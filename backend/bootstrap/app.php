@@ -27,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'check.banned' => \App\Http\Middleware\CheckBannedStatus::class,
             'check.fine' => \App\Http\Middleware\CheckFineAmount::class,
             'chatbot.cost_limiter' => \App\Http\Middleware\ChatbotCostLimiter::class,
+            'ensure.digital_access' => \App\Http\Middleware\EnsureValidDigitalAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
