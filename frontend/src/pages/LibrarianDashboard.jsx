@@ -1,249 +1,243 @@
-import React, { useState } from 'react';
-import { QrCode, BookPlus, UserCheck, ShieldOff, CheckCircle2, RotateCcw, AlertTriangle } from 'lucide-react';
-import axios from 'axios';
+import React, { useState, useEffect } from 'react';
+import { QrCode, BookCheck, ShieldAlert, CheckCircle2, UserCheck, BarChart3, AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import { api } from '../services/api';
 
 export default function LibrarianDashboard() {
-    const [barcode, setBarcode] = useState('');
-    const [memberId, setMemberId] = useState('1');
-    const [notice, setNotice] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [metrics, setMetrics] = useState({ total_books: 0, active_loans: 0, overdue_loans: 0, total_unpaid_fines: 0 });
+    const [loading, setLoading] = useState(true);
 
-    // Dynamic borrow limit config state
-    const [targetMemberNumber, setTargetMemberNumber] = useState('MEM-2026');
-    const [newBorrowLimit, setNewBorrowLimit] = useState(5);
+    // Form Checkout State
+    const [checkoutForm, setCheckoutForm] = useState({ barcode: '', member_id: '', days: 14 });
+    const [checkoutMsg, setCheckoutMsg] = useState(null);
+    const [checkoutError, setCheckoutError] = useState(null);
 
-    // Book creation state
-    const [newTitle, setNewTitle] = useState('');
-    const [newAuthor, setNewAuthor] = useState('');
-    const [newIsbn, setNewIsbn] = useState('');
-    const [newGenre, setNewGenre] = useState('Technology');
+    // Form Return State
+    const [returnForm, setReturnForm] = useState({ loan_id: '' });
+    const [returnMsg, setReturnMsg] = useState(null);
+    const [returnError, setReturnError] = useState(null);
 
-    const handleCheckoutSubmit = async (e) => {
-        e.preventDefault();
+    const fetchMetrics = async () => {
         setLoading(true);
         try {
-            await axios.post('/api/v1/librarian/loans/checkout', {
-                barcode,
-                member_id: memberId,
-            });
-            setNotice(`Book copy ${barcode} checked out successfully to Member ID #${memberId}!`);
-            setBarcode('');
+            const res = await api.getMetrics();
+            setMetrics(res.data || res);
         } catch (err) {
-            setNotice(`Circulation Checkout Processed for Barcode ${barcode}`);
-            setBarcode('');
+            console.error('Failed to load metrics:', err);
         } finally {
             setLoading(false);
-            setTimeout(() => setNotice(''), 4000);
         }
     };
 
-    const handleLimitUpdate = (e) => {
+    useEffect(() => {
+        fetchMetrics();
+    }, []);
+
+    const handleCheckout = async (e) => {
         e.preventDefault();
-        setNotice(`Updated borrowing limit for ${targetMemberNumber} to ${newBorrowLimit} books.`);
-        setTimeout(() => setNotice(''), 4000);
+        setCheckoutMsg(null);
+        setCheckoutError(null);
+        try {
+            const res = await api.checkoutLoan({
+                barcode: checkoutForm.barcode,
+                member_id: parseInt(checkoutForm.member_id, 10),
+                days: parseInt(checkoutForm.days, 10),
+            });
+
+            setCheckoutMsg(res.message || 'Book copy checked out successfully!');
+            setCheckoutForm({ barcode: '', member_id: '', days: 14 });
+            fetchMetrics();
+        } catch (err) {
+            setCheckoutError(err.message || 'Checkout failed.');
+        }
     };
 
-    const handleAddBook = (e) => {
+    const handleReturn = async (e) => {
         e.preventDefault();
-        setNotice(`Added new book "${newTitle}" with barcode BC-${newIsbn}-001 to inventory.`);
-        setNewTitle('');
-        setNewAuthor('');
-        setNewIsbn('');
-        setTimeout(() => setNotice(''), 4000);
+        setReturnMsg(null);
+        setReturnError(null);
+        try {
+            const res = await api.returnLoan(parseInt(returnForm.loan_id, 10));
+            setReturnMsg(res.message || 'Book returned successfully!');
+            setReturnForm({ loan_id: '' });
+            fetchMetrics();
+        } catch (err) {
+            setReturnError(err.message || 'Return processing failed.');
+        }
     };
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-            
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
             {/* Header */}
-            <div className="bg-gradient-to-r from-amber-950/60 via-slate-900 to-slate-950 border border-amber-500/30 rounded-3xl p-6 md:p-8 flex items-center justify-between">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">
                 <div>
-                    <span className="text-xs font-bold text-amber-400 uppercase tracking-wider block mb-1">
-                        Staff Operations Portal
+                    <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                        STAFF CIRCULATION DESK
                     </span>
-                    <h1 className="text-2xl md:text-3xl font-extrabold text-white">
-                        Librarian Circulation Desk
-                    </h1>
-                    <p className="text-xs text-slate-400 mt-1">
-                        Barcode scanner checkouts, returns processing, member borrowing limits, & inventory overrides.
-                    </p>
+                    <h1 className="text-2xl sm:text-3xl font-black text-white mt-2">Librarian Operations Console</h1>
+                    <p className="text-xs sm:text-sm text-slate-400">Barcode checkouts, inventory returns, and library metrics</p>
                 </div>
             </div>
 
-            {notice && (
-                <div className="p-4 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-200 flex items-center gap-3 animate-in fade-in">
-                    <CheckCircle2 className="w-5 h-5 text-amber-400 shrink-0" />
-                    <span className="text-sm font-semibold">{notice}</span>
+            {/* Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
+                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex items-center gap-4">
+                    <div className="p-3 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                        <BarChart3 className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <span className="text-xs text-slate-400 block font-medium">Total Titles</span>
+                        <span className="text-2xl font-black text-white">{loading ? '...' : metrics.total_books}</span>
+                    </div>
                 </div>
-            )}
 
+                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex items-center gap-4">
+                    <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <BookCheck className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <span className="text-xs text-slate-400 block font-medium">Active Loans</span>
+                        <span className="text-2xl font-black text-emerald-400">{loading ? '...' : metrics.active_loans}</span>
+                    </div>
+                </div>
+
+                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex items-center gap-4">
+                    <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        <ShieldAlert className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <span className="text-xs text-slate-400 block font-medium">Overdue Returns</span>
+                        <span className="text-2xl font-black text-amber-400">{loading ? '...' : metrics.overdue_loans}</span>
+                    </div>
+                </div>
+
+                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex items-center gap-4">
+                    <div className="p-3 rounded-2xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                        <QrCode className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <span className="text-xs text-slate-400 block font-medium">Unpaid Fines</span>
+                        <span className="text-2xl font-black text-purple-400">KES {loading ? '...' : metrics.total_unpaid_fines}</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Operations Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                
-                {/* 1. Checkout Counter / Barcode Scanner */}
-                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5">
+                {/* Barcode Checkout Form */}
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5 shadow-xl">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                        <div className="p-2.5 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
                             <QrCode className="w-5 h-5" />
                         </div>
                         <div>
-                            <h2 className="text-base font-bold text-white">Barcode Checkout Counter</h2>
-                            <p className="text-xs text-slate-400">Scan book barcode to issue loan</p>
+                            <h3 className="text-base font-bold text-white">Barcode Checkout Desk</h3>
+                            <p className="text-xs text-slate-400">Issue physical book copy to member</p>
                         </div>
                     </div>
 
-                    <form onSubmit={handleCheckoutSubmit} className="space-y-4">
+                    <form onSubmit={handleCheckout} className="space-y-4">
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">Book Barcode Number</label>
+                            <label className="block text-xs font-semibold text-slate-300 mb-1">Book Barcode</label>
                             <input
                                 type="text"
-                                value={barcode}
-                                onChange={(e) => setBarcode(e.target.value)}
-                                placeholder="Scan or type barcode (e.g. BC-9780132350884-001)"
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white font-mono focus:outline-none focus:border-amber-500 transition-colors"
+                                value={checkoutForm.barcode}
+                                onChange={(e) => setCheckoutForm({ ...checkoutForm, barcode: e.target.value })}
+                                placeholder="e.g. BC-7777"
                                 required
+                                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
                             />
                         </div>
 
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">Member ID / Barcode</label>
-                            <input
-                                type="text"
-                                value={memberId}
-                                onChange={(e) => setMemberId(e.target.value)}
-                                placeholder="Member ID number"
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-500 transition-colors"
-                                required
-                            />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-300 mb-1">Member ID</label>
+                                <input
+                                    type="number"
+                                    value={checkoutForm.member_id}
+                                    onChange={(e) => setCheckoutForm({ ...checkoutForm, member_id: e.target.value })}
+                                    placeholder="e.g. 1"
+                                    required
+                                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-slate-200 focus:outline-none focus:border-indigo-500"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-slate-300 mb-1">Loan Period (Days)</label>
+                                <input
+                                    type="number"
+                                    value={checkoutForm.days}
+                                    onChange={(e) => setCheckoutForm({ ...checkoutForm, days: e.target.value })}
+                                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-slate-200 focus:outline-none focus:border-indigo-500"
+                                />
+                            </div>
                         </div>
+
+                        {checkoutError && (
+                            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 flex-shrink-0" /> {checkoutError}
+                            </div>
+                        )}
+
+                        {checkoutMsg && (
+                            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> {checkoutMsg}
+                            </div>
+                        )}
 
                         <button
                             type="submit"
-                            disabled={loading}
-                            className="w-full py-3.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-sm shadow-lg shadow-amber-600/30 flex items-center justify-center gap-2 transition-all"
+                            className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-600/20"
                         >
-                            <UserCheck className="w-4 h-4" /> Execute Loan Checkout
+                            <BookCheck className="w-4 h-4" /> Issue Physical Book Copy
                         </button>
                     </form>
                 </div>
 
-                {/* 2. Configure Dynamic Borrowing Limit */}
-                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5">
+                {/* Return Book Form */}
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5 shadow-xl">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-                            <ShieldOff className="w-5 h-5" />
+                        <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <BookCheck className="w-5 h-5" />
                         </div>
                         <div>
-                            <h2 className="text-base font-bold text-white">Configure Member Borrow Limits</h2>
-                            <p className="text-xs text-slate-400">Override borrowing thresholds per user</p>
+                            <h3 className="text-base font-bold text-white">Process Returned Book</h3>
+                            <p className="text-xs text-slate-400">Mark loan returned & increment stock</p>
                         </div>
                     </div>
 
-                    <form onSubmit={handleLimitUpdate} className="space-y-4">
+                    <form onSubmit={handleReturn} className="space-y-4">
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">Member Number</label>
-                            <input
-                                type="text"
-                                value={targetMemberNumber}
-                                onChange={(e) => setTargetMemberNumber(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">Max Borrowing Limit</label>
+                            <label className="block text-xs font-semibold text-slate-300 mb-1">Loan Record ID</label>
                             <input
                                 type="number"
-                                min="1"
-                                max="20"
-                                value={newBorrowLimit}
-                                onChange={(e) => setNewBorrowLimit(parseInt(e.target.value))}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                                value={returnForm.loan_id}
+                                onChange={(e) => setReturnForm({ loan_id: e.target.value })}
+                                placeholder="e.g. 1"
                                 required
+                                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
                             />
                         </div>
+
+                        {returnError && (
+                            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 flex-shrink-0" /> {returnError}
+                            </div>
+                        )}
+
+                        {returnMsg && (
+                            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> {returnMsg}
+                            </div>
+                        )}
 
                         <button
                             type="submit"
-                            className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all"
+                            className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-600/20"
                         >
-                            Save Configured Limit
+                            <CheckCircle2 className="w-4 h-4" /> Process Inventory Return
                         </button>
                     </form>
                 </div>
-
-                {/* 3. Catalog & Book Creation */}
-                <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
-                            <BookPlus className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h2 className="text-base font-bold text-white">Add New Book to Inventory</h2>
-                            <p className="text-xs text-slate-400">Create new catalog record & auto-generate barcodes</p>
-                        </div>
-                    </div>
-
-                    <form onSubmit={handleAddBook} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">Book Title</label>
-                            <input
-                                type="text"
-                                value={newTitle}
-                                onChange={(e) => setNewTitle(e.target.value)}
-                                placeholder="Full title"
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">Author Name</label>
-                            <input
-                                type="text"
-                                value={newAuthor}
-                                onChange={(e) => setNewAuthor(e.target.value)}
-                                placeholder="Author name"
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">ISBN Number</label>
-                            <input
-                                type="text"
-                                value={newIsbn}
-                                onChange={(e) => setNewIsbn(e.target.value)}
-                                placeholder="e.g. 978-0132350884"
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">Genre Category</label>
-                            <select
-                                value={newGenre}
-                                onChange={(e) => setNewGenre(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition-colors"
-                            >
-                                <option value="Technology">Technology</option>
-                                <option value="Classic Fiction">Classic Fiction</option>
-                                <option value="Dystopian Fiction">Dystopian Fiction</option>
-                                <option value="Sci-Fi">Sci-Fi</option>
-                            </select>
-                        </div>
-
-                        <button
-                            type="submit"
-                            className="md:col-span-2 py-3.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-sm shadow-lg shadow-cyan-600/30 transition-all mt-2"
-                        >
-                            Save Book & Generate Barcode Copies
-                        </button>
-                    </form>
-                </div>
-
             </div>
         </div>
     );
