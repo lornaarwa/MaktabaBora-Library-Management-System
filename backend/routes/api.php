@@ -40,6 +40,15 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
         Route::get('/loans', [LoanController::class, 'index']);
         Route::post('/fines/{fine}/pay-daraja', [FineController::class, 'payWithDaraja']);
 
+        // Perk Subscriptions
+        Route::post('/subscriptions/checkout', [\App\Http\Controllers\SubscriptionController::class, 'checkout']);
+        Route::get('/subscriptions/status', [\App\Http\Controllers\SubscriptionController::class, 'status']);
+
+        // Digital Book Store & Reading
+        Route::post('/digital-books/{id}/purchase', [\App\Http\Controllers\DigitalRentalController::class, 'purchase']);
+        Route::get('/digital-books/{id}/read', [\App\Http\Controllers\DigitalRentalController::class, 'read'])
+            ->middleware([\App\Http\Middleware\EnsureValidDigitalAccess::class]);
+
         // Book Hold / Reservations Queue
         Route::post('/reservations', [ReservationController::class, 'store'])
             ->middleware([\App\Http\Middleware\CheckBookAvailability::class, \App\Http\Middleware\CheckReservationAvailability::class]);

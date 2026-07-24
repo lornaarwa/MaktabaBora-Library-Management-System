@@ -23,10 +23,14 @@ class Book extends Model
         'total_copies',
         'available_copies',
         'is_blocked',
+        'is_exclusive',
+        'digital_purchase_price',
     ];
 
     protected $casts = [
         'is_blocked' => 'boolean',
+        'is_exclusive' => 'boolean',
+        'digital_purchase_price' => 'float',
         'publication_year' => 'integer',
         'total_copies' => 'integer',
         'available_copies' => 'integer',
@@ -40,5 +44,10 @@ class Book extends Model
     public function reservations(): HasMany
     {
         return $this->hasMany(Reservation::class);
+    }
+
+    public function digitalPurchases(): HasMany
+    {
+        return $this->hasMany(DigitalPurchase::class);
     }
 }

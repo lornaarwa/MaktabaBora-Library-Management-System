@@ -21,6 +21,7 @@
 vendor/
 /vendor
 backend/vendor/
+frontend/node_modules/
 Homestead.json
 Homestead.yaml
 Thumbs.db
