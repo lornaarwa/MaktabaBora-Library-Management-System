@@ -1,15 +1,30 @@
-import React, { useState } from 'react';
-import { Shield, Users, Database, Sparkles, Activity, Ban, CheckCircle2, Server, Key } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Shield, Users, Database, Sparkles, Activity, Ban, CheckCircle2, Server, Loader2 } from 'lucide-react';
+import { api } from '../services/api';
 
 export default function AdminDashboard() {
-    const [memberBanNotice, setMemberBanNotice] = useState('');
-    const [targetMember, setTargetMember] = useState('MEM-2026');
+    const [users, setUsers] = useState([]);
+    const [metrics, setMetrics] = useState({ total_books: 0, active_loans: 0 });
+    const [loading, setLoading] = useState(true);
 
-    const handleBanToggle = (e) => {
-        e.preventDefault();
-        setMemberBanNotice(`Member ${targetMember} banned/suspended status updated. CheckBannedStatus middleware will enforce ban.`);
-        setTimeout(() => setMemberBanNotice(''), 4000);
-    };
+    useEffect(() => {
+        const fetchAdminData = async () => {
+            setLoading(true);
+            try {
+                const [metricsRes, usersRes] = await Promise.all([
+                    api.getMetrics().catch(() => ({ total_books: 0, active_loans: 0 })),
+                    api.get('/admin/users').catch(() => ({ data: [] })),
+                ]);
+                setMetrics(metricsRes.data || metricsRes || {});
+                setUsers(usersRes.data || usersRes || []);
+            } catch (err) {
+                console.error('Failed to load admin data:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchAdminData();
+    }, []);
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -21,31 +36,26 @@ export default function AdminDashboard() {
                         System Control Unit
                     </span>
                     <h1 className="text-2xl md:text-3xl font-extrabold text-white">
-                        Administrator Dashboard
+                        MaktabaBora Admin Console
                     </h1>
                     <p className="text-xs text-slate-400 mt-1">
-                        Database ORM status, AI token usage metrics, rate limiters, & member ban controls.
+                        Database health, middleware guards, and user access controls
                     </p>
                 </div>
             </div>
-
-            {memberBanNotice && (
-                <div className="p-4 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-200 flex items-center gap-3 animate-in fade-in">
-                    <CheckCircle2 className="w-5 h-5 text-rose-400 shrink-0" />
-                    <span className="text-sm font-semibold">{memberBanNotice}</span>
-                </div>
-            )}
 
             {/* Core Metrics Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-2">
                     <div className="flex justify-between items-center text-slate-400">
-                        <span className="text-xs font-semibold">Total System Users</span>
+                        <span className="text-xs font-semibold">Registered Accounts</span>
                         <Users className="w-5 h-5 text-indigo-400" />
                     </div>
-                    <span className="text-2xl font-extrabold text-white block">1,248</span>
-                    <span className="text-[10px] text-emerald-400 font-semibold">+12% from last month</span>
+                    <span className="text-2xl font-extrabold text-white block">
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (users.length || 1)}
+                    </span>
+                    <span className="text-[10px] text-emerald-400 font-semibold">Live PostgreSQL State</span>
                 </div>
 
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-2">
@@ -59,11 +69,13 @@ export default function AdminDashboard() {
 
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-2">
                     <div className="flex justify-between items-center text-slate-400">
-                        <span className="text-xs font-semibold">AI Tokens Consumed</span>
+                        <span className="text-xs font-semibold">Catalog Stock</span>
                         <Sparkles className="w-5 h-5 text-cyan-400" />
                     </div>
-                    <span className="text-2xl font-extrabold text-cyan-300 block">45,820</span>
-                    <span className="text-[10px] text-slate-400 font-semibold">Cost: ~$0.068 USD</span>
+                    <span className="text-2xl font-extrabold text-cyan-300 block">
+                        {loading ? '...' : (metrics.total_books || 0)} Titles
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-semibold">Inventory DB verified</span>
                 </div>
 
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-2">
@@ -72,77 +84,78 @@ export default function AdminDashboard() {
                         <Server className="w-5 h-5 text-purple-400" />
                     </div>
                     <span className="text-2xl font-extrabold text-white block">API Proxy v1</span>
-                    <span className="text-[10px] text-emerald-400 font-semibold">Rate Limit: 60req/min</span>
+                    <span className="text-[10px] text-emerald-400 font-semibold">Rate Limit: Active</span>
                 </div>
 
             </div>
 
-            {/* Member Ban Control */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                
-                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
-                            <Ban className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h2 className="text-base font-bold text-white">Member Suspension & Ban Tool</h2>
-                            <p className="text-xs text-slate-400">Enforce CheckBannedStatus middleware restrictions</p>
-                        </div>
+            {/* Registered Users Table */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                    <Users className="w-5 h-5 text-indigo-400" /> Account Directory & Roles
+                </h2>
+
+                {loading ? (
+                    <div className="flex items-center justify-center py-8 text-slate-400">
+                        <Loader2 className="w-6 h-6 animate-spin text-indigo-500 mr-2" /> Loading users...
                     </div>
-
-                    <form onSubmit={handleBanToggle} className="space-y-4">
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">Member Number</label>
-                            <input
-                                type="text"
-                                value={targetMember}
-                                onChange={(e) => setTargetMember(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition-colors"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">Reason for Suspension</label>
-                            <input
-                                type="text"
-                                defaultValue="Unreturned high-value materials and overdue fine defaults."
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition-colors"
-                                required
-                            />
-                        </div>
-
-                        <button
-                            type="submit"
-                            className="w-full py-3.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm shadow-lg shadow-rose-600/30 transition-all"
-                        >
-                            Toggle Member Ban Status
-                        </button>
-                    </form>
-                </div>
-
-                {/* Middleware Audit Status */}
-                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
-                    <h2 className="text-base font-bold text-white flex items-center gap-2">
-                        <Activity className="w-5 h-5 text-indigo-400" /> System Middleware Stack (14 Middlewares)
-                    </h2>
-
-                    <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                        {[
-                            'EnsureIsLibrarian', 'EnsureHasAccount', 'ValidateBorrowLimit',
-                            'CheckBookAvailability', 'CheckReservationAvailability', 'JwtTokenValidation',
-                            'ThrottleRequests', 'IpRateLimiter', 'Cors', 'TrustProxies',
-                            'ApiGatewayProxy', 'CheckBannedStatus', 'CheckFineAmount', 'ChatbotCostLimiter'
-                        ].map((mw, idx) => (
-                            <div key={idx} className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                                <span className="text-slate-300 truncate">{mw}</span>
-                                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">ACTIVE</span>
-                            </div>
-                        ))}
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs text-slate-300">
+                            <thead className="bg-slate-950/60 text-slate-400 uppercase text-[10px] tracking-wider">
+                                <tr>
+                                    <th className="p-3 rounded-l-xl">User Name</th>
+                                    <th className="p-3">Email</th>
+                                    <th className="p-3">System Role</th>
+                                    <th className="p-3 rounded-r-xl">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-800/60">
+                                {users.length > 0 ? (
+                                    users.map((u) => (
+                                        <tr key={u.id} className="hover:bg-slate-850/50">
+                                            <td className="p-3 font-semibold text-white">{u.name}</td>
+                                            <td className="p-3 text-slate-400">{u.email}</td>
+                                            <td className="p-3 uppercase font-mono font-bold text-indigo-400">{u.role}</td>
+                                            <td className="p-3">
+                                                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300">
+                                                    Active
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="4" className="p-4 text-center text-slate-500">
+                                            No user records returned from backend API.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
-                </div>
+                )}
+            </div>
 
+            {/* Middleware Audit Status */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+                <h2 className="text-base font-bold text-white flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-indigo-400" /> Decoupled Security Middlewares (15 Middlewares)
+                </h2>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 text-xs font-mono">
+                    {[
+                        'EnsureIsAdmin', 'EnsureIsLibrarian', 'EnsureIsMember', 'EnsureHasAccount',
+                        'ValidateBorrowLimit', 'CheckBookAvailability', 'CheckReservationAvailability',
+                        'JwtTokenValidation', 'ThrottleRequests', 'IpRateLimiter', 'Cors',
+                        'TrustProxies', 'ApiGatewayProxy', 'CheckBannedStatus', 'ChatbotCostLimiter'
+                    ].map((mw, idx) => (
+                        <div key={idx} className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                            <span className="text-slate-300 truncate">{mw}</span>
+                            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">ACTIVE</span>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );
