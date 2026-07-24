@@ -23,7 +23,7 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
     Route::post('/auth/register', [AuthController::class, 'register']);
     Route::post('/auth/login', [AuthController::class, 'login']);
 
-    // Public OPAC Catalog & Search
+    // Public Catalog & Search
     Route::get('/catalog/search', [CatalogSearchController::class, 'search']);
     Route::get('/books', [BookInventoryController::class, 'index']);
     Route::get('/books/{book}', [BookInventoryController::class, 'show']);
@@ -32,7 +32,7 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
     Route::post('/fines/daraja/callback', [FineController::class, 'darajaCallback']);
 
     // Authenticated Base Routes
-    Route::middleware(['ensure.account', 'check.banned'])->group(function () {
+    Route::middleware(['jwt.validation', 'ensure.account', 'check.banned'])->group(function () {
         Route::get('/auth/me', [AuthController::class, 'me']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
 
