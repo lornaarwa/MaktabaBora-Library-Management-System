@@ -5,28 +5,47 @@ const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => {
-        const saved = localStorage.getItem('smartlib_user');
+        const saved = localStorage.getItem('smartlib_user') || sessionStorage.getItem('smartlib_user');
         return saved ? JSON.parse(saved) : null;
     });
 
-    const [token, setToken] = useState(() => localStorage.getItem('smartlib_token') || null);
+    const [token, setToken] = useState(() => {
+        return localStorage.getItem('smartlib_token') || sessionStorage.getItem('smartlib_token') || null;
+    });
+
+    const [remember, setRememberState] = useState(() => {
+        return localStorage.getItem('smartlib_remember') === 'true';
+    });
+
     const [loading, setLoading] = useState(true);
 
+    // Sync storage when user or token changes
     useEffect(() => {
+        const storage = remember ? localStorage : sessionStorage;
+        const otherStorage = remember ? sessionStorage : localStorage;
+
         if (user) {
-            localStorage.setItem('smartlib_user', JSON.stringify(user));
+            storage.setItem('smartlib_user', JSON.stringify(user));
+            otherStorage.removeItem('smartlib_user');
         } else {
             localStorage.removeItem('smartlib_user');
+            sessionStorage.removeItem('smartlib_user');
         }
-    }, [user]);
+    }, [user, remember]);
 
     useEffect(() => {
+        const storage = remember ? localStorage : sessionStorage;
+        const otherStorage = remember ? sessionStorage : localStorage;
+
         if (token) {
-            localStorage.setItem('smartlib_token', token);
+            storage.setItem('smartlib_token', token);
+            otherStorage.removeItem('smartlib_token');
         } else {
             localStorage.removeItem('smartlib_token');
+            sessionStorage.removeItem('smartlib_token');
         }
-    }, [token]);
+        localStorage.setItem('smartlib_remember', remember ? 'true' : 'false');
+    }, [token, remember]);
 
     // Refresh user profile from API on mount if token exists
     useEffect(() => {
@@ -34,8 +53,9 @@ export const AuthProvider = ({ children }) => {
             if (token) {
                 try {
                     const res = await api.getMe();
-                    if (res.data?.user) {
-                        setUser(res.data.user);
+                    const userData = res.user || res.data?.user;
+                    if (userData) {
+                        setUser(userData);
                     }
                 } catch (err) {
                     console.warn('Session expired or invalid token:', err.message);
@@ -47,62 +67,31 @@ export const AuthProvider = ({ children }) => {
         verifyUser();
     }, [token]);
 
-    const login = async (email, password) => {
-        const res = await api.login({ email, password });
-        if (res.token && res.user) {
-            setUser(res.user);
-            setToken(res.token);
-            return res.user;
+    const login = async (email, password, isRemember = false) => {
+        setRememberState(isRemember);
+        const res = await api.login({ email, password, remember: isRemember });
+        const userData = res.user || res.data?.user;
+        const userToken = res.token || res.data?.token;
+
+        if (userToken && userData) {
+            setUser(userData);
+            setToken(userToken);
+            return userData;
         }
-        throw new Error(res.message || 'Login failed');
+        throw new Error(res.message || res.error || 'Login failed');
     };
 
     const register = async (data) => {
         const res = await api.register(data);
-        if (res.token && res.user) {
-            setUser(res.user);
-            setToken(res.token);
-            return res.user;
-        }
-        throw new Error(res.message || 'Registration failed');
-    };
+        const userData = res.user || res.data?.user;
+        const userToken = res.token || res.data?.token;
 
-    // Quick demo login helper for seamless testing
-    const loginAsRole = async (role) => {
-        let demoUser = {};
-        if (role === 'admin') {
-            demoUser = {
-                id: 99,
-                name: 'System Admin',
-                email: 'admin@library.org',
-                role: 'admin',
-            };
-        } else if (role === 'librarian') {
-            demoUser = {
-                id: 50,
-                name: 'Head Librarian',
-                email: 'librarian@library.org',
-                role: 'librarian',
-                librarian: { id: 1, employee_id: 'LIB-1002', department: 'Circulation' }
-            };
-        } else {
-            demoUser = {
-                id: 1,
-                name: 'Alex Johnson',
-                email: 'alex@student.edu',
-                role: 'member',
-                member: {
-                    id: 1,
-                    member_number: 'MEM-2026',
-                    membership_tier: 'student',
-                    borrow_limit: 5,
-                    is_banned: false,
-                    is_subscribed: true,
-                }
-            };
+        if (userToken && userData) {
+            setUser(userData);
+            setToken(userToken);
+            return userData;
         }
-        setUser(demoUser);
-        setToken(`token_${role}_${Date.now()}`);
+        throw new Error(res.message || res.error || 'Registration failed');
     };
 
     const logout = async () => {
@@ -113,11 +102,15 @@ export const AuthProvider = ({ children }) => {
         } finally {
             setUser(null);
             setToken(null);
+            localStorage.removeItem('smartlib_user');
+            localStorage.removeItem('smartlib_token');
+            sessionStorage.removeItem('smartlib_user');
+            sessionStorage.removeItem('smartlib_token');
         }
     };
 
     return (
-        <AuthContext.Provider value={{ user, setUser, token, setToken, login, register, loginAsRole, logout, loading }}>
+        <AuthContext.Provider value={{ user, setUser, token, setToken, remember, login, register, logout, loading }}>
             {children}
         </AuthContext.Provider>
     );

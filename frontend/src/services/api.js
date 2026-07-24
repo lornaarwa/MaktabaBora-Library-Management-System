@@ -10,9 +10,9 @@ const apiClient = axios.create({
     },
 });
 
-// Attach Bearer token to all requests if available
+// Attach Bearer token to all requests if available in localStorage or sessionStorage
 apiClient.interceptors.request.use((config) => {
-    const token = localStorage.getItem('smartlib_token');
+    const token = localStorage.getItem('smartlib_token') || sessionStorage.getItem('smartlib_token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
@@ -23,7 +23,7 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
     (response) => response.data,
     (error) => {
-        const errorMsg = error.response?.data?.message || error.message || 'An unexpected API error occurred.';
+        const errorMsg = error.response?.data?.message || error.response?.data?.error || error.message || 'An unexpected API error occurred.';
         const customError = new Error(errorMsg);
         customError.status = error.response?.status;
         customError.data = error.response?.data;

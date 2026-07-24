@@ -58,6 +58,7 @@ class AuthController extends Controller
         $credentials = $request->validate([
             'email' => 'required|email',
             'password' => 'required',
+            'remember' => 'nullable|boolean',
         ]);
 
         $user = User::where('email', $credentials['email'])->first();
@@ -77,7 +78,8 @@ class AuthController extends Controller
             }
         }
 
-        $token = $this->authSessionService->generateToken($user);
+        $remember = (bool) ($credentials['remember'] ?? false);
+        $token = $this->authSessionService->generateToken($user, $remember);
 
         return response()->json([
             'message' => 'Login successful',

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, KeyRound, Mail, User, ShieldCheck, Loader2, AlertCircle, ArrowRight, HelpCircle, X } from 'lucide-react';
+import { BookOpen, KeyRound, Mail, User, ShieldCheck, Loader2, AlertCircle, ArrowRight, HelpCircle, X, CheckSquare, Square } from 'lucide-react';
 
 export default function Login() {
     const { login, register } = useAuth();
@@ -15,6 +15,7 @@ export default function Login() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(true);
     const [membershipTier, setMembershipTier] = useState('general');
     
     // Forgot Password fields
@@ -31,7 +32,7 @@ export default function Login() {
 
         try {
             if (mode === 'signin') {
-                const user = await login(email, password);
+                const user = await login(email, password, rememberMe);
                 if (user.role === 'admin') navigate('/admin');
                 else if (user.role === 'librarian') navigate('/librarian');
                 else navigate('/member');
@@ -152,6 +153,22 @@ export default function Login() {
                             />
                         </div>
                     </div>
+
+                    {mode === 'signin' && (
+                        <div className="flex items-center justify-between pt-1">
+                            <label
+                                onClick={() => setRememberMe(!rememberMe)}
+                                className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none"
+                            >
+                                {rememberMe ? (
+                                    <CheckSquare className="w-4 h-4 text-indigo-400" />
+                                ) : (
+                                    <Square className="w-4 h-4 text-slate-600" />
+                                )}
+                                <span>Remember me (Keep persistent JWT session)</span>
+                            </label>
+                        </div>
+                    )}
 
                     {mode === 'signup' && (
                         <div>

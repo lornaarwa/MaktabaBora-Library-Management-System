@@ -15,9 +15,9 @@ class AuthSessionService implements AuthSessionServiceInterface
         $this->secret = config('app.key', 'secret-key-32-chars-long-placeholder');
     }
 
-    public function createSessionToken(User $user): string
+    public function createSessionToken(User $user, bool $remember = false): string
     {
-        return $this->generateToken($user);
+        return $this->generateToken($user, $remember);
     }
 
     public function validateSessionToken(string $token): ?User
@@ -41,15 +41,17 @@ class AuthSessionService implements AuthSessionServiceInterface
         return $this->validateSessionToken($token);
     }
 
-    public function generateToken(User $user): string
+    public function generateToken(User $user, bool $remember = false): string
     {
         $header = base64_encode(json_encode(['typ' => 'JWT', 'alg' => 'HS256']));
+        $ttl = $remember ? (60 * 60 * 24 * 30) : (60 * 60 * 24); // 30 days vs 24 hours
+
         $payload = base64_encode(json_encode([
             'sub' => $user->id,
             'email' => $user->email,
             'role' => $user->role ?? 'member',
             'iat' => time(),
-            'exp' => time() + (60 * 60 * 24), // 24h validity
+            'exp' => time() + $ttl,
         ]));
 
         $signature = hash_hmac('sha256', "$header.$payload", $this->secret);
