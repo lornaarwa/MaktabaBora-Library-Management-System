@@ -14,13 +14,13 @@ This document serves as the interactive task checklist for accountability, progr
 - [x] **Phase 6: Routes Wire-up & Integration Test**
 - [x] **Phase 7: Full Test Suite Verification**
 - [x] **Phase 8: Member Subscriptions (Perks) & Digital Purchases (Indefinite Access)**
-- [ ] **Phase 9: Frontend Centralized API Client & Auth Integration**
-- [ ] **Phase 10: OPAC Catalog, Member Perk Pass & Digital Storefront UI**
-- [ ] **Phase 11: Unified M-Pesa STK Push Payment Modal**
-- [ ] **Phase 12: Member Dashboard & Purchased Library UI**
-- [ ] **Phase 13: Staff Circulation Desk & Librarian Dashboard**
-- [ ] **Phase 14: AI Chatbot Assistant Widget Integration**
-- [ ] **Phase 15: Frontend Build Verification & End-to-End Polish**
+- [x] **Phase 9: Frontend Centralized API Client & Auth Integration**
+- [x] **Phase 10: OPAC Catalog, Member Perk Pass & Digital Storefront UI**
+- [x] **Phase 11: Unified M-Pesa STK Push Payment Modal**
+- [x] **Phase 12: Member Dashboard & Purchased Library UI**
+- [x] **Phase 13: Staff Circulation Desk & Librarian Dashboard**
+- [x] **Phase 14: AI Chatbot Assistant Widget Integration**
+- [x] **Phase 15: Frontend Build Verification & End-to-End Polish**
 
 ---
 
