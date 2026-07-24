@@ -1,100 +1,143 @@
 import React, { useState } from 'react';
-import { Smartphone, CheckCircle, ShieldAlert, X, Loader2 } from 'lucide-react';
-import axios from 'axios';
+import { X, Smartphone, ShieldCheck, AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
-export default function DarajaPayModal({ fine, isOpen, onClose, onSuccess }) {
-    const [phoneNumber, setPhoneNumber] = useState('0712345678');
+export default function DarajaPayModal({ isOpen, onClose, type = 'fine', item = null }) {
+    const { user } = useAuth();
+    const [phoneNumber, setPhoneNumber] = useState('254712345678');
     const [loading, setLoading] = useState(false);
-    const [status, setStatus] = useState(null); // 'success', 'failed'
-    const [message, setMessage] = useState('');
+    const [successMsg, setSuccessMsg] = useState(null);
+    const [errorMsg, setErrorMsg] = useState(null);
 
-    if (!isOpen || !fine) return null;
+    if (!isOpen) return null;
 
-    const handleStkPush = async (e) => {
+    const isSubscribed = user?.member?.is_subscribed;
+    const isDigital = type === 'digital';
+    const isFine = type === 'fine';
+
+    let title = 'M-Pesa Express Checkout';
+    let amount = 0;
+    let description = '';
+
+    if (isFine && item) {
+        title = `Pay Fine #${item.id}`;
+        amount = item.balance || item.amount;
+        description = `Settling overdue fine for loan copy #${item.loan_id}`;
+    } else if (isDigital && item) {
+        title = `Buy Digital Book: ${item.title}`;
+        const stdPrice = item.digital_purchase_price || 50.0;
+        amount = isSubscribed ? Math.round(stdPrice * 0.8 * 100) / 100 : stdPrice;
+        description = isSubscribed ? '20% Pro Subscriber Discount Applied!' : 'Standard One-Time Digital Purchase';
+    } else {
+        title = 'Library Payment';
+        amount = item?.amount || 500.0;
+        description = 'Library transaction';
+    }
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setStatus(null);
+        setErrorMsg(null);
+        setSuccessMsg(null);
 
         try {
-            const res = await axios.post(`/api/v1/fines/${fine.id}/pay-daraja`, {
-                phone_number: phoneNumber,
-                amount: fine.balance,
-            });
-
-            if (res.data?.success) {
-                setStatus('success');
-                setMessage(res.data.CustomerMessage || 'STK Push sent! Please enter M-Pesa PIN on your phone.');
-                setTimeout(() => {
-                    onSuccess();
-                }, 3000);
+            if (isFine) {
+                await api.payFineDaraja(item.id, { phone_number: phoneNumber });
+                setSuccessMsg(`STK Push sent to ${phoneNumber}. Enter your M-Pesa PIN to settle KES ${amount.toFixed(2)}.`);
+            } else if (isDigital) {
+                const res = await api.purchaseDigitalBook(item.id, { phone_number: phoneNumber });
+                setSuccessMsg(`M-Pesa STK Push sent! Lifetime access for "${item.title}" unlocked.`);
             }
-        } catch (err) {
-            setStatus('success'); // Fallback simulated success for demo
-            setMessage('M-Pesa STK Push triggered to ' + phoneNumber + '. Transaction reference: WS_MPESA_' + Math.floor(Math.random()*100000));
+
             setTimeout(() => {
-                onSuccess();
+                onClose();
+                setSuccessMsg(null);
             }, 3000);
+        } catch (err) {
+            setErrorMsg(err.message || 'Payment initiation failed.');
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
-                <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-white">
-                    <X className="w-5 h-5" />
-                </button>
-
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                        <Smartphone className="w-6 h-6" />
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-bold text-white">M-Pesa Daraja STK Push</h3>
-                        <p className="text-xs text-slate-400">Safaricom Instant Fine Payment</p>
-                    </div>
-                </div>
-
-                <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 mb-6 space-y-2 text-xs">
-                    <div className="flex justify-between text-slate-400">
-                        <span>Fine Reason:</span>
-                        <span className="font-semibold text-white capitalize">{fine.reason || 'Overdue Book'}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-400">
-                        <span>Amount Due:</span>
-                        <span className="font-bold text-emerald-400 text-sm">KES {parseFloat(fine.balance).toFixed(2)}</span>
-                    </div>
-                </div>
-
-                {status === 'success' ? (
-                    <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-center space-y-2">
-                        <CheckCircle className="w-8 h-8 text-emerald-400 mx-auto" />
-                        <p className="text-xs font-semibold text-emerald-300">{message}</p>
-                    </div>
-                ) : (
-                    <form onSubmit={handleStkPush} className="space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
+                
+                {/* Header */}
+                <div className="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <Smartphone className="w-5 h-5" />
+                        </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">M-Pesa Phone Number</label>
+                            <h2 className="text-base font-bold text-white leading-tight">{title}</h2>
+                            <p className="text-xs text-emerald-400 font-semibold mt-0.5">KES {amount.toFixed(2)}</p>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="p-6 space-y-5">
+                    <p className="text-xs text-slate-400">{description}</p>
+
+                    {isDigital && isSubscribed && (
+                        <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 flex-shrink-0" />
+                            <span>Pro Member: You saved 20% on this purchase!</span>
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                                Safaricom M-Pesa Phone Number
+                            </label>
                             <input
                                 type="text"
                                 value={phoneNumber}
                                 onChange={(e) => setPhoneNumber(e.target.value)}
-                                placeholder="07XXXXXXXX or 2547XXXXXXXX"
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors"
+                                placeholder="254712345678"
                                 required
+                                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-slate-200 focus:outline-none focus:border-emerald-500 font-mono"
                             />
                         </div>
+
+                        {errorMsg && (
+                            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                <span>{errorMsg}</span>
+                            </div>
+                        )}
+
+                        {successMsg && (
+                            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center gap-2">
+                                <ShieldCheck className="w-4 h-4 flex-shrink-0" />
+                                <span>{successMsg}</span>
+                            </div>
+                        )}
 
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition-all"
+                            className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all"
                         >
-                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Trigger STK Push Prompt'}
+                            {loading ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" /> Triggering M-Pesa STK Push...
+                                </>
+                            ) : (
+                                <>
+                                    <Smartphone className="w-4 h-4" /> Pay KES {amount.toFixed(2)} via M-Pesa
+                                </>
+                            )}
                         </button>
                     </form>
-                )}
+                </div>
             </div>
         </div>
     );
