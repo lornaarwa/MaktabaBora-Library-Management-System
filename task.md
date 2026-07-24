@@ -21,6 +21,11 @@ This document serves as the interactive task checklist for accountability, progr
 - [x] **Phase 13: Staff Circulation Desk & Librarian Dashboard**
 - [x] **Phase 14: AI Chatbot Assistant Widget Integration**
 - [x] **Phase 15: Frontend Build Verification & End-to-End Polish**
+- [x] **Phase 16: Decoupled Backend Role Security Middlewares**
+- [x] **Phase 17: MaktabaBora Branding, Navbar Overhaul & Minimal Footer**
+- [x] **Phase 18: Authentication Capabilities (Sign In, Sign Up, Forgot Password)**
+- [x] **Phase 19: Complete Mock Data Elimination Across Dashboards**
+- [x] **Phase 20: Full System Test Suite & Production Build Verification**
 
 ---
 
