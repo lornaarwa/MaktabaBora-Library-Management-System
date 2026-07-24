@@ -40,6 +40,10 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
         Route::get('/loans', [LoanController::class, 'index']);
         Route::post('/fines/{fine}/pay-daraja', [FineController::class, 'payWithDaraja']);
 
+        // Perk Subscriptions
+        Route::post('/subscriptions/checkout', [\App\Http\Controllers\SubscriptionController::class, 'checkout']);
+        Route::get('/subscriptions/status', [\App\Http\Controllers\SubscriptionController::class, 'status']);
+
         // Book Hold / Reservations Queue
         Route::post('/reservations', [ReservationController::class, 'store'])
             ->middleware([\App\Http\Middleware\CheckBookAvailability::class, \App\Http\Middleware\CheckReservationAvailability::class]);

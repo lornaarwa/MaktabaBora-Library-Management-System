@@ -36,11 +36,12 @@ class DarajaPaymentService implements DarajaPaymentServiceInterface
         return $response->json()['access_token'] ?? 'mock_daraja_access_token';
     }
 
-    public function initiateStkPush(Fine $fine, string $phoneNumber, float $amount): array
+    public function initiateStkPush(?Fine $fine, string $phoneNumber, float $amount, ?string $accountRef = null): array
     {
         $timestamp = date('YmdHis');
         $password = base64_encode("{$this->shortcode}{$this->passkey}{$timestamp}");
         $formattedPhone = preg_replace('/^0/', '254', preg_replace('/\D/', '', $phoneNumber));
+        $ref = $accountRef ?? ($fine ? "FINE-{$fine->id}" : 'PAYMENT');
 
         $payload = [
             'BusinessShortCode' => $this->shortcode,
@@ -52,11 +53,11 @@ class DarajaPaymentService implements DarajaPaymentServiceInterface
             'PartyB' => $this->shortcode,
             'PhoneNumber' => $formattedPhone,
             'CallBackURL' => config('app.url') . '/api/v1/fines/daraja/callback',
-            'AccountReference' => "FINE-{$fine->id}",
-            'TransactionDesc' => "Library Fine Payment for Fine #{$fine->id}",
+            'AccountReference' => $ref,
+            'TransactionDesc' => "Library Payment {$ref}",
         ];
 
-        Log::info("Initiating M-Pesa Daraja STK Push for Fine #{$fine->id}", $payload);
+        Log::info("Initiating M-Pesa Daraja STK Push [{$ref}]", $payload);
 
         // Simulation/Sandbox response fallback
         $checkoutRequestId = 'ws_CO_' . date('dmYHis') . '_' . rand(1000, 9999);
