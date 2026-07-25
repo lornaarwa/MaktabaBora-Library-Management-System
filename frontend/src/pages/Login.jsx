@@ -16,7 +16,6 @@ export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(true);
-    const [membershipTier, setMembershipTier] = useState('general');
     
     // Forgot Password fields
     const [forgotEmail, setForgotEmail] = useState('');
@@ -41,7 +40,7 @@ export default function Login() {
                     name,
                     email,
                     password,
-                    membership_tier: membershipTier,
+                    role: 'member',
                 });
                 navigate('/member');
             }
@@ -167,21 +166,6 @@ export default function Login() {
                                 )}
                                 <span>Remember me (Keep persistent JWT session)</span>
                             </label>
-                        </div>
-                    )}
-
-                    {mode === 'signup' && (
-                        <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">Membership Tier</label>
-                            <select
-                                value={membershipTier}
-                                onChange={(e) => setMembershipTier(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500"
-                            >
-                                <option value="general">General Public</option>
-                                <option value="student">Student</option>
-                                <option value="faculty">Faculty / Staff</option>
-                            </select>
                         </div>
                     )}
 

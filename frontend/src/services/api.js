@@ -60,6 +60,7 @@ export const api = {
 
     // Librarian Operations
     getMetrics: () => apiClient.get('/librarian/metrics'),
+    getLibrarianMembers: () => apiClient.get('/librarian/members'),
     checkoutLoan: (data) => apiClient.post('/librarian/loans/checkout', data),
     returnLoan: (loanId) => apiClient.post(`/librarian/loans/${loanId}/return`),
     createBook: (data) => apiClient.post('/librarian/books', data),
@@ -69,6 +70,13 @@ export const api = {
     configureBorrowLimit: (memberId, limit) => apiClient.post(`/librarian/members/${memberId}/borrow-limit`, { borrow_limit: limit }),
     getFines: () => apiClient.get('/librarian/fines'),
     waiveFine: (fineId) => apiClient.post(`/librarian/fines/${fineId}/waive`),
+
+    // Admin Operations
+    getAdminTables: () => apiClient.get('/admin/tables'),
+    getAdminTableData: (table) => apiClient.get(`/admin/tables/${table}`),
+    createAdminRecord: (table, data) => apiClient.post(`/admin/tables/${table}`, data),
+    updateAdminRecord: (table, id, data) => apiClient.put(`/admin/tables/${table}/${id}`, data),
+    deleteAdminRecord: (table, id) => apiClient.delete(`/admin/tables/${table}/${id}`),
 
     // AI Assistant
     sendAiMessage: (prompt) => apiClient.post('/ai/chat', { prompt }),

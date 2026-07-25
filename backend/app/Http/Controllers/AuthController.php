@@ -24,25 +24,21 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
-            'role' => 'nullable|string|in:member,librarian,admin',
-            'membership_tier' => 'nullable|string|in:student,faculty,general',
         ]);
 
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role' => $validated['role'] ?? 'member',
+            'role' => 'member',
         ]);
 
-        if ($user->role === 'member') {
-            Member::create([
-                'user_id' => $user->id,
-                'member_number' => 'MEM-' . strtoupper(bin2hex(random_bytes(3))),
-                'membership_tier' => $validated['membership_tier'] ?? 'general',
-                'borrow_limit' => 3,
-            ]);
-        }
+        Member::create([
+            'user_id' => $user->id,
+            'member_number' => 'MEM-' . strtoupper(bin2hex(random_bytes(3))),
+            'membership_tier' => 'general',
+            'borrow_limit' => 3,
+        ]);
 
         $token = $this->authSessionService->generateToken($user);
 

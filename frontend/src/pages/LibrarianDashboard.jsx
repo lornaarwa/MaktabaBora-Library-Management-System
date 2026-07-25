@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { QrCode, BookCheck, ShieldAlert, CheckCircle2, UserCheck, BarChart3, AlertCircle, Loader2 } from 'lucide-react';
+import { QrCode, BookCheck, ShieldAlert, CheckCircle2, Users, BarChart3, AlertCircle, Loader2, BookOpen, ShoppingBag, Clock } from 'lucide-react';
 import { api } from '../services/api';
 
 export default function LibrarianDashboard() {
     const [metrics, setMetrics] = useState({ total_books: 0, active_loans: 0, overdue_loans: 0, total_unpaid_fines: 0 });
+    const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
 
     // Form Checkout State
@@ -16,20 +17,24 @@ export default function LibrarianDashboard() {
     const [returnMsg, setReturnMsg] = useState(null);
     const [returnError, setReturnError] = useState(null);
 
-    const fetchMetrics = async () => {
+    const fetchData = async () => {
         setLoading(true);
         try {
-            const res = await api.getMetrics();
-            setMetrics(res.data || res);
+            const [metricsRes, membersRes] = await Promise.all([
+                api.getMetrics().catch(() => ({ total_books: 0, active_loans: 0, overdue_loans: 0, total_unpaid_fines: 0 })),
+                api.getLibrarianMembers().catch(() => ({ data: [] })),
+            ]);
+            setMetrics(metricsRes.data || metricsRes || {});
+            setMembers(membersRes.data || membersRes || []);
         } catch (err) {
-            console.error('Failed to load metrics:', err);
+            console.error('Failed to load librarian dashboard data:', err);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchMetrics();
+        fetchData();
     }, []);
 
     const handleCheckout = async (e) => {
@@ -45,7 +50,7 @@ export default function LibrarianDashboard() {
 
             setCheckoutMsg(res.message || 'Book copy checked out successfully!');
             setCheckoutForm({ barcode: '', member_id: '', days: 14 });
-            fetchMetrics();
+            fetchData();
         } catch (err) {
             setCheckoutError(err.message || 'Checkout failed.');
         }
@@ -59,7 +64,7 @@ export default function LibrarianDashboard() {
             const res = await api.returnLoan(parseInt(returnForm.loan_id, 10));
             setReturnMsg(res.message || 'Book returned successfully!');
             setReturnForm({ loan_id: '' });
-            fetchMetrics();
+            fetchData();
         } catch (err) {
             setReturnError(err.message || 'Return processing failed.');
         }
@@ -73,12 +78,12 @@ export default function LibrarianDashboard() {
                     <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
                         LIBRARIAN PORTAL
                     </span>
-                    <h1 className="text-2xl sm:text-3xl font-black text-white mt-2">Circulation & Inventory Desk</h1>
-                    <p className="text-xs sm:text-sm text-slate-400">Barcode physical checkouts, returns, and inventory stats</p>
+                    <h1 className="text-2xl sm:text-3xl font-black text-white mt-2">Circulation & Member Operations</h1>
+                    <p className="text-xs sm:text-sm text-slate-400">Barcode physical checkouts, returns, and member activity overview</p>
                 </div>
             </div>
 
-            {/* Metrics */}
+            {/* Metrics Overview */}
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
                 <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex items-center gap-4">
                     <div className="p-3 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
@@ -121,7 +126,73 @@ export default function LibrarianDashboard() {
                 </div>
             </div>
 
-            {/* Operations Grid */}
+            {/* Member Circulation Summary Table (Task 1) */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <Users className="w-5 h-5 text-indigo-400" /> Member Activity Directory
+                </h3>
+
+                {loading ? (
+                    <div className="flex items-center justify-center py-8 text-slate-400">
+                        <Loader2 className="w-6 h-6 animate-spin text-indigo-500 mr-2" /> Loading member directory...
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs text-slate-300">
+                            <thead className="bg-slate-950/60 text-slate-400 uppercase text-[10px] tracking-wider">
+                                <tr>
+                                    <th className="p-3 rounded-l-xl">Member Number</th>
+                                    <th className="p-3">Full Name & Email</th>
+                                    <th className="p-3">Tier / Limit</th>
+                                    <th className="p-3 text-center">Active Loans</th>
+                                    <th className="p-3 text-center">Reservations</th>
+                                    <th className="p-3 text-center rounded-r-xl">Digital Purchases</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-800/60">
+                                {members.length > 0 ? (
+                                    members.map((m) => (
+                                        <tr key={m.id} className="hover:bg-slate-850/50">
+                                            <td className="p-3 font-mono font-bold text-indigo-400">{m.member_number}</td>
+                                            <td className="p-3">
+                                                <div className="font-semibold text-white">{m.name}</div>
+                                                <div className="text-[11px] text-slate-400">{m.email}</div>
+                                            </td>
+                                            <td className="p-3">
+                                                <span className="capitalize text-slate-300 font-semibold">{m.membership_tier}</span>
+                                                <div className="text-[10px] text-slate-500">Max Limit: {m.borrow_limit}</div>
+                                            </td>
+                                            <td className="p-3 text-center">
+                                                <span className="px-2.5 py-1 rounded-full font-bold bg-indigo-500/20 text-indigo-300">
+                                                    {m.active_loans_count} active / {m.total_loans_count} total
+                                                </span>
+                                            </td>
+                                            <td className="p-3 text-center">
+                                                <span className="px-2.5 py-1 rounded-full font-bold bg-amber-500/20 text-amber-300">
+                                                    {m.reserved_books_count} holds
+                                                </span>
+                                            </td>
+                                            <td className="p-3 text-center">
+                                                <span className="px-2.5 py-1 rounded-full font-bold bg-purple-500/20 text-purple-300">
+                                                    {m.digital_purchases_count} e-books
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="6" className="p-4 text-center text-slate-500">
+                                            No members registered yet.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+
+            {/* Checkouts & Returns Operations Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Barcode Checkout Form */}
                 <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5 shadow-xl">
@@ -130,7 +201,7 @@ export default function LibrarianDashboard() {
                             <QrCode className="w-5 h-5" />
                         </div>
                         <div>
-                            <h3 className="text-base font-bold text-white">Issue Physical Book</h3>
+                            <h3 className="text-base font-bold text-white">Issue Physical Book Copy</h3>
                             <p className="text-xs text-slate-400">Scan barcode to check out book copy to member</p>
                         </div>
                     </div>

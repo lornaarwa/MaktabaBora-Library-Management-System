@@ -64,6 +64,7 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
         // Librarian Portal Routes
         Route::middleware(['ensure.librarian'])->prefix('librarian')->group(function () {
             Route::get('/metrics', [LibrarianDashboardController::class, 'metrics']);
+            Route::get('/members', [LibrarianDashboardController::class, 'members']);
             Route::post('/members/{member}/borrow-limit', [LibrarianDashboardController::class, 'configureBorrowLimit']);
             Route::post('/books/{book}/toggle-restriction', [LibrarianDashboardController::class, 'toggleBookRestriction']);
 
@@ -84,6 +85,13 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
             Route::get('/users', function () {
                 return response()->json(['status' => 'success', 'data' => \App\Models\User::with('member')->get()]);
             });
+
+            // Dynamic Table CRUD Management Routes
+            Route::get('/tables', [\App\Http\Controllers\AdminCrudController::class, 'indexTables']);
+            Route::get('/tables/{table}', [\App\Http\Controllers\AdminCrudController::class, 'getTableData']);
+            Route::post('/tables/{table}', [\App\Http\Controllers\AdminCrudController::class, 'storeRecord']);
+            Route::put('/tables/{table}/{id}', [\App\Http\Controllers\AdminCrudController::class, 'updateRecord']);
+            Route::delete('/tables/{table}/{id}', [\App\Http\Controllers\AdminCrudController::class, 'destroyRecord']);
         });
 
         // API Gateway Proxy Route
