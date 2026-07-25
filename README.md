@@ -1,4 +1,4 @@
-# Smart Library Management System (SmartLib)
+# MaktabaBora Library Management System (SmartLib)
 
 SmartLib is a production-grade, full-stack library management system featuring a **Laravel REST API** backend and a **React SPA** frontend. The platform handles digital/physical catalog searches (OPAC), barcode circulation, custom borrowing limits, Safaricom M-Pesa Daraja fine payments, member perk subscriptions, one-time digital book purchases with lifetime access, and an OpenAI-powered AI Assistant Chatbot.
 
