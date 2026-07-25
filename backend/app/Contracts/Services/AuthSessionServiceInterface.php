@@ -10,6 +10,10 @@ interface AuthSessionServiceInterface
 
     public function generateToken(User $user, bool $remember = false): string;
 
+    public function generateAccessToken(User $user): string;
+
+    public function generateRefreshToken(User $user): string;
+
     public function validateSessionToken(string $token): ?User;
 
     public function invalidateSessionToken(string $token): bool;

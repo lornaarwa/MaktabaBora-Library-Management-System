@@ -34,6 +34,7 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
     // Authenticated Base Routes
     Route::middleware(['jwt.validation', 'ensure.account', 'check.banned'])->group(function () {
         Route::get('/auth/me', [AuthController::class, 'me']);
+        Route::post('/auth/refresh', [AuthController::class, 'refresh']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
 
         // Member-only & Member-accessible Features

@@ -88,6 +88,21 @@ class AuthController extends Controller
         ]);
     }
 
+    public function refresh(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        $token = $this->authSessionService->generateAccessToken($user);
+
+        return response()->json([
+            'message' => 'Token refreshed successfully',
+            'token' => $token,
+        ]);
+    }
+
     public function me(Request $request): JsonResponse
     {
         return response()->json([
@@ -97,11 +112,6 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $token = $request->bearerToken();
-        if ($token) {
-            $this->authSessionService->blacklistToken($token);
-        }
-
         return response()->json(['message' => 'Logged out successfully']);
     }
 }
