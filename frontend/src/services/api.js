@@ -72,6 +72,9 @@ export const api = {
     waiveFine: (fineId) => apiClient.post(`/librarian/fines/${fineId}/waive`),
 
     // Admin Operations
+    getAdminAnalytics: () => apiClient.get('/admin/analytics'),
+    banAdminMember: (memberId, isBanned, reason = '') => apiClient.post(`/admin/members/${memberId}/ban`, { is_banned: isBanned, ban_reason: reason }),
+    createAdminLibrarian: (data) => apiClient.post('/admin/librarians', data),
     getAdminTables: () => apiClient.get('/admin/tables'),
     getAdminTableData: (table) => apiClient.get(`/admin/tables/${table}`),
     createAdminRecord: (table, data) => apiClient.post(`/admin/tables/${table}`, data),

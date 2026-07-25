@@ -86,6 +86,11 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
                 return response()->json(['status' => 'success', 'data' => \App\Models\User::with('member')->get()]);
             });
 
+            // Analytics & Management
+            Route::get('/analytics', [\App\Http\Controllers\AdminAnalyticsController::class, 'analytics']);
+            Route::post('/members/{member}/ban', [\App\Http\Controllers\AdminAnalyticsController::class, 'banMember']);
+            Route::post('/librarians', [\App\Http\Controllers\AdminAnalyticsController::class, 'storeLibrarian']);
+
             // Dynamic Table CRUD Management Routes
             Route::get('/tables', [\App\Http\Controllers\AdminCrudController::class, 'indexTables']);
             Route::get('/tables/{table}', [\App\Http\Controllers\AdminCrudController::class, 'getTableData']);
