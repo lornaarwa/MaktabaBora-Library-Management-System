@@ -1,171 +1,233 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { BookOpen, Clock, ShieldCheck, Sparkles, ShoppingBag, Loader2, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
 import DarajaPayModal from '../components/DarajaPayModal';
-import { BookOpen, Clock, AlertTriangle, CreditCard, Sparkles, CheckCircle2, RotateCw } from 'lucide-react';
-
-const MOCK_MEMBER_LOANS = [
-    { id: 101, book_title: 'Clean Code: A Handbook of Agile Software Craftsmanship', barcode: 'BC-9780132350884-001', loan_date: '2026-07-10', due_date: '2026-07-24', status: 'active', renewal_count: 1 },
-    { id: 102, book_title: 'The Great Gatsby', barcode: 'BC-9780743273565-002', loan_date: '2026-06-15', due_date: '2026-06-29', status: 'overdue', renewal_count: 0 }
-];
-
-const MOCK_FINES = [
-    { id: 1, loan_id: 102, amount: 250.00, balance: 250.00, status: 'unpaid', reason: 'Overdue Book (14 days past due)' }
-];
+import SubscriptionPassModal from '../components/SubscriptionPassModal';
+import DigitalReaderModal from '../components/DigitalReaderModal';
 
 export default function MemberDashboard() {
     const { user } = useAuth();
-    const [loans, setLoans] = useState(MOCK_MEMBER_LOANS);
-    const [fines, setFines] = useState(MOCK_FINES);
-    const [selectedFine, setSelectedFine] = useState(null);
-    const [isPayModalOpen, setIsPayModalOpen] = useState(false);
-    const [actionMsg, setActionMsg] = useState('');
+    const [loans, setLoans] = useState([]);
+    const [digitalLibrary, setDigitalLibrary] = useState([]);
+    const [subscription, setSubscription] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-    const handleRenew = (loanId) => {
-        setLoans(prev => prev.map(l => l.id === loanId ? { ...l, renewal_count: l.renewal_count + 1, due_date: '2026-08-07' } : l));
-        setActionMsg('Loan renewed successfully! Extended due date by 14 days.');
-        setTimeout(() => setActionMsg(''), 4000);
-    };
+    // Modals
+    const [darajaModal, setDarajaModal] = useState({ isOpen: false, type: 'fine', item: null });
+    const [subModalOpen, setSubModalOpen] = useState(false);
+    const [readerModal, setReaderModal] = useState({ isOpen: false, data: null });
 
-    const handlePayFineClick = (fine) => {
-        setSelectedFine(fine);
-        setIsPayModalOpen(true);
-    };
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            setLoading(true);
+            try {
+                const [loansRes, subRes, digitalRes] = await Promise.all([
+                    api.getLoans().catch(() => ({ data: [] })),
+                    api.getSubscriptionStatus().catch(() => ({ data: null })),
+                    api.getMyDigitalLibrary().catch(() => ({ data: [] })),
+                ]);
 
-    const handlePaymentSuccess = () => {
-        setFines(prev => prev.map(f => f.id === selectedFine.id ? { ...f, balance: 0, status: 'paid' } : f));
-        setIsPayModalOpen(false);
-        setActionMsg('M-Pesa Payment Received! Fine settled successfully.');
-        setTimeout(() => setActionMsg(''), 4000);
+                setLoans(loansRes.data || loansRes || []);
+                setSubscription(subRes.data || null);
+                setDigitalLibrary(digitalRes.data || digitalRes || []);
+            } catch (err) {
+                console.error('Failed to load member dashboard data:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (user) {
+            fetchDashboardData();
+        } else {
+            setLoading(false);
+        }
+    }, [user]);
+
+    const isSubscribed = user?.member?.is_subscribed || subscription?.is_subscribed;
+
+    const handleReadDigital = async (book) => {
+        try {
+            const res = await api.readDigitalBook(book.id);
+            setReaderModal({ isOpen: true, data: res.data || res });
+        } catch (err) {
+            alert(err.message || 'Failed to stream digital book.');
+        }
     };
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             
-            {/* Header Banner */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div>
-                    <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider block mb-1">
-                        Member Portal • {user?.member?.member_number || 'MEM-2026'}
-                    </span>
-                    <h1 className="text-2xl md:text-3xl font-extrabold text-white">
-                        Welcome back, {user?.name || 'Library Member'}
-                    </h1>
-                    <p className="text-xs text-slate-400 mt-1">
-                        Tier: <span className="text-indigo-300 font-semibold capitalize">{user?.member?.membership_tier || 'student'}</span> • Active Limit: {user?.member?.borrow_limit || 5} Books
+            {/* User Greeting & Member Banner (TailAdmin Header Layout) */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-sm">
+                <div className="space-y-1.5">
+                    <div className="flex items-center gap-2.5">
+                        <h1 className="text-xl sm:text-2xl font-extrabold text-zinc-100">{user?.name || 'Member Dashboard'}</h1>
+                        {isSubscribed ? (
+                            <span className="px-2.5 py-0.5 rounded text-[9px] font-mono font-bold bg-zinc-100 text-zinc-950 flex items-center gap-1">
+                                <Sparkles className="w-3 h-3 text-zinc-950" /> PRO MEMBER (20% OFF)
+                            </span>
+                        ) : (
+                            <span className="px-2.5 py-0.5 rounded text-[9px] font-mono font-bold bg-zinc-800 text-zinc-400 border border-zinc-700">
+                                MEMBER ACCOUNT
+                            </span>
+                        )}
+                    </div>
+                    <p className="text-xs text-zinc-400 font-mono">
+                        Card #: <span className="text-zinc-200 font-bold">{user?.member?.member_number || 'MEM-2026'}</span> | Max Limit: {user?.member?.borrow_limit || 5} Books
                     </p>
                 </div>
 
-                <div className="flex gap-3">
-                    <div className="bg-slate-950 px-4 py-3 rounded-2xl border border-slate-800 text-center">
-                        <span className="text-[10px] text-slate-500 block uppercase font-bold">Active Loans</span>
-                        <span className="text-xl font-extrabold text-indigo-400">{loans.filter(l => l.status === 'active').length}</span>
+                {!isSubscribed && (
+                    <button
+                        onClick={() => setSubModalOpen(true)}
+                        className="py-2.5 px-4 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                    >
+                        <Sparkles className="w-3.5 h-3.5" /> Unlock Pro Member Pass (KES 500/mo)
+                    </button>
+                )}
+            </div>
+
+            {/* TailAdmin Stat Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-2">
+                    <div className="flex justify-between items-center text-zinc-400">
+                        <span className="text-xs font-semibold text-zinc-400 uppercase font-mono">Active Loans</span>
+                        <div className="p-2 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300">
+                            <BookOpen className="w-4 h-4" />
+                        </div>
                     </div>
-                    <div className="bg-slate-950 px-4 py-3 rounded-2xl border border-slate-800 text-center">
-                        <span className="text-[10px] text-slate-500 block uppercase font-bold">Unpaid Fines</span>
-                        <span className="text-xl font-extrabold text-rose-400">
-                            KES {fines.reduce((acc, f) => acc + (f.status === 'unpaid' ? f.balance : 0), 0)}
-                        </span>
+                    <span className="text-2xl font-extrabold text-zinc-100 block">
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : loans.filter(l => l.status === 'active').length}
+                    </span>
+                    <span className="text-[10px] text-zinc-500 font-mono">Physical copies checked out</span>
+                </div>
+
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-2">
+                    <div className="flex justify-between items-center text-zinc-400">
+                        <span className="text-xs font-semibold text-zinc-400 uppercase font-mono">Digital Library</span>
+                        <div className="p-2 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300">
+                            <ShoppingBag className="w-4 h-4" />
+                        </div>
                     </div>
+                    <span className="text-2xl font-extrabold text-zinc-100 block">
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : digitalLibrary.length}
+                    </span>
+                    <span className="text-[10px] text-zinc-500 font-mono">Purchased lifetime e-books</span>
+                </div>
+
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-2">
+                    <div className="flex justify-between items-center text-zinc-400">
+                        <span className="text-xs font-semibold text-zinc-400 uppercase font-mono">Overdue Returns</span>
+                        <div className="p-2 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300">
+                            <Clock className="w-4 h-4" />
+                        </div>
+                    </div>
+                    <span className="text-2xl font-extrabold text-zinc-100 block">
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : loans.filter(l => l.status === 'overdue').length}
+                    </span>
+                    <span className="text-[10px] text-zinc-500 font-mono">Overdue physical items</span>
                 </div>
             </div>
 
-            {/* Action Feedback */}
-            {actionMsg && (
-                <div className="mb-6 p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 flex items-center gap-3 animate-in fade-in">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                    <span className="text-sm font-semibold">{actionMsg}</span>
-                </div>
-            )}
+            {/* Purchased Digital E-Books Grid */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4 shadow-sm">
+                <h3 className="text-base font-bold text-zinc-100 flex items-center gap-2">
+                    <ShoppingBag className="w-4 h-4 text-zinc-400" /> Purchased Digital E-Books
+                </h3>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
-                {/* Active Checkouts / Loans */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                            <BookOpen className="w-5 h-5 text-indigo-400" /> My Current Checkouts
-                        </h2>
+                {loading ? (
+                    <div className="flex items-center justify-center py-8 text-zinc-400">
+                        <Loader2 className="w-5 h-5 animate-spin text-zinc-400 mr-2" /> Loading e-books...
                     </div>
-
-                    <div className="space-y-4">
-                        {loans.map(loan => (
-                            <div key={loan.id} className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                ) : digitalLibrary.length === 0 ? (
+                    <p className="text-xs text-zinc-500 py-6 text-center">You have not purchased any digital e-books yet. Browse the catalog to purchase e-books.</p>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {digitalLibrary.map((item) => (
+                            <div key={item.id} className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between space-y-3">
                                 <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-[10px] font-mono text-slate-500 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">{loan.barcode}</span>
-                                        {loan.status === 'overdue' ? (
-                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1">
-                                                <AlertTriangle className="w-3 h-3" /> Overdue
-                                            </span>
-                                        ) : (
-                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                                                Active Loan
-                                            </span>
-                                        )}
-                                    </div>
-                                    <h3 className="font-bold text-white text-base">{loan.book_title}</h3>
-                                    <p className="text-xs text-slate-400 mt-1 flex items-center gap-3">
-                                        <span>Issued: {loan.loan_date}</span>
-                                        <span className="font-semibold text-indigo-300">Due: {loan.due_date}</span>
-                                        <span>Renewals: {loan.renewal_count}</span>
-                                    </p>
+                                    <span className="text-[9px] font-mono font-bold text-zinc-300 uppercase flex items-center gap-1">
+                                        <ShieldCheck className="w-3 h-3 text-zinc-400" /> Lifetime Unlocked
+                                    </span>
+                                    <h4 className="font-bold text-zinc-100 text-sm mt-1">{item.book?.title || `Book #${item.book_id}`}</h4>
+                                    <p className="text-xs text-zinc-400">{item.book?.author}</p>
                                 </div>
-
                                 <button
-                                    onClick={() => handleRenew(loan.id)}
-                                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-all self-end md:self-center"
+                                    onClick={() => handleReadDigital(item.book || { id: item.book_id })}
+                                    className="w-full py-2 px-3 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm"
                                 >
-                                    <RotateCw className="w-3.5 h-3.5" /> Renew Loan
+                                    <BookOpen className="w-3.5 h-3.5" /> Read E-Book Stream
                                 </button>
                             </div>
                         ))}
                     </div>
-                </div>
-
-                {/* Fines & Payment Box */}
-                <div className="space-y-6">
-                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                        <CreditCard className="w-5 h-5 text-rose-400" /> Library Fines & M-Pesa
-                    </h2>
-
-                    <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-4">
-                        {fines.map(fine => (
-                            <div key={fine.id} className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <span className="text-xs font-bold text-rose-400 block">{fine.reason}</span>
-                                        <span className="text-[10px] text-slate-500">Fine ID #{fine.id}</span>
-                                    </div>
-                                    <span className="text-lg font-extrabold text-white">
-                                        KES {fine.balance.toFixed(2)}
-                                    </span>
-                                </div>
-
-                                {fine.status === 'unpaid' ? (
-                                    <button
-                                        onClick={() => handlePayFineClick(fine)}
-                                        className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all"
-                                    >
-                                        <Smartphone className="w-4 h-4" /> Pay with M-Pesa STK
-                                    </button>
-                                ) : (
-                                    <span className="block text-center py-2 bg-emerald-500/10 text-emerald-400 font-bold text-xs rounded-xl border border-emerald-500/20">
-                                        Settled & Paid
-                                    </span>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
+                )}
             </div>
 
-            {/* M-Pesa Modal */}
+            {/* Active Physical Loans Table */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4 shadow-sm">
+                <h3 className="text-base font-bold text-zinc-100 flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-zinc-400" /> Physical Circulation Loans
+                </h3>
+
+                {loading ? (
+                    <div className="flex items-center justify-center py-8 text-zinc-400">
+                        <Loader2 className="w-5 h-5 animate-spin text-zinc-400 mr-2" /> Loading loans...
+                    </div>
+                ) : loans.length === 0 ? (
+                    <p className="text-xs text-zinc-500 py-6 text-center">No active physical loans found.</p>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs text-zinc-300 border-collapse">
+                            <thead className="bg-zinc-950 text-zinc-400 uppercase text-[10px] tracking-wider font-mono">
+                                <tr>
+                                    <th className="p-3 border-b border-zinc-800">Book Title</th>
+                                    <th className="p-3 border-b border-zinc-800">Loan Date</th>
+                                    <th className="p-3 border-b border-zinc-800">Due Date</th>
+                                    <th className="p-3 border-b border-zinc-800 text-right">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-zinc-800/60">
+                                {loans.map((loan) => (
+                                    <tr key={loan.id} className="hover:bg-zinc-950/50">
+                                        <td className="p-3 font-semibold text-zinc-100">{loan.book_copy?.book?.title || `Book Copy #${loan.book_copy_id}`}</td>
+                                        <td className="p-3 text-zinc-400 font-mono">{loan.loan_date}</td>
+                                        <td className="p-3 text-zinc-400 font-mono">{loan.due_date}</td>
+                                        <td className="p-3 text-right">
+                                            <span className={`px-2 py-0.5 rounded text-[9px] font-mono font-bold border ${
+                                                loan.status === 'active' ? 'bg-zinc-100 text-zinc-950 border-zinc-100' : 'bg-zinc-800 text-zinc-300 border-zinc-700'
+                                            }`}>
+                                                {loan.status.toUpperCase()}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+
+            {/* Modals */}
             <DarajaPayModal
-                fine={selectedFine}
-                isOpen={isPayModalOpen}
-                onClose={() => setIsPayModalOpen(false)}
-                onSuccess={handlePaymentSuccess}
+                isOpen={darajaModal.isOpen}
+                onClose={() => setDarajaModal({ isOpen: false, type: 'fine', item: null })}
+                type={darajaModal.type}
+                item={darajaModal.item}
+            />
+
+            <SubscriptionPassModal
+                isOpen={subModalOpen}
+                onClose={() => setSubModalOpen(false)}
+            />
+
+            <DigitalReaderModal
+                isOpen={readerModal.isOpen}
+                onClose={() => setReaderModal({ isOpen: false, data: null })}
+                bookData={readerModal.data}
             />
         </div>
     );

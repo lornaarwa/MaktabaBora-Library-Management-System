@@ -24,25 +24,21 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
-            'role' => 'nullable|string|in:member,librarian,admin',
-            'membership_tier' => 'nullable|string|in:student,faculty,general',
         ]);
 
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role' => $validated['role'] ?? 'member',
+            'role' => 'member',
         ]);
 
-        if ($user->role === 'member') {
-            Member::create([
-                'user_id' => $user->id,
-                'member_number' => 'MEM-' . strtoupper(bin2hex(random_bytes(3))),
-                'membership_tier' => $validated['membership_tier'] ?? 'general',
-                'borrow_limit' => 3,
-            ]);
-        }
+        Member::create([
+            'user_id' => $user->id,
+            'member_number' => 'MEM-' . strtoupper(bin2hex(random_bytes(3))),
+            'membership_tier' => 'general',
+            'borrow_limit' => 3,
+        ]);
 
         $token = $this->authSessionService->generateToken($user);
 
@@ -58,6 +54,7 @@ class AuthController extends Controller
         $credentials = $request->validate([
             'email' => 'required|email',
             'password' => 'required',
+            'remember' => 'nullable|boolean',
         ]);
 
         $user = User::where('email', $credentials['email'])->first();
@@ -77,11 +74,27 @@ class AuthController extends Controller
             }
         }
 
-        $token = $this->authSessionService->generateToken($user);
+        $remember = (bool) ($credentials['remember'] ?? false);
+        $token = $this->authSessionService->generateToken($user, $remember);
 
         return response()->json([
             'message' => 'Login successful',
             'user' => $user->load('member', 'librarian'),
+            'token' => $token,
+        ]);
+    }
+
+    public function refresh(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        $token = $this->authSessionService->generateAccessToken($user);
+
+        return response()->json([
+            'message' => 'Token refreshed successfully',
             'token' => $token,
         ]);
     }
@@ -95,11 +108,6 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
-        $token = $request->bearerToken();
-        if ($token) {
-            $this->authSessionService->blacklistToken($token);
-        }
-
         return response()->json(['message' => 'Logged out successfully']);
     }
 }

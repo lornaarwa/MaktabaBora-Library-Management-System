@@ -6,7 +6,13 @@ use App\Models\User;
 
 interface AuthSessionServiceInterface
 {
-    public function createSessionToken(User $user): string;
+    public function createSessionToken(User $user, bool $remember = false): string;
+
+    public function generateToken(User $user, bool $remember = false): string;
+
+    public function generateAccessToken(User $user): string;
+
+    public function generateRefreshToken(User $user): string;
 
     public function validateSessionToken(string $token): ?User;
 

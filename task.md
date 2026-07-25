@@ -14,6 +14,101 @@ This document serves as the interactive task checklist for accountability, progr
 - [x] **Phase 6: Routes Wire-up & Integration Test**
 - [x] **Phase 7: Full Test Suite Verification**
 - [x] **Phase 8: Member Subscriptions (Perks) & Digital Purchases (Indefinite Access)**
+- [x] **Phase 9: Frontend Centralized API Client & Auth Integration**
+- [x] **Phase 10: OPAC Catalog, Member Perk Pass & Digital Storefront UI**
+- [x] **Phase 11: Unified M-Pesa STK Push Payment Modal**
+- [x] **Phase 12: Member Dashboard & Purchased Library UI**
+- [x] **Phase 13: Staff Circulation Desk & Librarian Dashboard**
+- [x] **Phase 14: AI Chatbot Assistant Widget Integration**
+- [x] **Phase 15: Frontend Build Verification & End-to-End Polish**
+- [x] **Phase 16: Decoupled Backend Role Security Middlewares**
+- [x] **Phase 17: MaktabaBora Branding, Navbar Overhaul & Minimal Footer**
+- [x] **Phase 18: Authentication Capabilities (Sign In, Sign Up, Forgot Password)**
+- [x] **Phase 19: Complete Mock Data Elimination Across Dashboards**
+- [x] **Phase 20: Full System Test Suite & Production Build Verification**
+
+---
+
+## Detailed Task Breakdown & Git Commit Hooks
+
+### Phase 9: Centralized API Client & Auth Integration
+
+- [ ] **Subphase 9.1**: Centralized Axios API Service (`frontend/src/services/api.js`)
+  - [ ] Create `api.js` configured for `http://127.0.0.1:8000/api/v1`
+  - [ ] Add JWT Bearer token request interceptor & error handling
+  - [ ] **Git Commit**: `"feat(frontend): create centralized Axios API client with Bearer token interceptors"`
+
+- [ ] **Subphase 9.2**: Live AuthContext Integration (`frontend/src/context/AuthContext.jsx`)
+  - [ ] Connect `login`, `register`, `logout`, and `getMe` functions to live API
+  - [ ] **Git Commit**: `"feat(frontend): connect AuthContext to live login, register, and me API endpoints"`
+
+---
+
+### Phase 10: OPAC Catalog, Member Perk Pass & Digital Storefront UI
+
+- [ ] **Subphase 10.1**: Digital E-Book Reader Modal (`frontend/src/components/DigitalReaderModal.jsx`)
+  - [ ] Create `DigitalReaderModal.jsx` for streaming e-book PDF content (`GET /api/v1/digital-books/{id}/read`)
+  - [ ] **Git Commit**: `"feat(frontend): implement DigitalReaderModal for streaming e-book PDF content"`
+
+- [ ] **Subphase 10.2**: Enhanced Book Card Component (`frontend/src/components/BookCard.jsx`)
+  - [ ] Display subscriber discount badges (20% off) & exclusive catalog flags
+  - [ ] Add "Buy Digital Book" and "Read E-Book" action buttons
+  - [ ] **Git Commit**: `"feat(frontend): update BookCard with subscriber discount badges and digital purchase actions"`
+
+- [ ] **Subphase 10.3**: Dynamic Public Catalog Page (`frontend/src/pages/PublicCatalog.jsx`)
+  - [ ] Connect catalog to `GET /api/v1/catalog/search` API
+  - [ ] Filter by genre, availability, and exclusive subscriber titles
+  - [ ] **Git Commit**: `"feat(frontend): connect PublicCatalog to live search and category filtering APIs"`
+
+- [ ] **Subphase 10.4**: Subscription Perk Pass Modal (`frontend/src/components/SubscriptionPassModal.jsx`)
+  - [ ] Create `SubscriptionPassModal.jsx` highlighting 20% off perk benefits & KES 500 checkout
+  - [ ] **Git Commit**: `"feat(frontend): add SubscriptionPassModal for purchasing member perk passes"`
+
+---
+
+### Phase 11: Unified M-Pesa STK Push Payment Modal
+
+- [ ] **Subphase 11.1**: Multi-Purpose Daraja Payment Modal (`frontend/src/components/DarajaPayModal.jsx`)
+  - [ ] Refactor `DarajaPayModal.jsx` to support fines, subscription passes, and digital book purchases
+  - [ ] Add M-Pesa phone number validation & simulation status feedback
+  - [ ] **Git Commit**: `"feat(frontend): enhance DarajaPayModal to handle fines, subscriptions, and digital purchases"`
+
+---
+
+### Phase 12: Member Dashboard & Purchased Library UI
+
+- [ ] **Subphase 12.1**: Live Member Dashboard (`frontend/src/pages/MemberDashboard.jsx`)
+  - [ ] Load active loans (`GET /api/v1/loans`) & fine balance
+  - [ ] Display active subscription badge and purchased digital book library
+  - [ ] **Git Commit**: `"feat(frontend): connect MemberDashboard to live loans, subscriptions, and purchased books"`
+
+---
+
+### Phase 13: Staff Circulation Desk & Librarian Dashboard
+
+- [ ] **Subphase 13.1**: Live Librarian Desk (`frontend/src/pages/LibrarianDashboard.jsx`)
+  - [ ] Connect barcode scanner checkout (`POST /api/v1/librarian/loans/checkout`)
+  - [ ] Process book returns (`POST /api/v1/librarian/loans/{loan}/return`)
+  - [ ] Fetch live metrics (`GET /api/v1/librarian/metrics`) and handle fine waiving
+  - [ ] **Git Commit**: `"feat(frontend): update LibrarianDashboard with live barcode scanner checkout and metrics"`
+
+---
+
+### Phase 14: AI Chatbot Assistant Widget Integration
+
+- [ ] **Subphase 14.1**: Live AI Chatbot Widget (`frontend/src/components/AiChatWidget.jsx`)
+  - [ ] Connect to `POST /api/v1/ai/chat` endpoint
+  - [ ] Display token consumption per message turn and handle 429 quota errors
+  - [ ] **Git Commit**: `"feat(frontend): connect AiChatWidget to backend OpenAI endpoint with token usage tracking"`
+
+---
+
+### Phase 15: Frontend Build Verification & End-to-End Polish
+
+- [ ] **Subphase 15.1**: Build & Production Asset Bundle Verification
+  - [ ] Run `npm run build` in `frontend/` to verify zero compilation errors
+  - [ ] **Git Commit**: `"test(frontend): verify clean production build bundle and full frontend integration"`
+
 
 ---
 

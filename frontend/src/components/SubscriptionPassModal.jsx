@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { X, Smartphone, ShieldCheck, AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import { X, Sparkles, CheckCircle2, Phone, ShieldCheck, Loader2 } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
-export default function DarajaPayModal({ isOpen, onClose, type = 'fine', item = null }) {
-    const { user } = useAuth();
+export default function SubscriptionPassModal({ isOpen, onClose }) {
+    const { user, setUser } = useAuth();
     const [phoneNumber, setPhoneNumber] = useState('254712345678');
     const [loading, setLoading] = useState(false);
     const [successMsg, setSuccessMsg] = useState(null);
@@ -12,42 +12,29 @@ export default function DarajaPayModal({ isOpen, onClose, type = 'fine', item = 
 
     if (!isOpen) return null;
 
-    const isSubscribed = user?.member?.is_subscribed;
-    const isDigital = type === 'digital';
-    const isFine = type === 'fine';
-
-    let title = 'M-Pesa Express Checkout';
-    let amount = 0;
-    let description = '';
-
-    if (isFine && item) {
-        title = `Pay Fine #${item.id}`;
-        amount = item.balance || item.amount;
-        description = `Settling overdue fine for loan copy #${item.loan_id}`;
-    } else if (isDigital && item) {
-        title = `Buy Digital Book: ${item.title}`;
-        const stdPrice = item.digital_purchase_price || 50.0;
-        amount = isSubscribed ? Math.round(stdPrice * 0.8 * 100) / 100 : stdPrice;
-        description = isSubscribed ? '20% Pro Subscriber Discount Applied' : 'Standard One-Time Digital Purchase';
-    } else {
-        title = 'Library Payment';
-        amount = item?.amount || 500.0;
-        description = 'Library transaction';
-    }
-
-    const handleSubmit = async (e) => {
+    const handleCheckout = async (e) => {
         e.preventDefault();
         setLoading(true);
         setErrorMsg(null);
         setSuccessMsg(null);
 
         try {
-            if (isFine) {
-                await api.payFineDaraja(item.id, { phone_number: phoneNumber });
-                setSuccessMsg(`STK Push dispatched to ${phoneNumber}. Enter M-Pesa PIN to settle KES ${amount.toFixed(2)}.`);
-            } else if (isDigital) {
-                await api.purchaseDigitalBook(item.id, { phone_number: phoneNumber });
-                setSuccessMsg(`M-Pesa STK Push dispatched. Lifetime access for "${item.title}" unlocked.`);
+            await api.checkoutSubscription({
+                plan_type: 'pro_perks_monthly',
+                phone_number: phoneNumber,
+                amount: 500.00,
+            });
+
+            setSuccessMsg('M-Pesa STK Push dispatched. Complete PIN prompt on phone to activate Pro Member Pass.');
+
+            if (user) {
+                setUser({
+                    ...user,
+                    member: {
+                        ...user.member,
+                        is_subscribed: true,
+                    }
+                });
             }
 
             setTimeout(() => {
@@ -55,7 +42,7 @@ export default function DarajaPayModal({ isOpen, onClose, type = 'fine', item = 
                 setSuccessMsg(null);
             }, 3000);
         } catch (err) {
-            setErrorMsg(err.message || 'Payment initiation failed.');
+            setErrorMsg(err.message || 'Checkout failed.');
         } finally {
             setLoading(false);
         }
@@ -69,11 +56,11 @@ export default function DarajaPayModal({ isOpen, onClose, type = 'fine', item = 
                 <div className="p-5 border-b border-zinc-800 flex items-center justify-between bg-zinc-950/40">
                     <div className="flex items-center gap-2.5">
                         <div className="p-2 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300">
-                            <Smartphone className="w-4 h-4" />
+                            <Sparkles className="w-4 h-4" />
                         </div>
                         <div>
-                            <h2 className="text-sm font-bold text-zinc-100 leading-tight">{title}</h2>
-                            <p className="text-xs text-zinc-400 font-mono font-bold mt-0.5">KES {amount.toFixed(2)}</p>
+                            <h2 className="text-sm font-bold text-zinc-100 leading-tight">Pro Member Perk Pass</h2>
+                            <p className="text-xs text-zinc-400 font-mono font-bold mt-0.5">KES 500.00 / Monthly Pass</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800">
@@ -83,19 +70,30 @@ export default function DarajaPayModal({ isOpen, onClose, type = 'fine', item = 
 
                 {/* Body */}
                 <div className="p-5 space-y-4">
-                    <p className="text-xs text-zinc-400">{description}</p>
-
-                    {isDigital && isSubscribed && (
-                        <div className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 text-xs flex items-center gap-2 font-mono">
-                            <Sparkles className="w-3.5 h-3.5 flex-shrink-0 text-zinc-400" />
-                            <span>Pro Member: Saved 20% on this title</span>
+                    {/* Benefits List */}
+                    <div className="space-y-2 bg-zinc-950 border border-zinc-800 rounded-xl p-3.5 text-xs font-mono">
+                        <h4 className="font-bold text-zinc-300 uppercase tracking-wide text-[10px]">Member Perks</h4>
+                        <div className="space-y-1.5 text-zinc-400">
+                            <div className="flex items-center gap-2">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-zinc-200" />
+                                <span>20% Off all digital e-book purchases</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-zinc-200" />
+                                <span>Access to Pro Exclusive catalog titles</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-zinc-200" />
+                                <span>Priority hold queue placement</span>
+                            </div>
                         </div>
-                    )}
+                    </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-3">
+                    {/* M-Pesa Form */}
+                    <form onSubmit={handleCheckout} className="space-y-3">
                         <div>
-                            <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                                Safaricom M-Pesa Phone Number
+                            <label className="block text-xs font-semibold text-zinc-300 mb-1 flex items-center gap-1 font-mono">
+                                <Phone className="w-3.5 h-3.5 text-zinc-400" /> M-Pesa Phone Number
                             </label>
                             <input
                                 type="text"
@@ -108,9 +106,8 @@ export default function DarajaPayModal({ isOpen, onClose, type = 'fine', item = 
                         </div>
 
                         {errorMsg && (
-                            <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 text-xs flex items-center gap-2">
-                                <AlertCircle className="w-4 h-4 flex-shrink-0 text-zinc-400" />
-                                <span>{errorMsg}</span>
+                            <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 text-xs">
+                                {errorMsg}
                             </div>
                         )}
 
@@ -128,11 +125,11 @@ export default function DarajaPayModal({ isOpen, onClose, type = 'fine', item = 
                         >
                             {loading ? (
                                 <>
-                                    <Loader2 className="w-4 h-4 animate-spin text-zinc-950" /> Triggering M-Pesa STK Push...
+                                    <Loader2 className="w-4 h-4 animate-spin text-zinc-950" /> Processing M-Pesa STK Push...
                                 </>
                             ) : (
                                 <>
-                                    <Smartphone className="w-4 h-4" /> Pay KES {amount.toFixed(2)} via M-Pesa
+                                    <Sparkles className="w-4 h-4" /> Activate Pass (KES 500.00 via M-Pesa)
                                 </>
                             )}
                         </button>
