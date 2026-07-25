@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { QrCode, BookCheck, ShieldAlert, CheckCircle2, UserCheck, BarChart3, AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import { QrCode, BookCheck, ShieldAlert, CheckCircle2, UserCheck, BarChart3, AlertCircle, Loader2 } from 'lucide-react';
 import { api } from '../services/api';
 
 export default function LibrarianDashboard() {
@@ -70,11 +70,11 @@ export default function LibrarianDashboard() {
             {/* Header */}
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">
                 <div>
-                    <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                        STAFF CIRCULATION DESK
+                    <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        LIBRARIAN PORTAL
                     </span>
-                    <h1 className="text-2xl sm:text-3xl font-black text-white mt-2">Librarian Operations Console</h1>
-                    <p className="text-xs sm:text-sm text-slate-400">Barcode checkouts, inventory returns, and library metrics</p>
+                    <h1 className="text-2xl sm:text-3xl font-black text-white mt-2">Circulation & Inventory Desk</h1>
+                    <p className="text-xs sm:text-sm text-slate-400">Barcode physical checkouts, returns, and inventory stats</p>
                 </div>
             </div>
 
@@ -130,8 +130,8 @@ export default function LibrarianDashboard() {
                             <QrCode className="w-5 h-5" />
                         </div>
                         <div>
-                            <h3 className="text-base font-bold text-white">Barcode Checkout Desk</h3>
-                            <p className="text-xs text-slate-400">Issue physical book copy to member</p>
+                            <h3 className="text-base font-bold text-white">Issue Physical Book</h3>
+                            <p className="text-xs text-slate-400">Scan barcode to check out book copy to member</p>
                         </div>
                     </div>
 
@@ -142,7 +142,7 @@ export default function LibrarianDashboard() {
                                 type="text"
                                 value={checkoutForm.barcode}
                                 onChange={(e) => setCheckoutForm({ ...checkoutForm, barcode: e.target.value })}
-                                placeholder="e.g. BC-7777"
+                                placeholder="e.g. BC-9780132350884-001"
                                 required
                                 className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 font-mono"
                             />
@@ -188,7 +188,7 @@ export default function LibrarianDashboard() {
                             type="submit"
                             className="w-full py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-indigo-600/20"
                         >
-                            <BookCheck className="w-4 h-4" /> Issue Physical Book Copy
+                            <BookCheck className="w-4 h-4" /> Issue Book Copy
                         </button>
                     </form>
                 </div>
@@ -200,8 +200,8 @@ export default function LibrarianDashboard() {
                             <BookCheck className="w-5 h-5" />
                         </div>
                         <div>
-                            <h3 className="text-base font-bold text-white">Process Returned Book</h3>
-                            <p className="text-xs text-slate-400">Mark loan returned & increment stock</p>
+                            <h3 className="text-base font-bold text-white">Process Book Return</h3>
+                            <p className="text-xs text-slate-400">Mark loan returned and increment copy availability</p>
                         </div>
                     </div>
 
@@ -234,7 +234,7 @@ export default function LibrarianDashboard() {
                             type="submit"
                             className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-600/20"
                         >
-                            <CheckCircle2 className="w-4 h-4" /> Process Inventory Return
+                            <CheckCircle2 className="w-4 h-4" /> Process Return
                         </button>
                     </form>
                 </div>

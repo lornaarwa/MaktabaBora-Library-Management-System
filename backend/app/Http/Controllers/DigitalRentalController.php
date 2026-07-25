@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Contracts\Services\DarajaPaymentServiceInterface;
 use App\Contracts\Services\DigitalRentalServiceInterface;
 use App\Models\Book;
+use App\Models\DigitalPurchase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -71,5 +72,15 @@ class DigitalRentalController extends Controller
             'access_type' => 'lifetime',
             'stream_token' => bin2hex(random_bytes(16)),
         ], 'Digital content stream authorized.');
+    }
+
+    public function myLibrary(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $purchases = DigitalPurchase::where('user_id', $user->id)
+            ->with('book')
+            ->get();
+
+        return $this->sendResponse($purchases, 'Purchased digital library retrieved.');
     }
 }

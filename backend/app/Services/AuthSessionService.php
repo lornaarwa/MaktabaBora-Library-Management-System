@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Contracts\Services\AuthSessionServiceInterface;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 
 class AuthSessionService implements AuthSessionServiceInterface
 {
@@ -31,6 +32,7 @@ class AuthSessionService implements AuthSessionServiceInterface
 
     public function invalidateSessionToken(string $token): bool
     {
+        $this->blacklistToken($token);
         return true;
     }
 
@@ -84,10 +86,18 @@ class AuthSessionService implements AuthSessionServiceInterface
     }
 
     /**
-     * Completely stateless JWT validation (verifies signature, structure, and expiration)
+     * Completely stateless JWT validation with optional blacklist check
      */
     public function validateToken(string $token): ?array
     {
+        try {
+            if (Cache::has("blacklisted_token:" . md5($token))) {
+                return null;
+            }
+        } catch (\Throwable $e) {
+            // Ignore cache store connectivity errors safely
+        }
+
         $parts = explode('.', $token);
         if (count($parts) !== 3) {
             return null;
@@ -106,5 +116,18 @@ class AuthSessionService implements AuthSessionServiceInterface
         }
 
         return $data;
+    }
+
+    public function blacklistToken(string $token): void
+    {
+        $decoded = $this->validateToken($token);
+        if ($decoded) {
+            $ttl = max(1, $decoded['exp'] - time());
+            try {
+                Cache::put("blacklisted_token:" . md5($token), true, $ttl);
+            } catch (\Throwable $e) {
+                // Ignore cache store connectivity errors safely
+            }
+        }
     }
 }

@@ -47,6 +47,7 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
             Route::get('/subscriptions/status', [\App\Http\Controllers\SubscriptionController::class, 'status']);
 
             // Digital Book Store & Reading
+            Route::get('/digital-books/my-library', [\App\Http\Controllers\DigitalRentalController::class, 'myLibrary']);
             Route::post('/digital-books/{id}/purchase', [\App\Http\Controllers\DigitalRentalController::class, 'purchase']);
             Route::get('/digital-books/{id}/read', [\App\Http\Controllers\DigitalRentalController::class, 'read'])
                 ->middleware(['ensure.digital_access']);

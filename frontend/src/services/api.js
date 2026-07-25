@@ -49,6 +49,7 @@ export const api = {
     getSubscriptionStatus: () => apiClient.get('/subscriptions/status'),
 
     // Digital Book Store
+    getMyDigitalLibrary: () => apiClient.get('/digital-books/my-library'),
     purchaseDigitalBook: (id, data) => apiClient.post(`/digital-books/${id}/purchase`, data),
     readDigitalBook: (id) => apiClient.get(`/digital-books/${id}/read`),
 
