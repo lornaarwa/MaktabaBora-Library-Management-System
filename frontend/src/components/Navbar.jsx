@@ -1,101 +1,102 @@
 import React from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, User, Shield, BookMarked, Sparkles, LogOut, Search } from 'lucide-react';
+import { BookOpen, User, Shield, BookMarked, LogOut, Search, Bot } from 'lucide-react';
 
 export default function Navbar({ onOpenAiChat }) {
     const { user, logout } = useAuth();
     const location = useLocation();
 
     return (
-        <header className="sticky top-0 z-40 backdrop-blur-xl bg-slate-950/80 border-b border-slate-800/80 transition-all">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <header className="sticky top-0 z-40 backdrop-blur-md bg-zinc-950/90 border-b border-zinc-800 transition-all">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                 
                 {/* MaktabaBora Brand Logo */}
                 <Link to="/" className="flex items-center gap-3 group">
-                    <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-all">
-                        <BookOpen className="w-6 h-6 text-white" />
+                    <div className="w-9 h-9 rounded-lg bg-zinc-100 text-zinc-950 flex items-center justify-center font-black group-hover:bg-white transition-all shadow-sm">
+                        <BookOpen className="w-5 h-5 text-zinc-950" />
                     </div>
                     <div>
-                        <span className="text-xl font-bold bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">
-                            Maktaba<span className="text-indigo-400">Bora</span>
+                        <span className="text-lg font-extrabold text-zinc-100 tracking-tight">
+                            Maktaba<span className="text-zinc-400">Bora</span>
                         </span>
-                        <span className="block text-xs font-medium text-slate-400">Digital & Physical Library</span>
+                        <span className="block text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Library System</span>
                     </div>
                 </Link>
 
                 {/* Navigation Links */}
-                <nav className="hidden md:flex items-center gap-1 bg-slate-900/60 p-1.5 rounded-full border border-slate-800/60">
+                <nav className="hidden md:flex items-center gap-1 bg-zinc-900/80 p-1 rounded-xl border border-zinc-800">
                     <Link
                         to="/"
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
-                            location.pathname === '/' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                        className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                            location.pathname === '/' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60'
                         }`}
                     >
-                        <Search className="w-4 h-4" /> Catalog
+                        <Search className="w-3.5 h-3.5" /> Catalog
                     </Link>
 
                     {user?.role === 'member' && (
                         <Link
                             to="/member"
-                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
-                                location.pathname === '/member' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30' : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                                location.pathname === '/member' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60'
                             }`}
                         >
-                            <BookMarked className="w-4 h-4" /> My Library
+                            <BookMarked className="w-3.5 h-3.5" /> My Library
                         </Link>
                     )}
 
                     {(user?.role === 'librarian' || user?.role === 'admin') && (
                         <Link
                             to="/librarian"
-                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
-                                location.pathname === '/librarian' ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30' : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                                location.pathname === '/librarian' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60'
                             }`}
                         >
-                            <User className="w-4 h-4" /> Librarian Portal
+                            <User className="w-3.5 h-3.5" /> Librarian Desk
                         </Link>
                     )}
 
                     {user?.role === 'admin' && (
                         <Link
                             to="/admin"
-                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
-                                location.pathname === '/admin' ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30' : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
+                            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                                location.pathname === '/admin' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60'
                             }`}
                         >
-                            <Shield className="w-4 h-4" /> Admin Console
+                            <Shield className="w-3.5 h-3.5" /> Admin Console
                         </Link>
                     )}
                 </nav>
 
-                {/* User Controls & AI Assistant */}
-                <div className="flex items-center gap-3">
+                {/* Controls & User Account */}
+                <div className="flex items-center gap-2">
                     <button
                         onClick={onOpenAiChat}
-                        className="relative group px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500/10 via-indigo-500/10 to-purple-500/10 border border-indigo-500/30 text-indigo-300 hover:text-white hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/20 transition-all flex items-center gap-2 text-sm font-semibold"
+                        className="px-3 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 hover:text-white transition-all flex items-center gap-1.5 text-xs font-semibold"
                     >
-                        <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse" />
+                        <Bot className="w-3.5 h-3.5 text-zinc-400" />
                         <span>AI Assistant</span>
                     </button>
 
                     {user ? (
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-300 font-semibold hidden sm:inline-block">
-                                {user.name}
-                            </span>
+                        <div className="flex items-center gap-2 pl-2 border-l border-zinc-800">
+                            <div className="hidden sm:block text-right">
+                                <span className="text-xs font-bold text-zinc-200 block leading-tight">{user.name}</span>
+                                <span className="text-[9px] font-mono text-zinc-500 uppercase">{user.role}</span>
+                            </div>
                             <button
                                 onClick={() => logout()}
-                                className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 hover:text-rose-400 transition-colors"
+                                className="p-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-100 transition-colors"
                                 title="Sign Out"
                             >
-                                <LogOut className="w-5 h-5" />
+                                <LogOut className="w-4 h-4" />
                             </button>
                         </div>
                     ) : (
                         <Link
                             to="/login"
-                            className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition-all shadow-md shadow-indigo-600/30"
+                            className="px-4 py-1.5 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-bold transition-all shadow-sm"
                         >
                             Sign In
                         </Link>

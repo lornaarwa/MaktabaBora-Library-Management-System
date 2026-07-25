@@ -20,7 +20,7 @@ export default function AdminDashboard() {
     const [error, setError] = useState(null);
     const [successMsg, setSuccessMsg] = useState(null);
 
-    // Modal State: { type: 'create' | 'edit' | null, record: object | null }
+    // Modal State
     const [modal, setModal] = useState({ type: null, record: null });
     const [formData, setFormData] = useState({});
     const [submitting, setSubmitting] = useState(false);
@@ -123,80 +123,75 @@ export default function AdminDashboard() {
         );
     });
 
-    // Icons map for sidebar items
     const getTableIcon = (name) => {
         switch (name) {
-            case 'users': return <Users className="w-4 h-4" />;
-            case 'members': return <Shield className="w-4 h-4 text-indigo-400" />;
-            case 'librarians': return <Users className="w-4 h-4 text-amber-400" />;
-            case 'books': return <BookOpen className="w-4 h-4 text-cyan-400" />;
-            case 'book_copies': return <Layers className="w-4 h-4 text-purple-400" />;
-            case 'loans': return <BookCheck className="w-4 h-4 text-emerald-400" />;
-            case 'reservations': return <Clock className="w-4 h-4 text-amber-400" />;
-            case 'fines': return <CreditCard className="w-4 h-4 text-rose-400" />;
-            case 'subscriptions': return <Sparkles className="w-4 h-4 text-amber-300" />;
-            case 'digital_purchases': return <ShoppingBag className="w-4 h-4 text-purple-300" />;
-            default: return <Table className="w-4 h-4" />;
+            case 'users': return <Users className="w-4 h-4 text-zinc-400" />;
+            case 'members': return <Shield className="w-4 h-4 text-zinc-400" />;
+            case 'librarians': return <Users className="w-4 h-4 text-zinc-400" />;
+            case 'books': return <BookOpen className="w-4 h-4 text-zinc-400" />;
+            case 'book_copies': return <Layers className="w-4 h-4 text-zinc-400" />;
+            case 'loans': return <BookCheck className="w-4 h-4 text-zinc-400" />;
+            case 'reservations': return <Clock className="w-4 h-4 text-zinc-400" />;
+            case 'fines': return <CreditCard className="w-4 h-4 text-zinc-400" />;
+            case 'subscriptions': return <Sparkles className="w-4 h-4 text-zinc-400" />;
+            case 'digital_purchases': return <ShoppingBag className="w-4 h-4 text-zinc-400" />;
+            default: return <Table className="w-4 h-4 text-zinc-400" />;
         }
     };
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             
-            {/* Header */}
-            <div className="bg-gradient-to-r from-rose-950/60 via-slate-900 to-slate-950 border border-rose-500/30 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-2xl">
+            {/* Header (TailAdmin Header Layout) */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
                 <div>
-                    <span className="text-xs font-bold text-rose-400 uppercase tracking-wider block mb-1">
+                    <span className="px-2.5 py-0.5 rounded text-[9px] font-mono font-bold bg-zinc-800 text-zinc-300 border border-zinc-700 uppercase tracking-wider">
                         SYSTEM ADMINISTRATION
                     </span>
-                    <h1 className="text-2xl sm:text-3xl font-black text-white">
-                        Database Entity CRUD Portal
-                    </h1>
-                    <p className="text-xs text-slate-400 mt-1">
-                        Full Create, Read, Update & Delete management across domain database tables
-                    </p>
+                    <h1 className="text-xl sm:text-2xl font-extrabold text-zinc-100 mt-1.5">Database Entity CRUD Portal</h1>
+                    <p className="text-xs text-zinc-400">Full Create, Read, Update & Delete management across domain database tables</p>
                 </div>
             </div>
 
             {/* Notifications */}
             {successMsg && (
-                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4" /> {successMsg}
+                        <CheckCircle2 className="w-4 h-4 text-zinc-400" /> {successMsg}
                     </div>
-                    <button onClick={() => setSuccessMsg(null)}><X className="w-4 h-4" /></button>
+                    <button onClick={() => setSuccessMsg(null)}><X className="w-4 h-4 text-zinc-400" /></button>
                 </div>
             )}
 
             {error && (
-                <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-200 text-xs flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4" /> {error}
+                        <AlertCircle className="w-4 h-4 text-zinc-400" /> {error}
                     </div>
-                    <button onClick={() => setError(null)}><X className="w-4 h-4" /></button>
+                    <button onClick={() => setError(null)}><X className="w-4 h-4 text-zinc-400" /></button>
                 </div>
             )}
 
-            {/* Main Layout: Mini Sidebar + Data Table Grid */}
+            {/* Main Layout: TailAdmin Mini Sidebar + Data Table Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 
-                {/* Mini Sidebar Navigation (Task 2) */}
-                <div className="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-3xl p-4 space-y-3 h-fit shadow-xl">
-                    <h3 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider px-3 py-1 flex items-center gap-2">
-                        <Database className="w-4 h-4 text-indigo-400" /> Database Tables
+                {/* TailAdmin Mini Sidebar Navigation */}
+                <div className="lg:col-span-1 bg-zinc-900 border border-zinc-800 rounded-2xl p-3.5 space-y-2 h-fit shadow-sm">
+                    <h3 className="text-[10px] font-mono font-extrabold text-zinc-500 uppercase tracking-wider px-2 py-1 flex items-center gap-2">
+                        <Database className="w-3.5 h-3.5 text-zinc-400" /> Managed Tables
                     </h3>
                     <div className="space-y-1">
                         {tables.map(tName => (
                             <button
                                 key={tName}
                                 onClick={() => setActiveTable(tName)}
-                                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition-all ${
+                                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                                     activeTable === tName
-                                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                                        ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
+                                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
                                 }`}
                             >
-                                <div className="flex items-center gap-2.5 capitalize">
+                                <div className="flex items-center gap-2 capitalize">
                                     {getTableIcon(tName)}
                                     <span>{tName.replace('_', ' ')}</span>
                                 </div>
@@ -205,73 +200,73 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* Table View & Actions (Task 3) */}
-                <div className="lg:col-span-3 bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5 shadow-xl">
+                {/* Dynamic Table View & CRUD Actions */}
+                <div className="lg:col-span-3 bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4 shadow-sm">
                     
                     {/* Control Bar */}
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-zinc-800 pb-4">
                         <div className="flex items-center gap-2 w-full sm:w-auto">
-                            <h2 className="text-lg font-bold text-white capitalize flex items-center gap-2">
+                            <h2 className="text-base font-bold text-zinc-100 capitalize flex items-center gap-2">
                                 {getTableIcon(activeTable)} {activeTable.replace('_', ' ')}
                             </h2>
-                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-indigo-300 border border-slate-700">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-zinc-950 text-zinc-400 border border-zinc-800">
                                 {records.length} Records
                             </span>
                         </div>
 
-                        <div className="flex items-center gap-3 w-full sm:w-auto">
-                            {/* Search */}
-                            <div className="relative flex-1 sm:w-64">
-                                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                            {/* Filter Search */}
+                            <div className="relative flex-1 sm:w-60">
+                                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Filter records..."
-                                    className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                                    className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-700 font-mono"
                                 />
                             </div>
 
-                            {/* Create Record Button */}
+                            {/* Create Button */}
                             <button
                                 onClick={handleOpenCreate}
-                                className="py-2 px-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-indigo-600/20 whitespace-nowrap"
+                                className="py-1.5 px-3 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs flex items-center gap-1 shadow-sm whitespace-nowrap"
                             >
-                                <Plus className="w-4 h-4" /> Add Record
+                                <Plus className="w-3.5 h-3.5" /> Add Record
                             </button>
                         </div>
                     </div>
 
                     {/* Table View */}
                     {loading ? (
-                        <div className="flex items-center justify-center py-16 text-slate-400">
-                            <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mr-2" /> Loading table records...
+                        <div className="flex items-center justify-center py-16 text-zinc-400 font-mono text-xs">
+                            <Loader2 className="w-6 h-6 animate-spin text-zinc-400 mr-2" /> Loading records...
                         </div>
                     ) : filteredRecords.length === 0 ? (
-                        <div className="text-center py-16 text-slate-500 space-y-2">
-                            <Table className="w-10 h-10 mx-auto text-slate-600" />
+                        <div className="text-center py-16 text-zinc-500 space-y-1">
+                            <Table className="w-8 h-8 mx-auto text-zinc-600" />
                             <p className="text-xs">No records found in {activeTable}.</p>
                         </div>
                     ) : (
                         <div className="overflow-x-auto max-h-[500px]">
-                            <table className="w-full text-left text-xs text-slate-300 border-collapse">
-                                <thead className="bg-slate-950/80 sticky top-0 text-slate-400 uppercase text-[10px] tracking-wider z-10">
+                            <table className="w-full text-left text-xs text-zinc-300 border-collapse">
+                                <thead className="bg-zinc-950 sticky top-0 text-zinc-400 uppercase text-[10px] font-mono tracking-wider z-10">
                                     <tr>
                                         {columns.map(col => (
-                                            <th key={col} className="p-3 border-b border-slate-800 whitespace-nowrap">{col}</th>
+                                            <th key={col} className="p-3 border-b border-zinc-800 whitespace-nowrap">{col}</th>
                                         ))}
-                                        <th className="p-3 border-b border-slate-800 text-right whitespace-nowrap">Actions</th>
+                                        <th className="p-3 border-b border-zinc-800 text-right whitespace-nowrap">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-800/60">
+                                <tbody className="divide-y divide-zinc-800/60">
                                     {filteredRecords.map((row) => (
-                                        <tr key={row.id} className="hover:bg-slate-850/50 transition-colors">
+                                        <tr key={row.id} className="hover:bg-zinc-950/60 transition-colors">
                                             {columns.map(col => (
                                                 <td key={col} className="p-3 max-w-xs truncate font-mono text-[11px]">
                                                     {row[col] === null || row[col] === undefined ? (
-                                                        <span className="text-slate-600 italic">null</span>
+                                                        <span className="text-zinc-600 italic">null</span>
                                                     ) : typeof row[col] === 'boolean' ? (
-                                                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${row[col] ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'}`}>
+                                                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${row[col] ? 'bg-zinc-100 text-zinc-950' : 'bg-zinc-800 text-zinc-400'}`}>
                                                             {row[col] ? 'TRUE' : 'FALSE'}
                                                         </span>
                                                     ) : (
@@ -279,17 +274,17 @@ export default function AdminDashboard() {
                                                     )}
                                                 </td>
                                             ))}
-                                            <td className="p-3 text-right space-x-2 whitespace-nowrap">
+                                            <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
                                                 <button
                                                     onClick={() => handleOpenEdit(row)}
-                                                    className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 border border-indigo-500/20"
+                                                    className="p-1.5 rounded-md bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 transition-colors"
                                                     title="Edit Record"
                                                 >
                                                     <Edit2 className="w-3.5 h-3.5" />
                                                 </button>
                                                 <button
                                                     onClick={() => handleDelete(row.id)}
-                                                    className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 border border-rose-500/20"
+                                                    className="p-1.5 rounded-md bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 text-zinc-400 hover:text-zinc-100 transition-colors"
                                                     title="Delete Record"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />
@@ -306,33 +301,33 @@ export default function AdminDashboard() {
 
             {/* Create / Edit Modal */}
             {modal.type && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
-                    <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg p-6 space-y-5 shadow-2xl relative max-h-[85vh] flex flex-col">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-md animate-in fade-in duration-200">
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl relative max-h-[85vh] flex flex-col">
                         <button
                             onClick={() => setModal({ type: null, record: null })}
-                            className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white"
+                            className="absolute top-4 right-4 p-1.5 text-zinc-400 hover:text-white"
                         >
-                            <X className="w-5 h-5" />
+                            <X className="w-4 h-4" />
                         </button>
 
-                        <div className="flex items-center gap-3">
-                            <div className="p-2.5 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                        <div className="flex items-center gap-2.5">
+                            <div className="p-2 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300">
                                 {getTableIcon(activeTable)}
                             </div>
                             <div>
-                                <h3 className="text-base font-bold text-white capitalize">
+                                <h3 className="text-sm font-bold text-zinc-100 capitalize">
                                     {modal.type === 'create' ? `Create ${activeTable.replace('_', ' ')} Record` : `Edit ${activeTable.replace('_', ' ')} #${modal.record.id}`}
                                 </h3>
-                                <p className="text-xs text-slate-400">Fill in record attribute fields below</p>
+                                <p className="text-xs text-zinc-400">Fill in record attribute fields below</p>
                             </div>
                         </div>
 
-                        <form onSubmit={handleSubmitForm} className="space-y-4 overflow-y-auto pr-1 flex-1">
+                        <form onSubmit={handleSubmitForm} className="space-y-3 overflow-y-auto pr-1 flex-1">
                             {columns
                                 .filter(col => col !== 'id' && col !== 'created_at' && col !== 'updated_at')
                                 .map(col => (
                                     <div key={col}>
-                                        <label className="block text-xs font-semibold text-slate-300 mb-1 capitalize">
+                                        <label className="block text-xs font-semibold text-zinc-300 mb-1 capitalize font-mono">
                                             {col.replace('_', ' ')}
                                         </label>
                                         <input
@@ -340,25 +335,25 @@ export default function AdminDashboard() {
                                             value={formData[col] ?? ''}
                                             onChange={(e) => handleFieldChange(col, e.target.value)}
                                             placeholder={`Enter ${col}`}
-                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
+                                            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs text-zinc-100 focus:outline-none focus:border-zinc-700 font-mono"
                                         />
                                     </div>
                                 ))}
 
-                            <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-800">
+                            <div className="pt-2 flex items-center justify-end gap-2 border-t border-zinc-800">
                                 <button
                                     type="button"
                                     onClick={() => setModal({ type: null, record: null })}
-                                    className="py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+                                    className="py-1.5 px-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={submitting}
-                                    className="py-2 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/20 flex items-center gap-1.5"
+                                    className="py-1.5 px-4 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs shadow-sm flex items-center gap-1.5"
                                 >
-                                    {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (modal.type === 'create' ? 'Insert Record' : 'Save Changes')}
+                                    {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : (modal.type === 'create' ? 'Insert Record' : 'Save Changes')}
                                 </button>
                             </div>
                         </form>
