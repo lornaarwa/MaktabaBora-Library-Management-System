@@ -69,10 +69,10 @@ export default function PublicCatalog() {
                         <span className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary dark:text-emerald-400">MaktabaBora</span>
                     </div>
                     <nav className="hidden md:flex items-center gap-stack-lg">
-                        <a className="font-label-md text-label-md text-primary dark:text-emerald-400 font-bold cursor-pointer">Home</a>
-                        <a className="font-label-md text-label-md text-on-surface-variant dark:text-zinc-400 hover:bg-surface-container-high dark:hover:bg-zinc-800 transition-colors px-3 py-2 rounded-lg cursor-pointer">Explore</a>
-                        <a className="font-label-md text-label-md text-on-surface-variant dark:text-zinc-400 hover:bg-surface-container-high dark:hover:bg-zinc-800 transition-colors px-3 py-2 rounded-lg cursor-pointer">My Books</a>
-                        <a className="font-label-md text-label-md text-on-surface-variant dark:text-zinc-400 hover:bg-surface-container-high dark:hover:bg-zinc-800 transition-colors px-3 py-2 rounded-lg cursor-pointer">Institution</a>
+                        <Link className="font-label-md text-label-md text-primary dark:text-emerald-400 font-bold cursor-pointer" to="/">Home</Link>
+                        <Link className="font-label-md text-label-md text-on-surface-variant dark:text-zinc-400 hover:bg-surface-container-high dark:hover:bg-zinc-800 transition-colors px-3 py-2 rounded-lg cursor-pointer" to="/explore">Explore</Link>
+                        <Link className="font-label-md text-label-md text-on-surface-variant dark:text-zinc-400 hover:bg-surface-container-high dark:hover:bg-zinc-800 transition-colors px-3 py-2 rounded-lg cursor-pointer" to="/member">My Books</Link>
+                        <div onClick={handleProfileClick} className="font-label-md text-label-md text-on-surface-variant dark:text-zinc-400 hover:bg-surface-container-high dark:hover:bg-zinc-800 transition-colors px-3 py-2 rounded-lg cursor-pointer">Profile</div>
                     </nav>
                     <div className="flex items-center gap-stack-md">
                         <button onClick={toggleDarkMode} className="material-symbols-outlined text-on-surface-variant dark:text-zinc-400 hover:bg-surface-container-high dark:hover:bg-zinc-800 p-2 rounded-full transition-colors" title="Toggle Dark/Light Mode">
@@ -353,18 +353,18 @@ export default function PublicCatalog() {
 
             {/* Bottom Navigation Bar (Mobile only) */}
             <nav className="md:hidden fixed bottom-0 left-0 w-full bg-surface dark:bg-zinc-900 border-t border-outline-variant dark:border-zinc-800 flex justify-around items-center py-stack-sm px-margin-mobile pb-safe z-50 rounded-t-xl shadow-[0px_-4px_12px_rgba(0,0,0,0.03)]">
-                <a className="flex flex-col items-center justify-center bg-primary-container dark:bg-emerald-900/50 text-on-primary-container dark:text-emerald-250 rounded-full px-5 py-1 cursor-pointer">
+                <Link className="flex flex-col items-center justify-center bg-primary-container dark:bg-emerald-900/50 text-on-primary-container dark:text-emerald-250 rounded-full px-5 py-1 cursor-pointer" to="/">
                     <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>home</span>
                     <span className="font-label-sm text-label-sm">Home</span>
-                </a>
-                <a className="flex flex-col items-center justify-center text-on-surface-variant dark:text-zinc-400 hover:text-primary dark:hover:text-emerald-400 transition-colors cursor-pointer">
+                </Link>
+                <Link className="flex flex-col items-center justify-center text-on-surface-variant dark:text-zinc-400 hover:text-primary dark:hover:text-emerald-400 transition-colors cursor-pointer" to="/explore">
                     <span className="material-symbols-outlined">search</span>
                     <span className="font-label-sm text-label-sm">Search</span>
-                </a>
-                <a className="flex flex-col items-center justify-center text-on-surface-variant dark:text-zinc-400 hover:text-primary dark:hover:text-emerald-400 transition-colors cursor-pointer">
+                </Link>
+                <Link className="flex flex-col items-center justify-center text-on-surface-variant dark:text-zinc-400 hover:text-primary dark:hover:text-emerald-400 transition-colors cursor-pointer" to="/member">
                     <span className="material-symbols-outlined">book_5</span>
                     <span className="font-label-sm text-label-sm">My Books</span>
-                </a>
+                </Link>
                 <div onClick={handleProfileClick} className="flex flex-col items-center justify-center text-on-surface-variant dark:text-zinc-400 hover:text-primary dark:hover:text-emerald-400 transition-colors cursor-pointer">
                     <span className="material-symbols-outlined">person</span>
                     <span className="font-label-sm text-label-sm">Profile</span>
