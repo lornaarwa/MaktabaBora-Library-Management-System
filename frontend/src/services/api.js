@@ -40,7 +40,13 @@ export const api = {
     getMe: () => apiClient.get('/auth/me'),
 
     // Catalog & Books
-    searchCatalog: (query = '', genre = '') => apiClient.get(`/catalog/search?q=${encodeURIComponent(query)}&genre=${encodeURIComponent(genre)}`),
+    searchCatalog: (queryOrParams = '', genre = '') => {
+        if (typeof queryOrParams === 'object') {
+            const queryParams = new URLSearchParams(queryOrParams).toString();
+            return apiClient.get(`/catalog/search?${queryParams}`);
+        }
+        return apiClient.get(`/catalog/search?q=${encodeURIComponent(queryOrParams)}&genre=${encodeURIComponent(genre)}`);
+    },
     getBooks: () => apiClient.get('/books'),
     getBookDetails: (id) => apiClient.get(`/books/${id}`),
 
