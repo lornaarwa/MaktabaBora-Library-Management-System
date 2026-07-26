@@ -83,15 +83,7 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (data) => {
         const res = await api.register(data);
-        const userData = res.user || res.data?.user;
-        const userToken = res.token || res.data?.token;
-
-        if (userToken && userData) {
-            setUser(userData);
-            setToken(userToken);
-            return userData;
-        }
-        throw new Error(res.message || res.error || 'Registration failed');
+        return res;
     };
 
     const logout = async () => {
