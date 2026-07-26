@@ -2,30 +2,38 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-export default function Login() {
-    const { login } = useAuth();
+export default function Register() {
+    const { register } = useAuth();
     const navigate = useNavigate();
 
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [rememberMe, setRememberMe] = useState(true);
-    
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (password !== confirmPassword) {
+            setError('Passwords do not match.');
+            return;
+        }
+
         setLoading(true);
         setError(null);
 
         try {
-            const user = await login(email, password, rememberMe);
-            if (user.role === 'admin') navigate('/admin');
-            else if (user.role === 'librarian') navigate('/librarian');
-            else if (user.role === 'member') navigate('/member');
-            else navigate('/');
+            await register({
+                name,
+                email,
+                password,
+                role: 'member',
+            });
+            navigate('/login');
         } catch (err) {
-            setError(err.message || 'Authentication operation failed.');
+            setError(err.message || 'Registration failed.');
         } finally {
             setLoading(false);
         }
@@ -76,7 +84,24 @@ export default function Login() {
                         )}
 
                         <form onSubmit={handleSubmit} className="space-y-stack-md">
-                            {/* Email Field */}
+                            <div className="space-y-stack-xs">
+                                <label htmlFor="name" className="font-label-md text-label-md text-on-surface-variant ml-1">Full Name</label>
+                                <div className="relative group">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-outline">
+                                        <span className="material-symbols-outlined">person</span>
+                                    </div>
+                                    <input 
+                                        type="text" 
+                                        id="name" 
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        className="w-full bg-white border border-outline-variant rounded-lg py-3 pl-12 pr-4 text-on-surface focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none font-body-md focus:scale-[1.01]" 
+                                        placeholder="Enter your name" 
+                                        required 
+                                    />
+                                </div>
+                            </div>
+
                             <div className="space-y-stack-xs">
                                 <label htmlFor="email" className="font-label-md text-label-md text-on-surface-variant ml-1">Email Address</label>
                                 <div className="relative group">
@@ -89,13 +114,12 @@ export default function Login() {
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         className="w-full bg-white border border-outline-variant rounded-lg py-3 pl-12 pr-4 text-on-surface focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none font-body-md focus:scale-[1.01]" 
-                                        placeholder="librarian@maktababora.com" 
+                                        placeholder="user@maktababora.com" 
                                         required 
                                     />
                                 </div>
                             </div>
 
-                            {/* Password Field */}
                             <div className="space-y-stack-xs">
                                 <div className="flex justify-between items-center px-1">
                                     <label htmlFor="password" className="font-label-md text-label-md text-on-surface-variant">Password</label>
@@ -116,19 +140,26 @@ export default function Login() {
                                 </div>
                             </div>
 
-                            {/* Remember Me */}
-                            <div className="flex items-center gap-2 px-1">
-                                <input 
-                                    type="checkbox" 
-                                    id="remember" 
-                                    checked={rememberMe}
-                                    onChange={(e) => setRememberMe(e.target.checked)}
-                                    className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary transition-all" 
-                                />
-                                <label htmlFor="remember" className="font-label-sm text-label-sm text-on-surface-variant cursor-pointer">Keep me logged in</label>
+                            <div className="space-y-stack-xs">
+                                <div className="flex justify-between items-center px-1">
+                                    <label htmlFor="confirmPassword" className="font-label-md text-label-md text-on-surface-variant">Confirm Password</label>
+                                </div>
+                                <div className="relative group">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-outline">
+                                        <span className="material-symbols-outlined">lock</span>
+                                    </div>
+                                    <input 
+                                        type="password" 
+                                        id="confirmPassword" 
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        className="w-full bg-white border border-outline-variant rounded-lg py-3 pl-12 pr-4 text-on-surface focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none font-body-md focus:scale-[1.01]" 
+                                        placeholder="••••••••••••" 
+                                        required 
+                                    />
+                                </div>
                             </div>
 
-                            {/* Submit Button */}
                             <button 
                                 type="submit" 
                                 disabled={loading}
@@ -137,26 +168,26 @@ export default function Login() {
                                 {loading ? (
                                     <>
                                         <span className="material-symbols-outlined animate-spin">progress_activity</span> 
-                                        Authenticating...
+                                        Registering...
                                     </>
                                 ) : (
                                     <>
-                                        Sign In
+                                        Sign Up
                                         <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
                                     </>
                                 )}
                             </button>
                         </form>
-
+                        
                         <div className="mt-stack-lg pt-stack-lg border-t border-outline-variant/30 text-center">
                             <p className="font-body-sm text-body-sm text-on-surface-variant">
-                                New to MaktabaBora? 
+                                Already have an account? 
                                 <button 
                                     type="button"
-                                    onClick={() => navigate('/register')}
+                                    onClick={() => navigate('/login')}
                                     className="text-primary font-bold hover:underline transition-all ml-1"
                                 >
-                                    Create an account
+                                    Login
                                 </button>
                             </p>
                         </div>
