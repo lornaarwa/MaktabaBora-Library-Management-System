@@ -15,8 +15,11 @@ class Member extends Model
         'user_id',
         'member_number',
         'membership_tier', // student, faculty, general
-        'is_subscribed',
-        'subscription_expires_at',
+        'department',
+        'programme',
+        'interests',
+        'is_approved',
+        'membership_fee_paid',
         'borrow_limit',
         'is_banned',
         'banned_at',
@@ -24,8 +27,8 @@ class Member extends Model
     ];
 
     protected $casts = [
-        'is_subscribed' => 'boolean',
-        'subscription_expires_at' => 'datetime',
+        'is_approved' => 'boolean',
+        'membership_fee_paid' => 'boolean',
         'is_banned' => 'boolean',
         'borrow_limit' => 'integer',
         'banned_at' => 'datetime',
@@ -56,13 +59,8 @@ class Member extends Model
         return $this->hasMany(ChatSession::class);
     }
 
-    public function subscriptions(): HasMany
+    public function payments(): HasMany
     {
-        return $this->hasMany(Subscription::class);
-    }
-
-    public function digitalPurchases(): HasMany
-    {
-        return $this->hasMany(DigitalPurchase::class);
+        return $this->hasMany(Payment::class);
     }
 }
