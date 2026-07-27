@@ -224,30 +224,34 @@ export default function AdminDashboard() {
         return analytics.bought_over_time || [];
     };
 
-    // Render simple clean SVG Area / Bar Chart
+    // Render clean Bar Chart with crisp white bars against black background with dynamic axis scaling
     const renderSvgChart = (dataArr, label) => {
         if (!dataArr || dataArr.length === 0) return null;
-        const maxVal = Math.max(...dataArr.map(d => d.count), 10);
+        // Dynamically scale maxVal based on actual data range without artificial minimum limits
+        const maxVal = Math.max(...dataArr.map(d => d.count), 1);
+        const minVal = Math.min(...dataArr.map(d => d.count));
         
         return (
             <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs font-mono text-zinc-400">
-                    <span>{label}</span>
-                    <span>Max: {maxVal} events/day</span>
+                    <span className="font-semibold text-zinc-300">{label}</span>
+                    <span className="text-[10px] text-zinc-500 bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded font-mono">
+                        Range: {minVal} - {maxVal} events/day
+                    </span>
                 </div>
-                <div className="h-44 w-full bg-zinc-950 border border-zinc-800 rounded-xl p-4 flex items-end justify-between gap-2">
+                <div className="h-48 w-full bg-black border border-zinc-800 rounded-xl p-4 flex items-end justify-between gap-2 shadow-inner">
                     {dataArr.map((d, i) => {
                         const heightPct = Math.round((d.count / maxVal) * 100);
                         return (
                             <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative">
-                                <div className="text-[9px] font-mono text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="text-[9px] font-mono text-white bg-zinc-900 border border-zinc-700 px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity absolute -top-7 z-10 shadow-lg pointer-events-none">
                                     {d.count}
                                 </div>
                                 <div 
-                                    style={{ height: `${Math.max(heightPct, 8)}%` }} 
-                                    className="w-full bg-zinc-100 group-hover:bg-white rounded-t-sm transition-all shadow-sm"
+                                    style={{ height: `${Math.max(heightPct, 6)}%` }} 
+                                    className="w-full bg-white hover:bg-zinc-200 rounded-t-sm transition-all shadow-[0_0_12px_rgba(255,255,255,0.4)] group-hover:shadow-[0_0_16px_rgba(255,255,255,0.8)]"
                                 />
-                                <span className="text-[9px] font-mono text-zinc-500 truncate w-full text-center mt-1">
+                                <span className="text-[9px] font-mono text-zinc-400 truncate w-full text-center mt-1.5 group-hover:text-white transition-colors">
                                     {d.date.slice(5)}
                                 </span>
                             </div>
