@@ -18,19 +18,15 @@ class Book extends Model
         'genre',
         'description',
         'cover_image_path',
-        'file_path',
         'publication_year',
         'total_copies',
         'available_copies',
         'is_blocked',
-        'is_exclusive',
-        'digital_purchase_price',
+        'category_id',
     ];
 
     protected $casts = [
         'is_blocked' => 'boolean',
-        'is_exclusive' => 'boolean',
-        'digital_purchase_price' => 'float',
         'publication_year' => 'integer',
         'total_copies' => 'integer',
         'available_copies' => 'integer',
@@ -46,8 +42,8 @@ class Book extends Model
         return $this->hasMany(Reservation::class);
     }
 
-    public function digitalPurchases(): HasMany
+    public function category()
     {
-        return $this->hasMany(DigitalPurchase::class);
+        return $this->belongsTo(Category::class);
     }
 }
