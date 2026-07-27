@@ -71,6 +71,19 @@ export const api = {
     getFines: () => apiClient.get('/librarian/fines'),
     waiveFine: (fineId) => apiClient.post(`/librarian/fines/${fineId}/waive`),
 
+    // Librarian Book Copies & Subscriptions CRUD
+    getLibrarianCopies: () => apiClient.get('/librarian/book-copies'),
+    createLibrarianCopy: (data) => apiClient.post('/librarian/book-copies', data),
+    updateLibrarianCopy: (id, data) => apiClient.put(`/librarian/book-copies/${id}`, data),
+    deleteLibrarianCopy: (id) => apiClient.delete(`/librarian/book-copies/${id}`),
+
+    getActiveLoans: () => apiClient.get('/librarian/loans/active'),
+
+    getLibrarianSubscriptions: () => apiClient.get('/librarian/subscriptions'),
+    createLibrarianSubscription: (data) => apiClient.post('/librarian/subscriptions', data),
+    updateLibrarianSubscription: (id, data) => apiClient.put(`/librarian/subscriptions/${id}`, data),
+    deleteLibrarianSubscription: (id) => apiClient.delete(`/librarian/subscriptions/${id}`),
+
     // Admin Operations
     getAdminAnalytics: () => apiClient.get('/admin/analytics'),
     getAdminApiLogs: () => apiClient.get('/admin/api-logs'),

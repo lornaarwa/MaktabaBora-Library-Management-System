@@ -76,6 +76,21 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
                 ->middleware(['validate.borrow_limit', 'check.fine']);
             Route::post('/loans/{loan}/return', [LoanController::class, 'returnBook']);
 
+            // Book Copies Management
+            Route::get('/book-copies', [LibrarianDashboardController::class, 'bookCopies']);
+            Route::post('/book-copies', [LibrarianDashboardController::class, 'storeBookCopy']);
+            Route::put('/book-copies/{copy}', [LibrarianDashboardController::class, 'updateBookCopy']);
+            Route::delete('/book-copies/{copy}', [LibrarianDashboardController::class, 'deleteBookCopy']);
+
+            // Active Loans & Returns
+            Route::get('/loans/active', [LibrarianDashboardController::class, 'activeLoans']);
+
+            // Valid Subscriptions CRUD
+            Route::get('/subscriptions', [LibrarianDashboardController::class, 'subscriptions']);
+            Route::post('/subscriptions', [LibrarianDashboardController::class, 'storeSubscription']);
+            Route::put('/subscriptions/{subscription}', [LibrarianDashboardController::class, 'updateSubscription']);
+            Route::delete('/subscriptions/{subscription}', [LibrarianDashboardController::class, 'deleteSubscription']);
+
             Route::get('/fines', [FineController::class, 'index']);
             Route::post('/fines/{fine}/waive', [FineController::class, 'waive']);
         });
