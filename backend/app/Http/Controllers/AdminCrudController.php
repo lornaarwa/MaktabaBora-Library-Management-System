@@ -21,8 +21,8 @@ class AdminCrudController extends Controller
         'loans' => \App\Models\Loan::class,
         'reservations' => \App\Models\Reservation::class,
         'fines' => \App\Models\Fine::class,
-        'subscriptions' => \App\Models\Subscription::class,
-        'digital_purchases' => \App\Models\DigitalPurchase::class,
+        'categories' => \App\Models\Category::class,
+        'payments' => \App\Models\Payment::class,
     ];
 
     public function indexTables(): JsonResponse
