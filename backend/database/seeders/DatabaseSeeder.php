@@ -73,6 +73,7 @@ class DatabaseSeeder extends Seeder
                 'publisher' => 'Prentice Hall',
                 'genre' => 'Software',
                 'description' => 'Even bad code can function. But if code isn\'t clean, it can bring a development organization to its knees.',
+                'cover_image_path' => 'https://images.unsplash.com/photo-1532012197267-da84d127e765?auto=format&fit=crop&q=80&w=600',
                 'publication_year' => 2008,
                 'total_copies' => 4,
                 'available_copies' => 3,
@@ -86,6 +87,7 @@ class DatabaseSeeder extends Seeder
                 'publisher' => 'Addison-Wesley',
                 'genre' => 'Software',
                 'description' => 'One of the most significant books in software development for pragmatic career growth and engineering practices.',
+                'cover_image_path' => 'https://images.unsplash.com/photo-1516979187457-637abb4f9353?auto=format&fit=crop&q=80&w=600',
                 'publication_year' => 1999,
                 'total_copies' => 3,
                 'available_copies' => 2,
@@ -99,6 +101,7 @@ class DatabaseSeeder extends Seeder
                 'publisher' => 'O\'Reilly Media',
                 'genre' => 'Tech',
                 'description' => 'The definitive guide to data architecture, distributed systems, consistency models, and transaction isolation.',
+                'cover_image_path' => 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600',
                 'publication_year' => 2017,
                 'total_copies' => 5,
                 'available_copies' => 5,
@@ -112,6 +115,7 @@ class DatabaseSeeder extends Seeder
                 'publisher' => 'Scribner',
                 'genre' => 'Fiction',
                 'description' => 'A tragic story of Jay Gatsby, a self-made millionaire, and his pursuit of Daisy Buchanan in 1920s America.',
+                'cover_image_path' => 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=600',
                 'publication_year' => 1925,
                 'total_copies' => 3,
                 'available_copies' => 3,
@@ -125,6 +129,7 @@ class DatabaseSeeder extends Seeder
                 'publisher' => 'Avery',
                 'genre' => 'Science',
                 'description' => 'Tiny changes, remarkable results. Learn how small 1% daily improvements stack up over time into massive growth.',
+                'cover_image_path' => 'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&q=80&w=600',
                 'publication_year' => 2018,
                 'total_copies' => 4,
                 'available_copies' => 4,
@@ -134,7 +139,14 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($booksData as $bData) {
-            $book = Book::firstOrCreate(
+            $bData['file_path'] = $this->generateSamplePdfBase64(
+                $bData['title'],
+                $bData['author'],
+                $bData['genre'],
+                $bData['description']
+            );
+
+            $book = Book::updateOrCreate(
                 ['isbn' => $bData['isbn']],
                 $bData
             );
@@ -164,5 +176,74 @@ class DatabaseSeeder extends Seeder
                 }
             }
         }
+    }
+
+    private function generateSamplePdfBase64(string $title, string $author, string $genre, string $description): string
+    {
+        $cleanTitle = preg_replace('/[^\x20-\x7E]/', '', $title);
+        $cleanAuthor = preg_replace('/[^\x20-\x7E]/', '', $author);
+        $cleanGenre = preg_replace('/[^\x20-\x7E]/', '', $genre);
+        $cleanDescription = preg_replace('/[^\x20-\x7E]/', '', $description);
+
+        $streamContent = "BT\n" .
+            "/F1 18 Tf\n" .
+            "50 740 Td\n" .
+            "(" . addcslashes($cleanTitle, '()\\') . ") Tj\n" .
+            "/F1 12 Tf\n" .
+            "0 -30 Td\n" .
+            "(Author: " . addcslashes($cleanAuthor, '()\\') . ") Tj\n" .
+            "0 -20 Td\n" .
+            "(Genre: " . addcslashes($cleanGenre, '()\\') . ") Tj\n" .
+            "/F1 10 Tf\n" .
+            "0 -30 Td\n" .
+            "(Overview:) Tj\n" .
+            "0 -15 Td\n" .
+            "(" . addcslashes($cleanDescription, '()\\') . ") Tj\n" .
+            "0 -35 Td\n" .
+            "(CHAPTER 1: INTRODUCTION & OVERVIEW) Tj\n" .
+            "0 -20 Td\n" .
+            "(Welcome to the digital edition of " . addcslashes($cleanTitle, '()\\') . ".) Tj\n" .
+            "0 -18 Td\n" .
+            "(This document is authorized for digital access via Smart Library Management System.) Tj\n" .
+            "0 -18 Td\n" .
+            "(All rights reserved.) Tj\n" .
+            "ET";
+
+        $streamLen = strlen($streamContent);
+
+        $pdf = "%PDF-1.4\n" .
+            "1 0 obj\n" .
+            "<< /Type /Catalog /Pages 2 0 R >>\n" .
+            "endobj\n" .
+            "2 0 obj\n" .
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n" .
+            "endobj\n" .
+            "3 0 obj\n" .
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\n" .
+            "endobj\n" .
+            "4 0 obj\n" .
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n" .
+            "endobj\n" .
+            "5 0 obj\n" .
+            "<< /Length " . $streamLen . " >>\n" .
+            "stream\n" .
+            $streamContent . "\n" .
+            "endstream\n" .
+            "endobj\n" .
+            "xref\n" .
+            "0 6\n" .
+            "0000000000 65535 f \n" .
+            "0000000009 00000 n \n" .
+            "0000000058 00000 n \n" .
+            "0000000115 00000 n \n" .
+            "0000000244 00000 n \n" .
+            "0000000315 00000 n \n" .
+            "trailer\n" .
+            "<< /Size 6 /Root 1 0 R >>\n" .
+            "startxref\n" .
+            (370 + $streamLen) . "\n" .
+            "%%EOF";
+
+        return 'data:application/pdf;base64,' . base64_encode($pdf);
     }
 }

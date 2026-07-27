@@ -24,8 +24,8 @@ return new class extends Migration
             $table->string('publisher')->nullable();
             $table->string('genre');
             $table->text('description')->nullable();
-            $table->string('cover_image_path')->nullable();
-            $table->string('file_path')->nullable();
+            $table->text('cover_image_path')->nullable();
+            $table->longText('file_path')->nullable();
             $table->integer('publication_year')->nullable();
             $table->integer('total_copies')->default(1);
             $table->integer('available_copies')->default(1);

@@ -65,10 +65,21 @@ class DigitalRentalController extends Controller
     {
         $book = Book::find($id);
 
+        $fileUrl = null;
+        if ($book->file_path) {
+            if (str_starts_with($book->file_path, 'data:') || str_starts_with($book->file_path, 'http://') || str_starts_with($book->file_path, 'https://')) {
+                $fileUrl = $book->file_path;
+            } else {
+                $fileUrl = url($book->file_path);
+            }
+        } else {
+            $fileUrl = url("/storage/digital-books/sample-{$book->id}.pdf");
+        }
+
         return $this->sendResponse([
             'book_id' => $book->id,
             'title' => $book->title,
-            'file_url' => $book->file_path ? url($book->file_path) : url("/storage/digital-books/sample-{$book->id}.pdf"),
+            'file_url' => $fileUrl,
             'access_type' => 'lifetime',
             'stream_token' => bin2hex(random_bytes(16)),
         ], 'Digital content stream authorized.');
