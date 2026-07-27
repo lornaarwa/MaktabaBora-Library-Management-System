@@ -4,7 +4,7 @@ import {
     Users, Shield, BookOpen, Layers, BookCheck, Clock, CreditCard, Sparkles, ShoppingBag,
     ChevronLeft, ChevronRight, Menu, Activity, UserPlus, ShieldAlert, ShieldCheck, UserCheck, TrendingUp
 } from 'lucide-react';
-import { api } from '../services/api';
+import { api, getFrontendTerminalLogs } from '../services/api';
 
 export default function AdminDashboard() {
     // Navigation & View State: 'overview' | 'logs' | 'users' | 'members' | 'librarians' | table_name
@@ -17,8 +17,9 @@ export default function AdminDashboard() {
     const [analyticsLoading, setAnalyticsLoading] = useState(true);
 
     // API Logs & Health State
-    const [logsMiniTab, setLogsMiniTab] = useState('health'); // 'health' | 'traffic' | 'services'
+    const [logsMiniTab, setLogsMiniTab] = useState('backend_terminal'); // 'backend_terminal' | 'frontend_terminal' | 'split_terminal' | 'health'
     const [apiLogsData, setApiLogsData] = useState(null);
+    const [frontendLogs, setFrontendLogs] = useState([]);
     const [logsLoading, setLogsLoading] = useState(false);
 
     // Domain Tables State
@@ -67,6 +68,7 @@ export default function AdminDashboard() {
         try {
             const res = await api.getAdminApiLogs();
             setApiLogsData(res || {});
+            setFrontendLogs(getFrontendTerminalLogs());
         } catch (err) {
             console.error('Failed to load API logs:', err);
         } finally {
@@ -487,7 +489,7 @@ export default function AdminDashboard() {
                         </div>
                     )}
 
-                    {/* Task 2: API Logs & Health Page */}
+                    {/* Task 2: API Logs & Terminal Activity Page */}
                     {activeTab === 'logs' && (
                         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-6 shadow-sm">
                             
@@ -495,47 +497,160 @@ export default function AdminDashboard() {
                             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-zinc-800 pb-5">
                                 <div>
                                     <h2 className="text-base font-bold text-zinc-100 flex items-center gap-2 font-mono">
-                                        <Activity className="w-4 h-4 text-zinc-300" /> API Logs & Endpoint Health Monitoring
+                                        <Activity className="w-4 h-4 text-emerald-400" /> Terminal Activity & API Logs Stream
                                     </h2>
-                                    <p className="text-xs text-zinc-400 mt-0.5">Real-time HTTP traffic logging, latency metrics, and API gateway health</p>
+                                    <p className="text-xs text-zinc-400 mt-0.5">Real-time live logs from php artisan serve (backend) & npm run dev (frontend) processes</p>
                                 </div>
 
                                 {/* Mini Navbar */}
-                                <div className="flex bg-zinc-950 p-1 rounded-xl border border-zinc-800 text-xs font-mono font-semibold">
+                                <div className="flex flex-wrap bg-zinc-950 p-1 rounded-xl border border-zinc-800 text-xs font-mono font-semibold">
+                                    <button
+                                        onClick={() => setLogsMiniTab('backend_terminal')}
+                                        className={`px-3 py-1.5 rounded-lg transition-all ${
+                                            logsMiniTab === 'backend_terminal' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
+                                        }`}
+                                    >
+                                        Backend Terminal
+                                    </button>
+                                    <button
+                                        onClick={() => setLogsMiniTab('frontend_terminal')}
+                                        className={`px-3 py-1.5 rounded-lg transition-all ${
+                                            logsMiniTab === 'frontend_terminal' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
+                                        }`}
+                                    >
+                                        Frontend Terminal
+                                    </button>
+                                    <button
+                                        onClick={() => setLogsMiniTab('split_terminal')}
+                                        className={`px-3 py-1.5 rounded-lg transition-all ${
+                                            logsMiniTab === 'split_terminal' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
+                                        }`}
+                                    >
+                                        Split Dual View
+                                    </button>
                                     <button
                                         onClick={() => setLogsMiniTab('health')}
                                         className={`px-3 py-1.5 rounded-lg transition-all ${
                                             logsMiniTab === 'health' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
                                         }`}
                                     >
-                                        Endpoint Health Matrix
-                                    </button>
-                                    <button
-                                        onClick={() => setLogsMiniTab('traffic')}
-                                        className={`px-3 py-1.5 rounded-lg transition-all ${
-                                            logsMiniTab === 'traffic' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
-                                        }`}
-                                    >
-                                        API Traffic Logs
-                                    </button>
-                                    <button
-                                        onClick={() => setLogsMiniTab('services')}
-                                        className={`px-3 py-1.5 rounded-lg transition-all ${
-                                            logsMiniTab === 'services' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
-                                        }`}
-                                    >
-                                        System Services
+                                        Health Matrix
                                     </button>
                                 </div>
                             </div>
 
                             {logsLoading ? (
                                 <div className="flex items-center justify-center py-12 text-zinc-400 text-xs font-mono">
-                                    <Loader2 className="w-5 h-5 animate-spin mr-2" /> Fetching system health logs...
+                                    <Loader2 className="w-5 h-5 animate-spin mr-2" /> Fetching live terminal stream...
                                 </div>
                             ) : (
                                 <>
-                                    {/* Sub-tab 1: Endpoint Health Matrix */}
+                                    {/* 1. Backend Terminal Log Stream View */}
+                                    {logsMiniTab === 'backend_terminal' && (
+                                        <div className="space-y-3 font-mono">
+                                            <div className="flex items-center justify-between text-xs text-zinc-400 px-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                    <span className="font-bold text-zinc-200">Terminal Process: php artisan serve</span>
+                                                </div>
+                                                <div className="flex items-center gap-3 text-[11px] text-zinc-500">
+                                                    <span>CWD: backend/</span>
+                                                    <span>PORT: 8000</span>
+                                                    <button onClick={() => fetchApiLogs()} className="hover:text-zinc-200 text-zinc-400 underline">Refresh Log Stream</button>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-black border border-zinc-800 rounded-xl p-4 font-mono text-xs text-zinc-300 space-y-1.5 max-h-[500px] overflow-y-auto shadow-inner select-text">
+                                                <div className="text-emerald-400 font-bold mb-2">
+                                                    kimushzyyy@smartlib:~/backend$ php artisan serve --host=127.0.0.1 --port=8000
+                                                </div>
+                                                {apiLogsData?.backend_terminal_logs?.map((line, idx) => (
+                                                    <div key={idx} className="leading-relaxed hover:bg-zinc-900/60 px-1 py-0.5 rounded transition-colors">
+                                                        <span className="text-zinc-500 mr-2">[{idx + 1}]</span>
+                                                        <span className={line.includes('ERROR') ? 'text-red-400' : line.includes('HTTP 200') ? 'text-emerald-400' : 'text-zinc-300'}>
+                                                            {line}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 2. Frontend Terminal Log Stream View */}
+                                    {logsMiniTab === 'frontend_terminal' && (
+                                        <div className="space-y-3 font-mono">
+                                            <div className="flex items-center justify-between text-xs text-zinc-400 px-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
+                                                    <span className="font-bold text-zinc-200">Terminal Process: npm run dev (Vite)</span>
+                                                </div>
+                                                <div className="flex items-center gap-3 text-[11px] text-zinc-500">
+                                                    <span>CWD: frontend/</span>
+                                                    <span>PORT: 5173</span>
+                                                    <button onClick={() => fetchApiLogs()} className="hover:text-zinc-200 text-zinc-400 underline">Refresh Stream</button>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-black border border-zinc-800 rounded-xl p-4 font-mono text-xs text-zinc-300 space-y-1.5 max-h-[500px] overflow-y-auto shadow-inner select-text">
+                                                <div className="text-cyan-400 font-bold mb-2">
+                                                    kimushzyyy@smartlib:~/frontend$ npm run dev
+                                                </div>
+                                                {frontendLogs.map((line, idx) => (
+                                                    <div key={idx} className="leading-relaxed hover:bg-zinc-900/60 px-1 py-0.5 rounded transition-colors">
+                                                        <span className="text-zinc-500 mr-2">[{idx + 1}]</span>
+                                                        <span className={line.includes('ERROR') ? 'text-red-400' : line.includes('RESPONSE') ? 'text-emerald-400' : line.includes('vite') ? 'text-cyan-300' : 'text-zinc-300'}>
+                                                            {line}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 3. Split Dual Terminal View */}
+                                    {logsMiniTab === 'split_terminal' && (
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 font-mono">
+                                            {/* Backend Screen */}
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between text-xs text-zinc-400">
+                                                    <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                                                        <span className="w-2 h-2 rounded-full bg-emerald-500" /> Backend (php artisan serve)
+                                                    </span>
+                                                </div>
+                                                <div className="bg-black border border-zinc-800 rounded-xl p-3 text-[11px] text-zinc-300 space-y-1 max-h-[420px] overflow-y-auto shadow-inner">
+                                                    <div className="text-emerald-400 font-bold mb-1">
+                                                        $ php artisan serve
+                                                    </div>
+                                                    {apiLogsData?.backend_terminal_logs?.slice(-20).map((line, idx) => (
+                                                        <div key={idx} className="truncate text-zinc-300">
+                                                            {line}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Frontend Screen */}
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between text-xs text-zinc-400">
+                                                    <span className="text-cyan-400 font-bold flex items-center gap-1.5">
+                                                        <span className="w-2 h-2 rounded-full bg-cyan-400" /> Frontend (npm run dev)
+                                                    </span>
+                                                </div>
+                                                <div className="bg-black border border-zinc-800 rounded-xl p-3 text-[11px] text-zinc-300 space-y-1 max-h-[420px] overflow-y-auto shadow-inner">
+                                                    <div className="text-cyan-400 font-bold mb-1">
+                                                        $ npm run dev
+                                                    </div>
+                                                    {frontendLogs.slice(-20).map((line, idx) => (
+                                                        <div key={idx} className="truncate text-zinc-300">
+                                                            {line}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 4. Health Matrix */}
                                     {logsMiniTab === 'health' && (
                                         <div className="space-y-4">
                                             <div className="flex items-center justify-between text-xs text-zinc-400 font-mono">
@@ -585,73 +700,6 @@ export default function AdminDashboard() {
                                                     </tbody>
                                                 </table>
                                             </div>
-                                        </div>
-                                    )}
-
-                                    {/* Sub-tab 2: Live API Traffic Logs */}
-                                    {logsMiniTab === 'traffic' && (
-                                        <div className="space-y-4">
-                                            <div className="flex items-center justify-between text-xs text-zinc-400 font-mono">
-                                                <span>Recent Requests Stream</span>
-                                                <span className="text-zinc-400">Live Client IP: 127.0.0.1</span>
-                                            </div>
-
-                                            <div className="overflow-x-auto">
-                                                <table className="w-full text-left text-xs text-zinc-300 border-collapse">
-                                                    <thead className="bg-zinc-950 text-zinc-400 uppercase text-[10px] tracking-wider font-mono">
-                                                        <tr>
-                                                            <th className="p-3 border-b border-zinc-800">Timestamp</th>
-                                                            <th className="p-3 border-b border-zinc-800">Method</th>
-                                                            <th className="p-3 border-b border-zinc-800">Endpoint</th>
-                                                            <th className="p-3 border-b border-zinc-800 text-center">Code</th>
-                                                            <th className="p-3 border-b border-zinc-800 text-center">IP Address</th>
-                                                            <th className="p-3 border-b border-zinc-800 text-right">Duration</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-zinc-800/60 font-mono">
-                                                        {apiLogsData?.traffic_logs?.map((log) => (
-                                                            <tr key={log.id} className="hover:bg-zinc-950/50">
-                                                                <td className="p-3 text-zinc-400 text-[11px]">{log.timestamp}</td>
-                                                                <td className="p-3">
-                                                                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
-                                                                        log.method === 'GET' ? 'bg-blue-950/80 text-blue-400 border border-blue-800' : 'bg-emerald-950/80 text-emerald-400 border border-emerald-800'
-                                                                    }`}>
-                                                                        {log.method}
-                                                                    </span>
-                                                                </td>
-                                                                <td className="p-3 font-semibold text-zinc-200">{log.endpoint}</td>
-                                                                <td className="p-3 text-center">
-                                                                    <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-zinc-800 text-zinc-200 border border-zinc-700">
-                                                                        {log.status_code}
-                                                                    </span>
-                                                                </td>
-                                                                <td className="p-3 text-center text-zinc-400">{log.ip_address}</td>
-                                                                <td className="p-3 text-right text-zinc-300">{log.duration_ms} ms</td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Sub-tab 3: System Service Status */}
-                                    {logsMiniTab === 'services' && (
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            {apiLogsData?.services?.map((srv, idx) => (
-                                                <div key={idx} className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-2">
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-xs font-bold text-zinc-100">{srv.name}</span>
-                                                        <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center gap-1 uppercase">
-                                                            <CheckCircle2 className="w-3 h-3 text-emerald-400" /> {srv.status}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex justify-between text-[11px] font-mono text-zinc-400 pt-1 border-t border-zinc-800/80">
-                                                        <span>Type: {srv.type}</span>
-                                                        <span>Ping: {srv.latency}</span>
-                                                    </div>
-                                                </div>
-                                            ))}
                                         </div>
                                     )}
                                 </>
