@@ -73,6 +73,7 @@ export const api = {
 
     // Admin Operations
     getAdminAnalytics: () => apiClient.get('/admin/analytics'),
+    getAdminApiLogs: () => apiClient.get('/admin/api-logs'),
     banAdminMember: (memberId, isBanned, reason = '') => apiClient.post(`/admin/members/${memberId}/ban`, { is_banned: isBanned, ban_reason: reason }),
     createAdminLibrarian: (data) => apiClient.post('/admin/librarians', data),
     getAdminTables: () => apiClient.get('/admin/tables'),

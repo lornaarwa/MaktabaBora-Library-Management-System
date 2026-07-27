@@ -86,8 +86,9 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
                 return response()->json(['status' => 'success', 'data' => \App\Models\User::with('member')->get()]);
             });
 
-            // Analytics & Management
+            // Analytics, Logs & Management
             Route::get('/analytics', [\App\Http\Controllers\AdminAnalyticsController::class, 'analytics']);
+            Route::get('/api-logs', [\App\Http\Controllers\AdminAnalyticsController::class, 'apiLogs']);
             Route::post('/members/{member}/ban', [\App\Http\Controllers\AdminAnalyticsController::class, 'banMember']);
             Route::post('/librarians', [\App\Http\Controllers\AdminAnalyticsController::class, 'storeLibrarian']);
 

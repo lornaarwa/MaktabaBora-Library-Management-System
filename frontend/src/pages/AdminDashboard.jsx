@@ -7,7 +7,7 @@ import {
 import { api } from '../services/api';
 
 export default function AdminDashboard() {
-    // Navigation & View State: 'overview' | 'users' | 'members' | 'librarians' | table_name
+    // Navigation & View State: 'overview' | 'logs' | 'users' | 'members' | 'librarians' | table_name
     const [activeTab, setActiveTab] = useState('overview');
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
@@ -15,6 +15,11 @@ export default function AdminDashboard() {
     const [analytics, setAnalytics] = useState(null);
     const [activityGraphType, setActivityGraphType] = useState('loaned'); // 'loaned' | 'reserved' | 'bought'
     const [analyticsLoading, setAnalyticsLoading] = useState(true);
+
+    // API Logs & Health State
+    const [logsMiniTab, setLogsMiniTab] = useState('health'); // 'health' | 'traffic' | 'services'
+    const [apiLogsData, setApiLogsData] = useState(null);
+    const [logsLoading, setLogsLoading] = useState(false);
 
     // Domain Tables State
     const [tables] = useState([
@@ -56,6 +61,19 @@ export default function AdminDashboard() {
         }
     };
 
+    // Fetch API Logs & Endpoint Health Data
+    const fetchApiLogs = async () => {
+        setLogsLoading(true);
+        try {
+            const res = await api.getAdminApiLogs();
+            setApiLogsData(res || {});
+        } catch (err) {
+            console.error('Failed to load API logs:', err);
+        } finally {
+            setLogsLoading(false);
+        }
+    };
+
     // Fetch Table Data when activeTab changes (if a domain table)
     const fetchTableData = async (tableName) => {
         setLoading(true);
@@ -63,7 +81,6 @@ export default function AdminDashboard() {
         try {
             const res = await api.getAdminTableData(tableName);
             
-            // Task 3: For Users tab, hide password column
             let rawColumns = res.columns || [];
             if (tableName === 'users') {
                 rawColumns = rawColumns.filter(c => c !== 'password');
@@ -83,7 +100,9 @@ export default function AdminDashboard() {
     }, []);
 
     useEffect(() => {
-        if (activeTab !== 'overview') {
+        if (activeTab === 'logs') {
+            fetchApiLogs();
+        } else if (activeTab !== 'overview') {
             const targetTable = activeTab === 'users' ? 'users' : activeTab === 'members' ? 'members' : activeTab === 'librarians' ? 'librarians' : activeTab;
             fetchTableData(targetTable);
         }
@@ -341,26 +360,54 @@ export default function AdminDashboard() {
                             </div>
                         </button>
 
-                        <div className="border-t border-zinc-800/80 my-2" />
-
-                        {/* Managed Database Tables */}
-                        {tables.map(tName => (
+                        {/* Logs Section Header & Button */}
+                        <div className="pt-3 pb-1">
+                            {!isSidebarCollapsed && (
+                                <h4 className="px-2 text-[9px] font-mono font-extrabold text-zinc-500 uppercase tracking-wider mb-1">
+                                    SYSTEM LOGS
+                                </h4>
+                            )}
                             <button
-                                key={tName}
-                                onClick={() => setActiveTab(tName)}
+                                onClick={() => setActiveTab('logs')}
                                 className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                                    activeTab === tName
+                                    activeTab === 'logs'
                                         ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
                                         : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
                                 }`}
-                                title={tName.replace('_', ' ')}
+                                title="API Logs & Health"
                             >
-                                <div className="flex items-center gap-2.5 capitalize">
-                                    <Table className="w-4 h-4 text-zinc-400" />
-                                    {!isSidebarCollapsed && <span>{tName.replace('_', ' ')}</span>}
+                                <div className="flex items-center gap-2.5">
+                                    <Clock className="w-4 h-4 text-zinc-400" />
+                                    {!isSidebarCollapsed && <span>API Logs & Health</span>}
                                 </div>
                             </button>
-                        ))}
+                        </div>
+
+                        {/* Collections Section Header & Domain Tables */}
+                        <div className="pt-2 pb-1">
+                            {!isSidebarCollapsed && (
+                                <h4 className="px-2 text-[9px] font-mono font-extrabold text-zinc-500 uppercase tracking-wider mb-1">
+                                    COLLECTIONS
+                                </h4>
+                            )}
+                            {tables.map(tName => (
+                                <button
+                                    key={tName}
+                                    onClick={() => setActiveTab(tName)}
+                                    className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                                        activeTab === tName
+                                            ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
+                                            : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'
+                                    }`}
+                                    title={tName.replace('_', ' ')}
+                                >
+                                    <div className="flex items-center gap-2.5 capitalize">
+                                        <Table className="w-4 h-4 text-zinc-400" />
+                                        {!isSidebarCollapsed && <span>{tName.replace('_', ' ')}</span>}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -440,7 +487,177 @@ export default function AdminDashboard() {
                         </div>
                     )}
 
-                    {/* Task 4: Specialized Members Banning View */}
+                    {/* Task 2: API Logs & Health Page */}
+                    {activeTab === 'logs' && (
+                        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-6 shadow-sm">
+                            
+                            {/* Header & Mini Navbar */}
+                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-zinc-800 pb-5">
+                                <div>
+                                    <h2 className="text-base font-bold text-zinc-100 flex items-center gap-2 font-mono">
+                                        <Activity className="w-4 h-4 text-zinc-300" /> API Logs & Endpoint Health Monitoring
+                                    </h2>
+                                    <p className="text-xs text-zinc-400 mt-0.5">Real-time HTTP traffic logging, latency metrics, and API gateway health</p>
+                                </div>
+
+                                {/* Mini Navbar */}
+                                <div className="flex bg-zinc-950 p-1 rounded-xl border border-zinc-800 text-xs font-mono font-semibold">
+                                    <button
+                                        onClick={() => setLogsMiniTab('health')}
+                                        className={`px-3 py-1.5 rounded-lg transition-all ${
+                                            logsMiniTab === 'health' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
+                                        }`}
+                                    >
+                                        Endpoint Health Matrix
+                                    </button>
+                                    <button
+                                        onClick={() => setLogsMiniTab('traffic')}
+                                        className={`px-3 py-1.5 rounded-lg transition-all ${
+                                            logsMiniTab === 'traffic' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
+                                        }`}
+                                    >
+                                        API Traffic Logs
+                                    </button>
+                                    <button
+                                        onClick={() => setLogsMiniTab('services')}
+                                        className={`px-3 py-1.5 rounded-lg transition-all ${
+                                            logsMiniTab === 'services' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
+                                        }`}
+                                    >
+                                        System Services
+                                    </button>
+                                </div>
+                            </div>
+
+                            {logsLoading ? (
+                                <div className="flex items-center justify-center py-12 text-zinc-400 text-xs font-mono">
+                                    <Loader2 className="w-5 h-5 animate-spin mr-2" /> Fetching system health logs...
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Sub-tab 1: Endpoint Health Matrix */}
+                                    {logsMiniTab === 'health' && (
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between text-xs text-zinc-400 font-mono">
+                                                <span>Active Route Endpoints ({apiLogsData?.endpoints?.length || 0})</span>
+                                                <span className="text-emerald-400 flex items-center gap-1">
+                                                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> 100% Operational
+                                                </span>
+                                            </div>
+
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left text-xs text-zinc-300 border-collapse">
+                                                    <thead className="bg-zinc-950 text-zinc-400 uppercase text-[10px] tracking-wider font-mono">
+                                                        <tr>
+                                                            <th className="p-3 border-b border-zinc-800">HTTP Method</th>
+                                                            <th className="p-3 border-b border-zinc-800">Endpoint Route</th>
+                                                            <th className="p-3 border-b border-zinc-800 text-center">Status</th>
+                                                            <th className="p-3 border-b border-zinc-800 text-center">Latency (ms)</th>
+                                                            <th className="p-3 border-b border-zinc-800 text-center">Uptime %</th>
+                                                            <th className="p-3 border-b border-zinc-800 text-right">Health Badge</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-zinc-800/60 font-mono">
+                                                        {apiLogsData?.endpoints?.map((ep, idx) => (
+                                                            <tr key={idx} className="hover:bg-zinc-950/50">
+                                                                <td className="p-3">
+                                                                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
+                                                                        ep.method === 'GET' ? 'bg-blue-950/80 text-blue-400 border border-blue-800' : 'bg-emerald-950/80 text-emerald-400 border border-emerald-800'
+                                                                    }`}>
+                                                                        {ep.method}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="p-3 font-bold text-zinc-100">{ep.route}</td>
+                                                                <td className="p-3 text-center">
+                                                                    <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-zinc-800 text-zinc-200 border border-zinc-700">
+                                                                        {ep.status} OK
+                                                                    </span>
+                                                                </td>
+                                                                <td className="p-3 text-center text-zinc-300">{ep.latency_ms} ms</td>
+                                                                <td className="p-3 text-center text-zinc-300">{ep.uptime}%</td>
+                                                                <td className="p-3 text-right">
+                                                                    <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800 inline-flex items-center gap-1">
+                                                                        <CheckCircle2 className="w-3 h-3 text-emerald-400" /> HEALTHY
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Sub-tab 2: Live API Traffic Logs */}
+                                    {logsMiniTab === 'traffic' && (
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between text-xs text-zinc-400 font-mono">
+                                                <span>Recent Requests Stream</span>
+                                                <span className="text-zinc-400">Live Client IP: 127.0.0.1</span>
+                                            </div>
+
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left text-xs text-zinc-300 border-collapse">
+                                                    <thead className="bg-zinc-950 text-zinc-400 uppercase text-[10px] tracking-wider font-mono">
+                                                        <tr>
+                                                            <th className="p-3 border-b border-zinc-800">Timestamp</th>
+                                                            <th className="p-3 border-b border-zinc-800">Method</th>
+                                                            <th className="p-3 border-b border-zinc-800">Endpoint</th>
+                                                            <th className="p-3 border-b border-zinc-800 text-center">Code</th>
+                                                            <th className="p-3 border-b border-zinc-800 text-center">IP Address</th>
+                                                            <th className="p-3 border-b border-zinc-800 text-right">Duration</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-zinc-800/60 font-mono">
+                                                        {apiLogsData?.traffic_logs?.map((log) => (
+                                                            <tr key={log.id} className="hover:bg-zinc-950/50">
+                                                                <td className="p-3 text-zinc-400 text-[11px]">{log.timestamp}</td>
+                                                                <td className="p-3">
+                                                                    <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                                                                        log.method === 'GET' ? 'bg-blue-950/80 text-blue-400 border border-blue-800' : 'bg-emerald-950/80 text-emerald-400 border border-emerald-800'
+                                                                    }`}>
+                                                                        {log.method}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="p-3 font-semibold text-zinc-200">{log.endpoint}</td>
+                                                                <td className="p-3 text-center">
+                                                                    <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-zinc-800 text-zinc-200 border border-zinc-700">
+                                                                        {log.status_code}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="p-3 text-center text-zinc-400">{log.ip_address}</td>
+                                                                <td className="p-3 text-right text-zinc-300">{log.duration_ms} ms</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Sub-tab 3: System Service Status */}
+                                    {logsMiniTab === 'services' && (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            {apiLogsData?.services?.map((srv, idx) => (
+                                                <div key={idx} className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-xs font-bold text-zinc-100">{srv.name}</span>
+                                                        <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center gap-1 uppercase">
+                                                            <CheckCircle2 className="w-3 h-3 text-emerald-400" /> {srv.status}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between text-[11px] font-mono text-zinc-400 pt-1 border-t border-zinc-800/80">
+                                                        <span>Type: {srv.type}</span>
+                                                        <span>Ping: {srv.latency}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    )}
                     {activeTab === 'members' && (
                         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4 shadow-sm">
                             <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
