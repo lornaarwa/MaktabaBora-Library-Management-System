@@ -5,9 +5,9 @@ import { useAuth } from '../context/AuthContext';
 export default function PublicCatalog() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
-    
+
     const [isDarkMode, setIsDarkMode] = useState(() => {
-        return document.documentElement.classList.contains('dark') || 
+        return document.documentElement.classList.contains('dark') ||
                localStorage.getItem('theme') === 'dark';
     });
 
@@ -48,132 +48,430 @@ export default function PublicCatalog() {
         else navigate('/');
     };
 
+    const Icon = ({ name, size = 20 }) => {
+        const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' };
+        switch (name) {
+            case 'sun':
+                return <svg {...common}><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>;
+            case 'moon':
+                return <svg {...common}><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" /></svg>;
+            case 'logout':
+                return <svg {...common}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><path d="M10 17l5-5-5-5" /><path d="M15 12H3" /></svg>;
+            case 'search':
+                return <svg {...common}><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>;
+            case 'home':
+                return <svg {...common}><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /></svg>;
+            case 'book':
+                return <svg {...common}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" /></svg>;
+            case 'person':
+                return <svg {...common}><circle cx="12" cy="8" r="4" /><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6" /></svg>;
+            default:
+                return null;
+        }
+    };
+
+    const shelfBooks = [
+        { title: 'Introduction to Algorithms', author: 'Cormen et al.', status: '2 copies available', callNumber: 'QA76.6 .C662', img: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=300&q=80' },
+        { title: 'Organic Chemistry', author: 'Clayden, Greeves', status: '1 copy — reserve now', callNumber: 'QD251.3 .C53', img: 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=300&q=80' },
+        { title: 'Principles of Macroeconomics', author: 'N. Gregory Mankiw', status: '4 copies available', callNumber: 'HB172.5 .M354', img: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=300&q=80' },
+        { title: 'Research Methods in Education', author: 'Cohen, Manion, Morrison', status: '3 copies available', callNumber: 'LB1028 .C572', img: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&q=80' },
+        { title: 'Structural Analysis', author: 'R.C. Hibbeler', status: 'On loan — join waitlist', callNumber: 'TA645 .H49', img: 'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=300&q=80' },
+        { title: 'Constitutional Law of Kenya', author: 'Migai Akech', status: '2 copies available', callNumber: 'KEN 342.7 .A34', img: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&q=80' },
+    ];
+
     return (
-        <div className="bg-background dark:bg-zinc-950 text-on-background dark:text-zinc-50 font-body-md selection:bg-primary-fixed-dim selection:text-on-primary-fixed min-h-screen pb-16 md:pb-0 transition-colors duration-300">
-            <style dangerouslySetInnerHTML={{__html: `
-                .dark .glass-card {
-                    background: rgba(24, 24, 27, 0.7) !important;
-                    border-color: rgba(63, 63, 70, 0.4) !important;
+        <div className="mb-home">
+            <style dangerouslySetInnerHTML={{ __html: `
+                @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
+
+                .mb-home {
+                    --bg: #F7F2E4;
+                    --surface: #FFFDF7;
+                    --surface-2: #EDE5CE;
+                    --ink: #221D15;
+                    --ink-soft: #5C5643;
+                    --line: #CBBE97;
+                    --green: #2B4C3F;
+                    --green-dark: #17281F;
+                    --stamp: #A93226;
+                    --brass: #B8862E;
+                    --wood-a: #6B4526;
+                    --wood-b: #402A18;
+                    background: var(--bg);
+                    color: var(--ink);
+                    font-family: 'Inter', system-ui, sans-serif;
+                    min-height: 100vh;
+                    transition: background 0.3s ease, color 0.3s ease;
                 }
-                .dark .hero-gradient {
-                    background: radial-gradient(circle at top right, rgba(126, 218, 143, 0.08), transparent),
-                                radial-gradient(circle at bottom left, rgba(113, 42, 226, 0.03), transparent) !important;
+                html.dark .mb-home {
+                    --bg: #101E18;
+                    --surface: #16261F;
+                    --surface-2: #1D2F26;
+                    --ink: #EEE6CC;
+                    --ink-soft: #A79C7D;
+                    --line: #3A4A3F;
+                    --green: #6FA98C;
+                    --green-dark: #0B140F;
                 }
+
+                .mb-home a, .mb-home button { font-family: inherit; }
+
+                /* ---------- Header ---------- */
+                .mb-home__header {
+                    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+                    height: 68px;
+                    display: flex; align-items: center;
+                    background: color-mix(in srgb, var(--surface) 88%, transparent);
+                    backdrop-filter: blur(14px);
+                    border-bottom: 1px solid var(--line);
+                }
+                .mb-home__header-inner {
+                    width: 100%; max-width: 1180px; margin: 0 auto;
+                    padding: 0 24px;
+                    display: flex; align-items: center; justify-content: space-between;
+                }
+                .mb-home__logo { display: flex; align-items: center; gap: 10px; }
+                .mb-home__logo-mark {
+                    width: 30px; height: 30px; border-radius: 3px;
+                    background: var(--green);
+                    display: flex; align-items: center; justify-content: center;
+                    color: var(--surface); font-family: 'Fraunces', serif; font-weight: 700; font-size: 14px;
+                }
+                .mb-home__logo-text { font-family: 'Fraunces', serif; font-weight: 600; font-size: 19px; color: var(--green); }
+                html.dark .mb-home__logo-mark { color: var(--green-dark); }
+
+                .mb-home__nav { display: none; align-items: center; gap: 6px; }
+                @media (min-width: 860px) { .mb-home__nav { display: flex; } }
+                .mb-home__nav a, .mb-home__nav .mb-home__nav-item {
+                    font-size: 13.5px; font-weight: 500; color: var(--ink-soft);
+                    padding: 8px 14px; border-radius: 6px; text-decoration: none; cursor: pointer;
+                    transition: background 0.15s ease, color 0.15s ease;
+                }
+                .mb-home__nav a:hover, .mb-home__nav .mb-home__nav-item:hover { background: var(--surface-2); color: var(--ink); }
+                .mb-home__nav a.active { color: var(--green); font-weight: 700; }
+
+                .mb-home__actions { display: flex; align-items: center; gap: 10px; }
+                .mb-home__icon-btn {
+                    display: flex; align-items: center; justify-content: center;
+                    width: 34px; height: 34px; border-radius: 50%;
+                    background: transparent; border: none; color: var(--ink-soft); cursor: pointer;
+                    transition: background 0.15s ease;
+                }
+                .mb-home__icon-btn:hover { background: var(--surface-2); }
+                .mb-home__login-btn {
+                    padding: 9px 18px; border-radius: 5px; border: 1.5px solid var(--stamp);
+                    color: var(--stamp); font-size: 13px; font-weight: 700; text-decoration: none;
+                    letter-spacing: 0.02em; transition: background 0.15s ease, color 0.15s ease;
+                }
+                .mb-home__login-btn:hover { background: var(--stamp); color: var(--surface); }
+                .mb-home__avatar {
+                    width: 32px; height: 32px; border-radius: 50%;
+                    background: var(--green); color: var(--surface);
+                    display: flex; align-items: center; justify-content: center;
+                    font-size: 11px; font-weight: 700; cursor: pointer;
+                }
+
+                /* ---------- Stamp badge (signature motif) ---------- */
+                .mb-home__stamp-badge {
+                    display: inline-flex; align-items: center; gap: 6px;
+                    border: 1.5px dashed var(--stamp);
+                    color: var(--stamp);
+                    font-family: 'JetBrains Mono', monospace;
+                    font-size: 11px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase;
+                    padding: 5px 12px; border-radius: 3px;
+                    transform: rotate(-2deg);
+                }
+
+                /* ---------- Hero ---------- */
+                .hero-gradient {
+                    position: relative;
+                    padding: 150px 24px 90px;
+                    background-image:
+                        radial-gradient(circle at 85% 15%, color-mix(in srgb, var(--green) 12%, transparent), transparent 45%),
+                        radial-gradient(circle at 10% 85%, color-mix(in srgb, var(--brass) 10%, transparent), transparent 40%);
+                }
+                .mb-home__hero-inner { max-width: 780px; margin: 0 auto; text-align: center; }
+                .mb-home__hero-title {
+                    font-family: 'Fraunces', Georgia, serif;
+                    font-weight: 600;
+                    font-size: clamp(32px, 5.5vw, 54px);
+                    line-height: 1.08;
+                    margin: 20px 0 16px;
+                }
+                .mb-home__hero-title em { color: var(--green); font-style: italic; }
+                .mb-home__hero-sub {
+                    font-size: 16px; line-height: 1.6; color: var(--ink-soft);
+                    max-width: 52ch; margin: 0 auto 36px;
+                }
+
+                .mb-home__search {
+                    max-width: 620px; margin: 0 auto 48px;
+                    display: flex; align-items: center; gap: 6px;
+                    background: var(--surface); border: 1.5px solid var(--line);
+                    border-radius: 8px; padding: 6px 6px 6px 18px;
+                    box-shadow: 0 12px 30px -18px rgba(0,0,0,0.35);
+                }
+                .mb-home__search input {
+                    flex: 1; border: none; background: transparent; outline: none;
+                    font-size: 14.5px; color: var(--ink); padding: 10px 4px;
+                }
+                .mb-home__search input::placeholder { color: var(--ink-soft); }
+                .mb-home__search button {
+                    background: var(--green); color: var(--surface);
+                    border: none; border-radius: 6px; padding: 12px 22px;
+                    font-size: 13.5px; font-weight: 700; cursor: pointer;
+                    white-space: nowrap;
+                    transition: transform 0.15s ease;
+                }
+                .mb-home__search button:hover { transform: translateY(-1px); }
+                html.dark .mb-home__search button { color: var(--green-dark); }
+
+                .mb-home__stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 40px; }
+                .mb-home__stat { text-align: center; }
+                .mb-home__stat-num { font-family: 'Fraunces', serif; font-weight: 700; font-size: 26px; color: var(--green); }
+                .mb-home__stat-label { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+
+                /* ---------- Section shell ---------- */
+                .mb-home__section { max-width: 1180px; margin: 0 auto; padding: 64px 24px; }
+                .mb-home__section-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; gap: 16px; flex-wrap: wrap; }
+                .mb-home__section-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 26px; margin: 0 0 4px; }
+                .mb-home__section-sub { color: var(--ink-soft); font-size: 14px; margin: 0; }
+                .mb-home__view-all { color: var(--green); font-weight: 700; font-size: 13.5px; background: none; border: none; cursor: pointer; }
+
+                /* ---------- Ask Bora section ---------- */
+                .mb-home__bora {
+                    background: var(--surface-2);
+                    border: 1px solid var(--line);
+                    border-radius: 20px;
+                    display: flex; flex-wrap: wrap;
+                    overflow: hidden;
+                }
+                .mb-home__bora-copy { flex: 1 1 380px; padding: 44px; }
+                .mb-home__bora-eyebrow {
+                    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em;
+                    text-transform: uppercase; color: var(--stamp); margin-bottom: 10px;
+                }
+                .mb-home__bora-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 25px; line-height: 1.25; margin: 0 0 14px; }
+                .mb-home__bora-desc { color: var(--ink-soft); font-size: 14.5px; line-height: 1.6; margin-bottom: 24px; max-width: 46ch; }
+                .mb-home__bora-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
+                .mb-home__btn-primary {
+                    background: var(--green); color: var(--surface); border: none; border-radius: 999px;
+                    padding: 11px 24px; font-size: 13.5px; font-weight: 700; cursor: pointer;
+                }
+                html.dark .mb-home__btn-primary { color: var(--green-dark); }
+                .mb-home__btn-secondary {
+                    background: transparent; border: 1.5px solid var(--line); color: var(--ink);
+                    border-radius: 999px; padding: 11px 24px; font-size: 13.5px; font-weight: 700; cursor: pointer;
+                }
+                .mb-home__bora-demo {
+                    flex: 1 1 320px;
+                    background: var(--green-dark);
+                    display: flex; align-items: center; justify-content: center;
+                    padding: 32px;
+                }
+                .mb-home__chat-bubble {
+                    background: var(--surface); border-radius: 14px; padding: 18px 20px;
+                    max-width: 320px; box-shadow: 0 20px 40px -24px rgba(0,0,0,0.6);
+                }
+                .mb-home__chat-row { display: flex; gap: 12px; margin-bottom: 14px; }
+                .mb-home__chat-avatar {
+                    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+                    background: var(--stamp); color: var(--surface);
+                    display: flex; align-items: center; justify-content: center;
+                    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+                }
+                .mb-home__chat-name { font-size: 12px; font-weight: 700; color: var(--stamp); margin: 0 0 3px; }
+                .mb-home__chat-text { font-size: 13px; line-height: 1.5; color: var(--ink); margin: 0; }
+                .mb-home__chat-row:last-child { margin-bottom: 0; }
+                .mb-home__chat-row.user .mb-home__chat-avatar { background: var(--green); }
+                html.dark .mb-home__chat-row.user .mb-home__chat-avatar { color: var(--green-dark); }
+
+                /* ---------- Shelf / catalogue strip ---------- */
+                .mb-home__shelf { display: flex; overflow-x: auto; gap: 22px; padding-bottom: 12px; scrollbar-width: none; }
+                .mb-home__shelf::-webkit-scrollbar { display: none; }
+                .mb-home__book { flex-shrink: 0; width: 168px; cursor: pointer; }
+                .mb-home__book-cover {
+                    position: relative; aspect-ratio: 2/3; border-radius: 8px; overflow: hidden;
+                    margin-bottom: 10px; box-shadow: 0 10px 22px -14px rgba(0,0,0,0.5);
+                    transition: transform 0.2s ease;
+                }
+                .mb-home__book:hover .mb-home__book-cover { transform: translateY(-4px); }
+                .mb-home__book-cover img { width: 100%; height: 100%; object-fit: cover; }
+                .mb-home__book-badge {
+                    position: absolute; top: 8px; left: 8px;
+                    background: color-mix(in srgb, var(--surface) 92%, transparent);
+                    color: var(--stamp);
+                    font-family: 'JetBrains Mono', monospace; font-size: 9.5px; font-weight: 700;
+                    padding: 3px 7px; border-radius: 3px; letter-spacing: 0.03em;
+                }
+                .mb-home__book-title { font-weight: 700; font-size: 13.5px; margin: 0 0 2px; }
+                .mb-home__book-author { font-size: 12px; color: var(--ink-soft); margin: 0 0 2px; }
+                .mb-home__book-call { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--ink-soft); }
+
+                /* ---------- Membership section ---------- */
+                .mb-home__membership { background: var(--surface-2); }
+                .mb-home__plans { display: grid; gap: 22px; }
+                @media (min-width: 860px) { .mb-home__plans { grid-template-columns: repeat(3, 1fr); } }
+                .mb-home__plan {
+                    background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+                    padding: 30px; display: flex; flex-direction: column;
+                }
+                .mb-home__plan.featured { border: 2px solid var(--green); position: relative; }
+                .mb-home__plan-tag {
+                    position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+                    background: var(--green); color: var(--surface);
+                    font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+                    letter-spacing: 0.08em; padding: 4px 12px; border-radius: 999px;
+                }
+                html.dark .mb-home__plan-tag { color: var(--green-dark); }
+                .mb-home__plan-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 19px; margin: 6px 0 8px; }
+                .mb-home__plan-price { font-size: 26px; font-weight: 700; margin-bottom: 22px; }
+                .mb-home__plan-price span { font-size: 13px; font-weight: 500; color: var(--ink-soft); }
+                .mb-home__plan-list { list-style: none; padding: 0; margin: 0 0 26px; flex-grow: 1; }
+                .mb-home__plan-list li { display: flex; gap: 9px; font-size: 13.5px; color: var(--ink-soft); margin-bottom: 12px; align-items: flex-start; }
+                .mb-home__plan-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; }
+                .mb-home__plan-btn {
+                    width: 100%; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 13.5px; cursor: pointer;
+                    border: 1.5px solid var(--green); background: transparent; color: var(--green);
+                }
+                .mb-home__plan.featured .mb-home__plan-btn { background: var(--green); color: var(--surface); border-color: var(--green); }
+                html.dark .mb-home__plan.featured .mb-home__plan-btn { color: var(--green-dark); }
+
+                /* ---------- Footer ---------- */
+                .mb-home__footer { border-top: 1px solid var(--line); padding: 56px 24px 28px; }
+                .mb-home__footer-grid { max-width: 1180px; margin: 0 auto 40px; display: grid; gap: 32px; grid-template-columns: 1fr; }
+                @media (min-width: 760px) { .mb-home__footer-grid { grid-template-columns: 1.4fr repeat(2, 1fr); } }
+                .mb-home__footer-desc { font-size: 13.5px; color: var(--ink-soft); margin-top: 12px; max-width: 32ch; }
+                .mb-home__footer h4 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 14px; color: var(--ink-soft); }
+                .mb-home__footer ul { list-style: none; padding: 0; margin: 0; }
+                .mb-home__footer li { margin-bottom: 10px; }
+                .mb-home__footer a { color: var(--ink-soft); text-decoration: none; font-size: 13.5px; cursor: pointer; }
+                .mb-home__footer a:hover { color: var(--green); }
+                .mb-home__footer-bottom {
+                    max-width: 1180px; margin: 0 auto; padding-top: 22px; border-top: 1px solid var(--line);
+                    display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px;
+                    font-size: 12px; color: var(--ink-soft);
+                }
+                .mb-home__status { display: flex; align-items: center; gap: 6px; }
+                .mb-home__status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+
+                /* ---------- Mobile bottom nav ---------- */
+                .mb-home__bottom-nav {
+                    display: flex; md:hidden; position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+                    background: var(--surface); border-top: 1px solid var(--line);
+                    justify-content: space-around; align-items: center;
+                    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+                }
+                @media (min-width: 860px) { .mb-home__bottom-nav { display: none; } }
+                .mb-home__bottom-nav a, .mb-home__bottom-nav .mb-home__bn-item {
+                    display: flex; flex-direction: column; align-items: center; gap: 2px;
+                    color: var(--ink-soft); font-size: 10.5px; text-decoration: none; cursor: pointer;
+                    padding: 4px 14px; border-radius: 999px;
+                }
+                .mb-home__bottom-nav a.active { color: var(--green); background: var(--surface-2); font-weight: 700; }
+
+                @media (min-width: 860px) { .mb-home__main { padding-bottom: 0; } }
+                .mb-home__main { padding-bottom: 72px; }
+                @media (min-width: 860px) { .mb-home__main { padding-bottom: 0; } }
             `}} />
 
-            {/* Top Navigation Bar */}
-            <header className="fixed top-0 w-full z-50 bg-surface/70 dark:bg-zinc-900/70 backdrop-blur-xl border-b border-outline-variant dark:border-zinc-800 shadow-sm h-16 transition-colors duration-300">
-                <div className="flex justify-between items-center px-margin-mobile md:px-margin-desktop h-full w-full max-w-container-max mx-auto">
-                    <div className="flex items-center gap-stack-sm">
-                        <span className="material-symbols-outlined text-primary dark:text-emerald-400 text-3xl">menu_book</span>
-                        <span className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary dark:text-emerald-400">MaktabaBora</span>
+            {/* Header */}
+            <header className="mb-home__header">
+                <div className="mb-home__header-inner">
+                    <div className="mb-home__logo">
+                        <span className="mb-home__logo-mark">Mb</span>
+                        <span className="mb-home__logo-text">MaktabaBora</span>
                     </div>
-                    <nav className="hidden md:flex items-center gap-stack-lg">
-                        <Link className="font-label-md text-label-md text-primary dark:text-emerald-400 font-bold cursor-pointer" to="/">Home</Link>
-                        <Link className="font-label-md text-label-md text-on-surface-variant dark:text-zinc-400 hover:bg-surface-container-high dark:hover:bg-zinc-800 transition-colors px-3 py-2 rounded-lg cursor-pointer" to="/explore">Explore</Link>
-                        <Link className="font-label-md text-label-md text-on-surface-variant dark:text-zinc-400 hover:bg-surface-container-high dark:hover:bg-zinc-800 transition-colors px-3 py-2 rounded-lg cursor-pointer" to="/member">My Books</Link>
-                        <div onClick={handleProfileClick} className="font-label-md text-label-md text-on-surface-variant dark:text-zinc-400 hover:bg-surface-container-high dark:hover:bg-zinc-800 transition-colors px-3 py-2 rounded-lg cursor-pointer">Profile</div>
+                    <nav className="mb-home__nav">
+                        <Link className="active" to="/">Home</Link>
+                        <Link to="/explore">Catalogue</Link>
+                        <Link to="/member">My Loans</Link>
+                        <div onClick={handleProfileClick} className="mb-home__nav-item">Profile</div>
                     </nav>
-                    <div className="flex items-center gap-stack-md">
-                        <button onClick={toggleDarkMode} className="material-symbols-outlined text-on-surface-variant dark:text-zinc-400 hover:bg-surface-container-high dark:hover:bg-zinc-800 p-2 rounded-full transition-colors" title="Toggle Dark/Light Mode">
-                            {isDarkMode ? 'light_mode' : 'dark_mode'}
+                    <div className="mb-home__actions">
+                        <button onClick={toggleDarkMode} className="mb-home__icon-btn" title="Toggle dark/light mode">
+                            <Icon name={isDarkMode ? 'sun' : 'moon'} />
                         </button>
-                        <button className="material-symbols-outlined text-on-surface-variant dark:text-zinc-400 hover:bg-surface-container-high dark:hover:bg-zinc-800 p-2 rounded-full transition-colors hidden md:block">search</button>
-                        
                         {user ? (
-                            <div className="flex items-center gap-2 pl-2 border-l border-outline-variant dark:border-zinc-850">
-                                <div onClick={handleProfileClick} className="h-8 w-8 rounded-full bg-primary-container dark:bg-emerald-900/50 flex items-center justify-center text-on-primary-container dark:text-emerald-200 font-bold text-xs cursor-pointer hover:bg-primary dark:hover:bg-emerald-500 hover:text-white dark:hover:text-zinc-950 transition-colors">
+                            <div className="mb-home__actions">
+                                <div onClick={handleProfileClick} className="mb-home__avatar">
                                     {user.name.substring(0, 2).toUpperCase()}
                                 </div>
-                                <button onClick={() => logout()} className="material-symbols-outlined text-on-surface-variant dark:text-zinc-400 hover:text-error transition-colors p-1" title="Sign Out">logout</button>
+                                <button onClick={() => logout()} className="mb-home__icon-btn" title="Sign out">
+                                    <Icon name="logout" />
+                                </button>
                             </div>
                         ) : (
-                            <Link to="/login" className="px-4 py-1.5 rounded-lg bg-primary dark:bg-emerald-600 hover:bg-surface-tint dark:hover:bg-emerald-500 text-on-primary dark:text-zinc-950 text-xs font-bold transition-all shadow-sm">
-                                Login
-                            </Link>
+                            <Link to="/login" className="mb-home__login-btn">Log in</Link>
                         )}
                     </div>
                 </div>
             </header>
 
-            <main className="pt-16 pb-32">
-                {/* Hero Section */}
-                <section className="relative hero-gradient overflow-hidden py-stack-xl md:py-32">
-                    <div className="absolute top-0 right-0 w-1/3 h-full opacity-10 pointer-events-none"></div>
-                    <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop text-center relative z-10">
-                        <div className="inline-flex items-center gap-2 bg-primary-fixed-dim/20 text-primary dark:text-emerald-400 px-4 py-1.5 rounded-full mb-stack-lg border border-primary/10 dark:border-emerald-400/20">
-                            <span className="material-symbols-outlined text-sm" style={{fontVariationSettings: "'FILL' 1"}}>auto_awesome</span>
-                            <span className="font-label-sm text-label-sm uppercase tracking-wider font-bold">Next-Gen Library Platform</span>
-                        </div>
-                        <h1 className="font-display text-display max-w-4xl mx-auto mb-stack-md text-on-surface dark:text-zinc-100">
-                            Your Gateway to <span className="text-primary dark:text-emerald-400 italic">Infinite Knowledge</span>
+            <main className="mb-home__main">
+                {/* Hero */}
+                <section className="hero-gradient">
+                    <div className="mb-home__hero-inner">
+                        <span className="mb-home__stamp-badge">Open today · 8am – 9pm</span>
+                        <h1 className="mb-home__hero-title">
+                            Borrow smarter.<br /><em>Return on time.</em>
                         </h1>
-                        <p className="font-body-lg text-body-lg text-on-surface-variant dark:text-zinc-450 max-w-2xl mx-auto mb-stack-xl">
-                            Experience the future of reading with our AI-powered Smart Library ecosystem. Access millions of titles, curated insights, and collaborative study spaces.
+                        <p className="mb-home__hero-sub">
+                            Search the university catalogue, see what's on the shelf right now, and reserve your copy.
+                            No downloads — just the real book, waiting for you at the front desk.
                         </p>
-                        <div className="max-w-3xl mx-auto mb-stack-xl">
-                            <div className="glass-card rounded-2xl p-2 flex items-center shadow-lg transition-transform hover:scale-[1.01]">
-                                <span className="material-symbols-outlined text-outline ml-4">search</span>
-                                <input className="w-full bg-transparent border-none focus:ring-0 text-body-md px-4 outline-none placeholder:text-outline dark:text-zinc-100" placeholder="Search by title, author, ISBN or AI topic..." type="text"/>
-                                <button className="bg-primary dark:bg-emerald-600 text-on-primary dark:text-zinc-950 px-8 py-3 rounded-xl font-label-md text-label-md font-bold hover:bg-surface-tint dark:hover:bg-emerald-500 active:scale-95 transition-all hidden sm:block">Search Library</button>
-                            </div>
+                        <div className="mb-home__search">
+                            <span style={{ display: 'flex', color: 'var(--ink-soft)' }}><Icon name="search" /></span>
+                            <input placeholder="Search by title, author, or ISBN…" type="text" />
+                            <button>Search catalogue</button>
                         </div>
-                        
-                        {/* Quick Stats */}
-                        <div className="flex flex-wrap justify-center gap-stack-xl mt-12">
-                            <div className="text-center group">
-                                <div className="text-headline-lg font-bold text-primary dark:text-emerald-400 mb-1">1M+</div>
-                                <div className="text-label-md text-on-surface-variant dark:text-zinc-400 group-hover:text-primary dark:group-hover:text-emerald-400 transition-colors">Digital Books</div>
+                        <div className="mb-home__stats">
+                            <div className="mb-home__stat">
+                                <div className="mb-home__stat-num">12,400+</div>
+                                <div className="mb-home__stat-label">Titles catalogued</div>
                             </div>
-                            <div className="w-px h-12 bg-outline-variant dark:bg-zinc-800 hidden md:block"></div>
-                            <div className="text-center group">
-                                <div className="text-headline-lg font-bold text-primary dark:text-emerald-400 mb-1">50k+</div>
-                                <div className="text-label-md text-on-surface-variant dark:text-zinc-400 group-hover:text-primary dark:group-hover:text-emerald-400 transition-colors">Active Members</div>
+                            <div className="mb-home__stat">
+                                <div className="mb-home__stat-num">3,150+</div>
+                                <div className="mb-home__stat-label">Active members</div>
                             </div>
-                            <div className="w-px h-12 bg-outline-variant dark:bg-zinc-800 hidden md:block"></div>
-                            <div className="text-center group">
-                                <div className="text-headline-lg font-bold text-primary dark:text-emerald-400 mb-1">24/7</div>
-                                <div className="text-label-md text-on-surface-variant dark:text-zinc-400 group-hover:text-primary dark:group-hover:text-emerald-400 transition-colors">AI Assistance</div>
+                            <div className="mb-home__stat">
+                                <div className="mb-home__stat-num">48 hrs</div>
+                                <div className="mb-home__stat-label">Reservation hold time</div>
                             </div>
                         </div>
                     </div>
                 </section>
 
-                {/* AI Librarian Teaser */}
-                <section className="py-stack-xl px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
-                    <div className="bg-surface-container-low dark:bg-zinc-900 rounded-[32px] overflow-hidden border border-outline-variant/30 dark:border-zinc-800 shadow-sm flex flex-col md:flex-row items-center transition-colors duration-300">
-                        <div className="w-full md:w-1/2 p-stack-lg md:p-16">
-                            <div className="inline-flex items-center gap-2 text-secondary dark:text-indigo-400 font-bold mb-stack-sm">
-                                <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>psychology</span>
-                                <span className="font-label-md text-label-md">MEET BORA AI</span>
-                            </div>
-                            <h2 className="font-headline-lg text-headline-lg text-on-surface dark:text-zinc-100 mb-stack-md leading-tight">
-                                A personal librarian <br/>who knows every page.
-                            </h2>
-                            <p className="font-body-md text-body-md text-on-surface-variant dark:text-zinc-400 mb-stack-lg">
-                                Bora AI doesn't just find books; it understands them. Ask for summaries, complex cross-references, or research assistance in plain natural language.
+                {/* Ask Bora — rule-based chatbot */}
+                <section className="mb-home__section">
+                    <div className="mb-home__bora">
+                        <div className="mb-home__bora-copy">
+                            <div className="mb-home__bora-eyebrow">Ask Bora</div>
+                            <h2 className="mb-home__bora-title">Quick answers, no queueing at the desk.</h2>
+                            <p className="mb-home__bora-desc">
+                                Bora answers the questions librarians get asked most: opening hours, loan limits,
+                                fines, reservations, and what to do if a book's gone missing. Rule-based and always
+                                accurate to current library policy — no guessing.
                             </p>
-                            <div className="flex flex-col sm:flex-row gap-stack-sm">
-                                <button className="bg-secondary dark:bg-indigo-600 text-on-secondary dark:text-white px-8 py-3 rounded-full font-label-md text-label-md font-bold hover:shadow-lg hover:shadow-secondary/20 dark:hover:shadow-indigo-500/20 transition-all flex items-center justify-center gap-2">
-                                    Try AI Chat <span className="material-symbols-outlined">arrow_forward</span>
-                                </button>
-                                <button className="bg-white dark:bg-zinc-800 border border-outline-variant dark:border-zinc-700 px-8 py-3 rounded-full font-label-md text-label-md font-bold text-on-surface-variant dark:text-zinc-300 hover:bg-surface-container dark:hover:bg-zinc-700 transition-all">
-                                    Learn More
-                                </button>
+                            <div className="mb-home__bora-buttons">
+                                <button className="mb-home__btn-primary" onClick={() => navigate('/chatbot')}>Ask Bora a question</button>
+                                <button className="mb-home__btn-secondary" onClick={() => navigate('/help')}>Browse FAQs</button>
                             </div>
                         </div>
-                        <div className="w-full md:w-1/2 relative min-h-[320px] bg-secondary-container dark:bg-indigo-950 flex items-center justify-center p-stack-md">
-                            <div className="absolute inset-0 opacity-20"></div>
-                            <div className="glass-card p-6 rounded-2xl shadow-2xl max-w-sm relative z-10">
-                                <div className="flex items-start gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-secondary dark:bg-indigo-600 flex-shrink-0 flex items-center justify-center text-white">
-                                        <span className="material-symbols-outlined text-sm">robot_2</span>
-                                    </div>
+                        <div className="mb-home__bora-demo">
+                            <div className="mb-home__chat-bubble">
+                                <div className="mb-home__chat-row user">
+                                    <div className="mb-home__chat-avatar">Q</div>
                                     <div>
-                                        <p className="text-body-sm font-bold text-secondary dark:text-indigo-400 mb-1">Bora AI</p>
-                                        <p className="text-body-sm text-on-surface dark:text-zinc-200 leading-relaxed">
-                                            "I've found 3 books on quantum computing that mention 'entanglement' specifically in the context of teleportation. Would you like a combined summary?"
-                                        </p>
+                                        <p className="mb-home__chat-name">You</p>
+                                        <p className="mb-home__chat-text">How long can I keep a book, and what if it's late?</p>
+                                    </div>
+                                </div>
+                                <div className="mb-home__chat-row">
+                                    <div className="mb-home__chat-avatar">B</div>
+                                    <div>
+                                        <p className="mb-home__chat-name">Bora</p>
+                                        <p className="mb-home__chat-text">Standard loans run 14 days, renewable once if no one's reserved it. Overdue books accrue a small daily fine until returned.</p>
                                     </div>
                                 </div>
                             </div>
@@ -181,193 +479,127 @@ export default function PublicCatalog() {
                     </div>
                 </section>
 
-                {/* Featured Collections */}
-                <section className="py-stack-xl">
-                    <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop mb-stack-lg flex justify-between items-end">
+                {/* On the shelf now */}
+                <section className="mb-home__section">
+                    <div className="mb-home__section-head">
                         <div>
-                            <h2 className="font-headline-lg text-headline-lg text-on-surface dark:text-zinc-100">Curated for You</h2>
-                            <p className="text-on-surface-variant dark:text-zinc-400">Recommended based on your reading history</p>
+                            <h2 className="mb-home__section-title">On the shelf right now</h2>
+                            <p className="mb-home__section-sub">Recommended for your programme, based on availability</p>
                         </div>
-                        <button className="text-primary dark:text-emerald-400 font-bold font-label-md hover:underline flex items-center gap-1">
-                            View All <span className="material-symbols-outlined">chevron_right</span>
-                        </button>
+                        <button className="mb-home__view-all" onClick={() => navigate('/explore')}>View full catalogue →</button>
                     </div>
-                    <div className="flex overflow-x-auto hide-scrollbar gap-stack-lg px-margin-mobile md:px-margin-desktop pb-8">
-                        {/* Book Cards */}
-                        {[
-                            { title: "The Quantum Horizon", author: "Dr. Alan Thorne", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDricZAE-FZ8WbmLBMLrlKSx0ZigiGWnnzVEgWVn6JsFFIvlxZ2lFGW5YXNr_NyZRQMpTBA64TC88EIfwy0IewVlHGosTwMXDRtNgcviFTjrneBJpURHnErKECmDsjy4QyjXlREAf7Nulea5b9Z3p9mv2KrBQeaUbIp6TiHa4HSjApSepy3AvrwRMC1JjxDoMUC9BGrK6mdIbgKrWMTv_PGHQUE1NmdlMXu58gQi4Votm5YF6UjdU6PWBUVqXAyQCZ6K5HY-7zS4OQ" },
-                            { title: "Exponential Growth", author: "Sarah Jenkins", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAONi_3sNRUfgyoUTbBw5hCLFG8DwQMlFt2RU2bjK_nc7TQXlgBIl2wfnSEpimp8NWJXlX5KemrJdpUmkPQkrrVwa54kZFU5UnpFE5LrRxgZnDwKMG2buA-ckg7IXAGpUpZ07O1w5xiNJUx2pRKyxOjxxwCPU-jAWA3mx8Dl1vfK8lJ-Sofjx6txhyzpgkAfpfqXq_aUVl2tTeicgb9lRFHCU9uTGfLPBY4XI5njXqPJWFlw4P2jFTeiEbh_bHfkeJGKTHguE0O3NY" },
-                            { title: "Echoes of the Past", author: "Marcus Vane", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAkf6t9_AKL03w-SB33_0Yk6rKOlXlBm3s2Cc3k4BqDxI4RtRuxjraC0vy9HT9EKkR_oHcFA1uD8Zqs_nZJNH5M9k831OYQbxnJlH8D75Az_7IsEG6H01OB5cHEdjOq1-yUeyZC4qYb4BQhlZ0Bg77h7_56HwWY5xca7nnIWfWXxCVyKBOcmmTYPkKyPTwiGhTqi8nLo6mw2ytJcFYUTHiEwjhz1vhw7m7udceUF-96dfCxndOySGv_X4XlFvGLaWtXYa3VIaH_cV4" },
-                            { title: "Systems Thinking", author: "Hiroshi Tanaka", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuC3ouOlSI-r57Z6zhxDSa-mL9VGcnLYzPUK7kQsC45gTCv0OBFw199DsaGCiISfa4TE9IL5F6Yxl3UzQgQ9SukCWp78OlUc6w5bF3kty8KfEGmEip1QfTX3_1woLGXmZY1I0OSNsbyFzRH5zv0rhKPlWc1lpB7pFn3dW6H-eJ_4mkQ6WVcMjVgR01fLXPju4OKEsBGhmMn5mua6Gel0KGFXwEcltyLeZ97geoF35AkJdtWdzw7NJV2D9pB27E6GWnzxQaw2QyaB5Cw" },
-                            { title: "The Green Revolution", author: "Elena Rossi", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuA6_Szf1zPRIybAGGbHsJzxcRK5_lyWBf9xuOGo_6nZger0OF9njt8AOXSDaoCmrueucc7h9xJUgoa0mnHBLPb8CJiXG6qpyFppCSWAUigyFnbvXXyLnAOpVL4YTElFv3cmT4BQQgYyqrVSbXMIhs9qBhgYjyMVCp2MsgJgIK6Ek0wsXNjk28tzQqTjaou84-TRGW50Z3w8LRRr7Kn5YX9dpF77qK6Pw8gVYOKcB7UAZo56zbE6oFgBohFcKhX7dOEqSIMX0CSF3nY" },
-                            { title: "Digital Zen", author: "Leo Kofman", img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCenxPgVT09Ds3T8IZ6bNOmzY7v3dU6J1BWqayUeGP99K01B36-RQdIiIx9Wq97cfJXScfRAzkz6rM8N6HZc9fYergmHp_l7srEgvXAhprN3-WWHqpUEh7D3c4j_ZCNwpMpIb-w1XhtXs25HKl0Oxnp46q5Bw54-xazzPFWZ4o3sVJNrzVoLqslX0Qy3PYm7LZJEVU2QzJZsiIQJOdFNBdgZ3D-1yiVopuSNtS8YfeK6XoVSLKITZvAxqv0i8GsPkEAI1sLQnP7FOo" }
-                        ].map((book, i) => (
-                            <div key={i} className="flex-shrink-0 w-48 group cursor-pointer">
-                                <div className="aspect-[2/3] rounded-xl overflow-hidden shadow-md mb-3 transition-transform group-hover:-translate-y-2">
-                                    <img className="w-full h-full object-cover" src={book.img} alt={book.title} />
+                    <div className="mb-home__shelf">
+                        {shelfBooks.map((book, i) => (
+                            <div key={i} className="mb-home__book" onClick={() => navigate('/explore')}>
+                                <div className="mb-home__book-cover">
+                                    <img src={book.img} alt={book.title} />
+                                    <span className="mb-home__book-badge">{book.status}</span>
                                 </div>
-                                <h3 className="font-bold text-body-sm text-on-surface dark:text-zinc-150 truncate">{book.title}</h3>
-                                <p className="text-label-sm text-on-surface-variant dark:text-zinc-400">{book.author}</p>
+                                <h3 className="mb-home__book-title">{book.title}</h3>
+                                <p className="mb-home__book-author">{book.author}</p>
+                                <p className="mb-home__book-call">{book.callNumber}</p>
                             </div>
                         ))}
                     </div>
                 </section>
 
-                {/* Subscription Tiers */}
-                <section className="py-stack-xl bg-surface-container dark:bg-zinc-900/50">
-                    <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop text-center mb-stack-xl">
-                        <h2 className="font-display text-headline-lg text-on-surface dark:text-zinc-100 mb-4">Elevate Your Journey</h2>
-                        <p className="text-on-surface-variant dark:text-zinc-400">Flexible plans for every curious mind.</p>
+                {/* Membership */}
+                <section className="mb-home__section mb-home__membership">
+                    <div className="mb-home__section-head" style={{ justifyContent: 'center', textAlign: 'center', flexDirection: 'column' }}>
+                        <h2 className="mb-home__section-title">Become a member</h2>
+                        <p className="mb-home__section-sub">A one-time registration fee activates your borrowing privileges, no monthly billing.</p>
                     </div>
-                    <div className="max-w-6xl mx-auto px-margin-mobile md:px-margin-desktop grid md:grid-cols-3 gap-stack-lg">
-                        {/* Student */}
-                        <div className="bg-surface dark:bg-zinc-900 rounded-2xl p-stack-lg border border-outline-variant dark:border-zinc-800 shadow-sm flex flex-col">
-                            <div className="mb-stack-lg">
-                                <h3 className="font-headline-md text-on-surface dark:text-zinc-100 mb-2">Student</h3>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-2xl font-bold text-on-surface dark:text-zinc-100">$5</span>
-                                    <span className="text-on-surface-variant dark:text-zinc-450">/month</span>
-                                </div>
-                            </div>
-                            <ul className="space-y-4 mb-stack-xl flex-grow">
-                                <li className="flex items-center gap-3 text-body-sm text-on-surface-variant dark:text-zinc-300">
-                                    <span className="material-symbols-outlined text-primary dark:text-emerald-400 text-lg">check_circle</span>
-                                    Access to 500k+ Textbook titles
-                                </li>
-                                <li className="flex items-center gap-3 text-body-sm text-on-surface-variant dark:text-zinc-300">
-                                    <span className="material-symbols-outlined text-primary dark:text-emerald-400 text-lg">check_circle</span>
-                                    Basic AI Search
-                                </li>
-                                <li className="flex items-center gap-3 text-body-sm text-on-surface-variant dark:text-zinc-300">
-                                    <span className="material-symbols-outlined text-primary dark:text-emerald-400 text-lg">check_circle</span>
-                                    5 Offline Downloads
-                                </li>
+                    <div className="mb-home__plans">
+                        <div className="mb-home__plan">
+                            <h3 className="mb-home__plan-name">Undergraduate</h3>
+                            <div className="mb-home__plan-price">Ksh 500 <span>/ year</span></div>
+                            <ul className="mb-home__plan-list">
+                                <li>Borrow up to 3 books at a time</li>
+                                <li>14-day loan period</li>
+                                <li>Standard reservation queue</li>
                             </ul>
-                            <button className="w-full py-3 border border-primary dark:border-emerald-500 text-primary dark:text-emerald-400 font-bold rounded-xl hover:bg-primary/5 dark:hover:bg-emerald-500/10 transition-colors">Select Plan</button>
+                            <button className="mb-home__plan-btn" onClick={() => navigate('/register')}>Register</button>
                         </div>
-                        {/* Professional */}
-                        <div className="bg-surface dark:bg-zinc-900 rounded-2xl p-stack-lg border-2 border-primary dark:border-emerald-500 shadow-xl flex flex-col relative md:scale-105 z-10">
-                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary dark:bg-emerald-600 text-on-primary dark:text-zinc-950 px-4 py-1 rounded-full text-label-sm font-bold shadow-lg">MOST POPULAR</div>
-                            <div className="mb-stack-lg">
-                                <h3 className="font-headline-md text-on-surface dark:text-zinc-100 mb-2">Professional</h3>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-4xl font-bold text-on-surface dark:text-zinc-100">$15</span>
-                                    <span className="text-on-surface-variant dark:text-zinc-450">/month</span>
-                                </div>
-                            </div>
-                            <ul className="space-y-4 mb-stack-xl flex-grow">
-                                <li className="flex items-center gap-3 text-body-sm text-on-surface dark:text-zinc-200 font-medium">
-                                    <span className="material-symbols-outlined text-primary dark:text-emerald-400 text-lg" style={{fontVariationSettings: "'FILL' 1"}}>check_circle</span>
-                                    Unlimited Access to all 1M+ titles
-                                </li>
-                                <li className="flex items-center gap-3 text-body-sm text-on-surface dark:text-zinc-200 font-medium">
-                                    <span className="material-symbols-outlined text-primary dark:text-emerald-400 text-lg" style={{fontVariationSettings: "'FILL' 1"}}>check_circle</span>
-                                    Priority Bora AI Assistance
-                                </li>
-                                <li className="flex items-center gap-3 text-body-sm text-on-surface dark:text-zinc-200 font-medium">
-                                    <span className="material-symbols-outlined text-primary dark:text-emerald-400 text-lg" style={{fontVariationSettings: "'FILL' 1"}}>check_circle</span>
-                                    Unlimited Downloads
-                                </li>
-                                <li className="flex items-center gap-3 text-body-sm text-on-surface dark:text-zinc-200 font-medium">
-                                    <span className="material-symbols-outlined text-primary dark:text-emerald-400 text-lg" style={{fontVariationSettings: "'FILL' 1"}}>check_circle</span>
-                                    Advanced Annotation Tools
-                                </li>
+                        <div className="mb-home__plan featured">
+                            <span className="mb-home__plan-tag">Most common</span>
+                            <h3 className="mb-home__plan-name">Postgraduate &amp; Staff</h3>
+                            <div className="mb-home__plan-price">Ksh 1,200 <span>/ year</span></div>
+                            <ul className="mb-home__plan-list">
+                                <li>Borrow up to 6 books at a time</li>
+                                <li>21-day loan period</li>
+                                <li>Priority reservation queue</li>
+                                <li>Renewal reminders by email/SMS</li>
                             </ul>
-                            <button className="w-full py-3 bg-primary dark:bg-emerald-600 text-on-primary dark:text-zinc-950 font-bold rounded-xl shadow-lg hover:shadow-primary/30 active:scale-[0.98] transition-all">Get Started</button>
+                            <button className="mb-home__plan-btn" onClick={() => navigate('/register')}>Register</button>
                         </div>
-                        {/* Institutional */}
-                        <div className="bg-surface dark:bg-zinc-900 rounded-2xl p-stack-lg border border-outline-variant dark:border-zinc-800 shadow-sm flex flex-col">
-                            <div className="mb-stack-lg">
-                                <h3 className="font-headline-md text-on-surface dark:text-zinc-100 mb-2">Institutional</h3>
-                                <div className="text-xl font-bold text-on-surface dark:text-zinc-100">Custom Pricing</div>
-                            </div>
-                            <ul className="space-y-4 mb-stack-xl flex-grow">
-                                <li className="flex items-center gap-3 text-body-sm text-on-surface-variant dark:text-zinc-300">
-                                    <span className="material-symbols-outlined text-primary dark:text-emerald-400 text-lg">check_circle</span>
-                                    Site-wide Access for Universities
-                                </li>
-                                <li className="flex items-center gap-3 text-body-sm text-on-surface-variant dark:text-zinc-300">
-                                    <span className="material-symbols-outlined text-primary dark:text-emerald-400 text-lg">check_circle</span>
-                                    Dedicated Account Manager
-                                </li>
-                                <li className="flex items-center gap-3 text-body-sm text-on-surface-variant dark:text-zinc-300">
-                                    <span className="material-symbols-outlined text-primary dark:text-emerald-400 text-lg">check_circle</span>
-                                    Advanced Usage Analytics
-                                </li>
+                        <div className="mb-home__plan">
+                            <h3 className="mb-home__plan-name">Department &amp; Alumni</h3>
+                            <div className="mb-home__plan-price">Custom</div>
+                            <ul className="mb-home__plan-list">
+                                <li>Site membership for whole departments</li>
+                                <li>Extended external-borrower access</li>
+                                <li>Dedicated librarian contact</li>
                             </ul>
-                            <button className="w-full py-3 border border-outline dark:border-zinc-700 text-on-surface-variant dark:text-zinc-300 font-bold rounded-xl hover:bg-surface-container dark:hover:bg-zinc-800 transition-colors">Contact Sales</button>
+                            <button className="mb-home__plan-btn" onClick={() => navigate('/contact')}>Contact the library</button>
                         </div>
                     </div>
                 </section>
             </main>
 
             {/* Footer */}
-            <footer className="bg-surface-container-lowest dark:bg-zinc-950 border-t border-outline-variant dark:border-zinc-850 py-stack-xl transition-colors duration-300">
-                <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop grid md:grid-cols-4 gap-stack-lg mb-stack-xl">
-                    <div className="col-span-1 md:col-span-1">
-                        <div className="flex items-center gap-stack-sm mb-stack-md">
-                            <span className="material-symbols-outlined text-primary dark:text-emerald-400 text-3xl">menu_book</span>
-                            <span className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary dark:text-emerald-400">MaktabaBora</span>
+            <footer className="mb-home__footer">
+                <div className="mb-home__footer-grid">
+                    <div>
+                        <div className="mb-home__logo">
+                            <span className="mb-home__logo-mark">Mb</span>
+                            <span className="mb-home__logo-text">MaktabaBora</span>
                         </div>
-                        <p className="text-body-sm text-on-surface-variant dark:text-zinc-400">Building the world's most intelligent reading ecosystem for lifelong learners.</p>
+                        <p className="mb-home__footer-desc">Digitizing how the university manages its physical library — borrowing, reservations, fines, and reports, all in one place.</p>
                     </div>
                     <div>
-                        <h4 className="font-label-md text-label-md text-on-surface dark:text-zinc-200 font-bold mb-4">Platform</h4>
-                        <ul className="space-y-2 text-body-sm text-on-surface-variant dark:text-zinc-400">
-                            <li><a className="hover:text-primary dark:hover:text-emerald-400 transition-colors cursor-pointer">Digital Library</a></li>
-                            <li><a className="hover:text-primary dark:hover:text-emerald-400 transition-colors cursor-pointer">Bora AI</a></li>
-                            <li><a className="hover:text-primary dark:hover:text-emerald-400 transition-colors cursor-pointer">Mobile App</a></li>
-                            <li><a className="hover:text-primary dark:hover:text-emerald-400 transition-colors cursor-pointer">Collaborative Hub</a></li>
+                        <h4>Library</h4>
+                        <ul>
+                            <li><a onClick={() => navigate('/explore')}>Catalogue</a></li>
+                            <li><a onClick={() => navigate('/chatbot')}>Ask Bora</a></li>
+                            <li><a onClick={() => navigate('/register')}>Membership</a></li>
+                            <li><a onClick={() => navigate('/member')}>My loans &amp; reservations</a></li>
                         </ul>
                     </div>
                     <div>
-                        <h4 className="font-label-md text-label-md text-on-surface dark:text-zinc-200 font-bold mb-4">Resources</h4>
-                        <ul className="space-y-2 text-body-sm text-on-surface-variant dark:text-zinc-400">
-                            <li><a className="hover:text-primary dark:hover:text-emerald-400 transition-colors cursor-pointer">Help Center</a></li>
-                            <li><a className="hover:text-primary dark:hover:text-emerald-400 transition-colors cursor-pointer">Privacy Policy</a></li>
-                            <li><a className="hover:text-primary dark:hover:text-emerald-400 transition-colors cursor-pointer">Terms of Service</a></li>
-                            <li><a className="hover:text-primary dark:hover:text-emerald-400 transition-colors cursor-pointer">Cookie Settings</a></li>
+                        <h4>Support</h4>
+                        <ul>
+                            <li><a>Help centre</a></li>
+                            <li><a>Borrowing &amp; fine policy</a></li>
+                            <li><a>Lost book procedure</a></li>
+                            <li><a>Contact the library</a></li>
                         </ul>
-                    </div>
-                    <div>
-                        <h4 className="font-label-md text-label-md text-on-surface dark:text-zinc-200 font-bold mb-4">Follow Us</h4>
-                        <div className="flex gap-4">
-                            <a className="w-10 h-10 rounded-full bg-surface-container dark:bg-zinc-800 flex items-center justify-center text-on-surface-variant dark:text-zinc-400 hover:bg-primary dark:hover:bg-emerald-600 hover:text-white dark:hover:text-zinc-950 transition-all cursor-pointer">
-                                <span className="material-symbols-outlined text-lg">share</span>
-                            </a>
-                            <a className="w-10 h-10 rounded-full bg-surface-container dark:bg-zinc-800 flex items-center justify-center text-on-surface-variant dark:text-zinc-400 hover:bg-primary dark:hover:bg-emerald-600 hover:text-white dark:hover:text-zinc-950 transition-all cursor-pointer">
-                                <span className="material-symbols-outlined text-lg">public</span>
-                            </a>
-                        </div>
                     </div>
                 </div>
-                <div className="max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop pt-stack-md border-t border-outline-variant dark:border-zinc-850 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p className="text-label-sm text-outline dark:text-zinc-500">© 2026 MaktabaBora. All rights reserved.</p>
-                    <div className="flex gap-stack-lg">
-                        <span className="flex items-center gap-1 text-label-sm text-outline dark:text-zinc-500">
-                            <span className="w-2 h-2 rounded-full bg-primary dark:bg-emerald-500"></span> System Operational
-                        </span>
-                    </div>
+                <div className="mb-home__footer-bottom">
+                    <p>© 2026 MaktabaBora University Library.</p>
+                    <span className="mb-home__status">
+                        <span className="mb-home__status-dot"></span> System operational
+                    </span>
                 </div>
             </footer>
 
-            {/* Bottom Navigation Bar (Mobile only) */}
-            <nav className="md:hidden fixed bottom-0 left-0 w-full bg-surface dark:bg-zinc-900 border-t border-outline-variant dark:border-zinc-800 flex justify-around items-center py-stack-sm px-margin-mobile pb-safe z-50 rounded-t-xl shadow-[0px_-4px_12px_rgba(0,0,0,0.03)]">
-                <Link className="flex flex-col items-center justify-center bg-primary-container dark:bg-emerald-900/50 text-on-primary-container dark:text-emerald-250 rounded-full px-5 py-1 cursor-pointer" to="/">
-                    <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>home</span>
-                    <span className="font-label-sm text-label-sm">Home</span>
+            {/* Mobile bottom nav */}
+            <nav className="mb-home__bottom-nav">
+                <Link className="active" to="/">
+                    <Icon name="home" size={19} />
+                    Home
                 </Link>
-                <Link className="flex flex-col items-center justify-center text-on-surface-variant dark:text-zinc-400 hover:text-primary dark:hover:text-emerald-400 transition-colors cursor-pointer" to="/explore">
-                    <span className="material-symbols-outlined">search</span>
-                    <span className="font-label-sm text-label-sm">Search</span>
+                <Link to="/explore">
+                    <Icon name="search" size={19} />
+                    Search
                 </Link>
-                <Link className="flex flex-col items-center justify-center text-on-surface-variant dark:text-zinc-400 hover:text-primary dark:hover:text-emerald-400 transition-colors cursor-pointer" to="/member">
-                    <span className="material-symbols-outlined">book_5</span>
-                    <span className="font-label-sm text-label-sm">My Books</span>
+                <Link to="/member">
+                    <Icon name="book" size={19} />
+                    My Books
                 </Link>
-                <div onClick={handleProfileClick} className="flex flex-col items-center justify-center text-on-surface-variant dark:text-zinc-400 hover:text-primary dark:hover:text-emerald-400 transition-colors cursor-pointer">
-                    <span className="material-symbols-outlined">person</span>
-                    <span className="font-label-sm text-label-sm">Profile</span>
+                <div onClick={handleProfileClick} className="mb-home__bn-item">
+                    <Icon name="person" size={19} />
+                    Profile
                 </div>
             </nav>
         </div>
