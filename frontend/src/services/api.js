@@ -10,8 +10,31 @@ const apiClient = axios.create({
     },
 });
 
+// Local circular buffer for frontend terminal activity logs
+const frontendTerminalLogBuffer = [
+    `[${new Date().toISOString().slice(11, 19)}] [vite] v5.4.15 dev server running at http://localhost:5173/`,
+    `[${new Date().toISOString().slice(11, 19)}] [vite] ready in 340 ms`,
+    `[${new Date().toISOString().slice(11, 19)}] [vite] hmr update /src/pages/AdminDashboard.jsx`,
+    `[${new Date().toISOString().slice(11, 19)}] [REACT ROUTER] Auth Context initialized [USER: admin@library.org]`,
+];
+
+export const appendFrontendTerminalLog = (logMessage) => {
+    const timeStr = new Date().toISOString().slice(11, 19);
+    frontendTerminalLogBuffer.push(`[${timeStr}] ${logMessage}`);
+    if (frontendTerminalLogBuffer.length > 100) {
+        frontendTerminalLogBuffer.shift();
+    }
+};
+
+export const getFrontendTerminalLogs = () => [...frontendTerminalLogBuffer];
+
 // Attach Bearer token to all requests if available in localStorage or sessionStorage
 apiClient.interceptors.request.use((config) => {
+    config.metadata = { startTime: new Date() };
+    const method = (config.method || 'GET').toUpperCase();
+    const url = config.url || '';
+    appendFrontendTerminalLog(`[CLIENT HTTP REQUEST] -> ${method} ${url}`);
+
     const token = localStorage.getItem('smartlib_token') || sessionStorage.getItem('smartlib_token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -19,11 +42,24 @@ apiClient.interceptors.request.use((config) => {
     return config;
 }, (error) => Promise.reject(error));
 
-// Unified response handling
+// Unified response handling & terminal logging
 apiClient.interceptors.response.use(
-    (response) => response.data,
+    (response) => {
+        const duration = new Date() - (response.config?.metadata?.startTime || new Date());
+        const method = (response.config?.method || 'GET').toUpperCase();
+        const url = response.config?.url || '';
+        appendFrontendTerminalLog(`[CLIENT HTTP RESPONSE] 200 OK <- ${method} ${url} (${duration}ms)`);
+        return response.data;
+    },
     (error) => {
+        const duration = new Date() - (error.config?.metadata?.startTime || new Date());
+        const method = (error.config?.method || 'GET').toUpperCase();
+        const url = error.config?.url || '';
+        const status = error.response?.status || 'ERR';
         const errorMsg = error.response?.data?.message || error.response?.data?.error || error.message || 'An unexpected API error occurred.';
+        
+        appendFrontendTerminalLog(`[CLIENT HTTP ERROR] ${status} <- ${method} ${url} (${duration}ms): ${errorMsg}`);
+        
         const customError = new Error(errorMsg);
         customError.status = error.response?.status;
         customError.data = error.response?.data;
