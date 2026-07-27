@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DigitalPurchase;
+use App\Models\Payment;
 use App\Models\Librarian;
 use App\Models\Loan;
 use App\Models\Member;
@@ -44,9 +44,9 @@ class AdminAnalyticsController extends Controller
             return ['date' => $date, 'count' => max($count, rand(1, 6))];
         });
 
-        // 4. Bought Digital Books Over Time
-        $boughtOverTime = $days->map(function ($date) {
-            $count = DigitalPurchase::whereDate('created_at', $date)->count();
+        // 4. Payments Over Time
+        $paymentsOverTime = $days->map(function ($date) {
+            $count = Payment::whereDate('created_at', $date)->count();
             return ['date' => $date, 'count' => max($count, rand(1, 5))];
         });
 
@@ -56,7 +56,7 @@ class AdminAnalyticsController extends Controller
             'logins_over_time' => $loginsOverTime,
             'loaned_over_time' => $loanedOverTime,
             'reserved_over_time' => $reservedOverTime,
-            'bought_over_time' => $boughtOverTime,
+            'payments_over_time' => $paymentsOverTime,
         ]);
     }
 

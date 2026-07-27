@@ -23,8 +23,6 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
-        'subscription_status',
-        'subscription_id',
     ];
 
     /**
@@ -58,20 +56,5 @@ class User extends Authenticatable
     public function librarian()
     {
         return $this->hasOne(Librarian::class);
-    }
-
-    public function subscriptions()
-    {
-        return $this->hasMany(Subscription::class);
-    }
-
-    public function activeSubscription()
-    {
-        return $this->belongsTo(Subscription::class, 'subscription_id');
-    }
-
-    public function digitalPurchases()
-    {
-        return $this->hasMany(DigitalPurchase::class);
     }
 }

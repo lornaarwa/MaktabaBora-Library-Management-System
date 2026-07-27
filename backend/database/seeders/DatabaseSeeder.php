@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Book;
 use App\Models\BookCopy;
+use App\Models\Category;
 use App\Models\Librarian;
 use App\Models\Loan;
 use App\Models\Member;
@@ -15,7 +16,13 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Admin User
+        // 1. Create default Categories
+        $softwareCat = Category::firstOrCreate(['name' => 'Software'], ['description' => 'Software engineering, design patterns, and programming methodology books']);
+        $techCat = Category::firstOrCreate(['name' => 'Technology'], ['description' => 'General computer technology, database systems, and networking']);
+        $fictionCat = Category::firstOrCreate(['name' => 'Fiction'], ['description' => 'Literature, storytelling, and classic novels']);
+        $scienceCat = Category::firstOrCreate(['name' => 'Science'], ['description' => 'Physics, chemistry, biology, and habit psychology science']);
+
+        // 2. Admin User
         $admin = User::firstOrCreate(
             ['email' => 'admin@library.org'],
             [
@@ -25,7 +32,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // 2. Librarian User
+        // 3. Librarian User
         $librarianUser = User::firstOrCreate(
             ['email' => 'librarian@library.org'],
             [
@@ -43,7 +50,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // 3. Member User
+        // 4. Member User (approved student)
         $memberUser = User::firstOrCreate(
             ['email' => 'member@library.org'],
             [
@@ -58,13 +65,42 @@ class DatabaseSeeder extends Seeder
             [
                 'member_number' => 'MEM-2026',
                 'membership_tier' => 'student',
+                'department' => 'Computer Science',
+                'programme' => 'BSc Computer Science',
+                'interests' => 'Software, Tech, Algorithms',
+                'is_approved' => true,
+                'membership_fee_paid' => true,
                 'borrow_limit' => 5,
                 'is_banned' => false,
-                'is_subscribed' => true,
             ]
         );
 
-        // 4. Sample 5 Books
+        // 5. Unapproved Member User (needs approval & fee payment)
+        $pendingUser = User::firstOrCreate(
+            ['email' => 'pending@library.org'],
+            [
+                'name' => 'Jane Doe',
+                'password' => Hash::make('password123'),
+                'role' => 'member',
+            ]
+        );
+
+        Member::firstOrCreate(
+            ['user_id' => $pendingUser->id],
+            [
+                'member_number' => 'MEM-PENDING',
+                'membership_tier' => 'student',
+                'department' => 'Mechanical Engineering',
+                'programme' => 'BSc Mechanical Engineering',
+                'interests' => 'Science, Physics',
+                'is_approved' => false,
+                'membership_fee_paid' => false,
+                'borrow_limit' => 3,
+                'is_banned' => false,
+            ]
+        );
+
+        // 6. Sample Books Data
         $booksData = [
             [
                 'isbn' => '978-0132350884',
@@ -76,8 +112,7 @@ class DatabaseSeeder extends Seeder
                 'publication_year' => 2008,
                 'total_copies' => 4,
                 'available_copies' => 3,
-                'is_exclusive' => false,
-                'digital_purchase_price' => 50.00,
+                'category_id' => $softwareCat->id,
             ],
             [
                 'isbn' => '978-0201616224',
@@ -89,8 +124,7 @@ class DatabaseSeeder extends Seeder
                 'publication_year' => 1999,
                 'total_copies' => 3,
                 'available_copies' => 2,
-                'is_exclusive' => true,
-                'digital_purchase_price' => 60.00,
+                'category_id' => $softwareCat->id,
             ],
             [
                 'isbn' => '978-1449373320',
@@ -102,8 +136,7 @@ class DatabaseSeeder extends Seeder
                 'publication_year' => 2017,
                 'total_copies' => 5,
                 'available_copies' => 5,
-                'is_exclusive' => true,
-                'digital_purchase_price' => 75.00,
+                'category_id' => $techCat->id,
             ],
             [
                 'isbn' => '978-0743273565',
@@ -115,8 +148,7 @@ class DatabaseSeeder extends Seeder
                 'publication_year' => 1925,
                 'total_copies' => 3,
                 'available_copies' => 3,
-                'is_exclusive' => false,
-                'digital_purchase_price' => 30.00,
+                'category_id' => $fictionCat->id,
             ],
             [
                 'isbn' => '978-0735211292',
@@ -128,8 +160,7 @@ class DatabaseSeeder extends Seeder
                 'publication_year' => 2018,
                 'total_copies' => 4,
                 'available_copies' => 4,
-                'is_exclusive' => false,
-                'digital_purchase_price' => 45.00,
+                'category_id' => $scienceCat->id,
             ],
         ];
 

@@ -68,12 +68,31 @@ class LoanController extends Controller
 
     public function returnBook(Loan $loan): JsonResponse
     {
-        if ($loan->status === 'returned') {
-            return response()->json(['error' => 'Loan is already returned'], 400);
+        if ($loan->status === 'returned' || $loan->status === 'lost_resolved') {
+            return response()->json(['error' => 'Loan is already returned or resolved'], 400);
+        }
+
+        $returnedDate = now();
+        $isOverdue = $returnedDate->gt($loan->due_date);
+        $fineAmount = 0;
+        $fine = null;
+
+        if ($isOverdue) {
+            $overdueDays = max(1, $returnedDate->diffInDays($loan->due_date));
+            $fineAmount = $overdueDays * 50.00; // KES 50 per day
+
+            $fine = \App\Models\Fine::create([
+                'loan_id' => $loan->id,
+                'member_id' => $loan->member_id,
+                'amount' => $fineAmount,
+                'balance' => $fineAmount,
+                'status' => 'unpaid',
+                'reason' => 'overdue',
+            ]);
         }
 
         $loan->update([
-            'returned_date' => now(),
+            'returned_date' => $returnedDate,
             'status' => 'returned',
         ]);
 
@@ -81,6 +100,15 @@ class LoanController extends Controller
         $copy->update(['status' => 'available']);
         $copy->book->increment('available_copies');
 
-        return response()->json(['message' => 'Book returned successfully', 'loan' => $loan]);
+        $msg = 'Book returned successfully.';
+        if ($fineAmount > 0) {
+            $msg .= " Overdue by {$overdueDays} days. A late fine of KES {$fineAmount} has been charged.";
+        }
+
+        return response()->json([
+            'message' => $msg,
+            'loan' => $loan,
+            'fine' => $fine,
+        ]);
     }
 }

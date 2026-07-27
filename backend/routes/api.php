@@ -42,15 +42,8 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
             Route::get('/loans', [LoanController::class, 'index']);
             Route::post('/fines/{fine}/pay-daraja', [FineController::class, 'payWithDaraja']);
 
-            // Perk Subscriptions
-            Route::post('/subscriptions/checkout', [\App\Http\Controllers\SubscriptionController::class, 'checkout']);
-            Route::get('/subscriptions/status', [\App\Http\Controllers\SubscriptionController::class, 'status']);
-
-            // Digital Book Store & Reading
-            Route::get('/digital-books/my-library', [\App\Http\Controllers\DigitalRentalController::class, 'myLibrary']);
-            Route::post('/digital-books/{id}/purchase', [\App\Http\Controllers\DigitalRentalController::class, 'purchase']);
-            Route::get('/digital-books/{id}/read', [\App\Http\Controllers\DigitalRentalController::class, 'read'])
-                ->middleware(['ensure.digital_access']);
+            // Personalized Recommendations
+            Route::get('/recommendations', [CatalogSearchController::class, 'recommendations']);
 
             // Book Hold / Reservations Queue
             Route::post('/reservations', [ReservationController::class, 'store'])
@@ -65,6 +58,7 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
         Route::middleware(['ensure.librarian'])->prefix('librarian')->group(function () {
             Route::get('/metrics', [LibrarianDashboardController::class, 'metrics']);
             Route::get('/members', [LibrarianDashboardController::class, 'members']);
+            Route::post('/members/{member}/approve', [LibrarianDashboardController::class, 'approveMember']);
             Route::post('/members/{member}/borrow-limit', [LibrarianDashboardController::class, 'configureBorrowLimit']);
             Route::post('/books/{book}/toggle-restriction', [LibrarianDashboardController::class, 'toggleBookRestriction']);
 
@@ -75,6 +69,18 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
             Route::post('/loans/checkout', [LoanController::class, 'checkout'])
                 ->middleware(['validate.borrow_limit', 'check.fine']);
             Route::post('/loans/{loan}/return', [LoanController::class, 'returnBook']);
+            Route::post('/loans/{loan}/lost', [LibrarianDashboardController::class, 'markLost']);
+
+            // Payments hub
+            Route::post('/payments', [LibrarianDashboardController::class, 'recordPayment']);
+
+            // Categories Management
+            Route::get('/categories', [LibrarianDashboardController::class, 'getCategories']);
+            Route::post('/categories', [LibrarianDashboardController::class, 'manageCategories']);
+
+            // Analytics & predictions
+            Route::get('/predictions/demand', [LibrarianDashboardController::class, 'getDemandPredictions']);
+            Route::get('/analytics/borrowing', [LibrarianDashboardController::class, 'getBorrowingAnalytics']);
 
             Route::get('/fines', [FineController::class, 'index']);
             Route::post('/fines/{fine}/waive', [FineController::class, 'waive']);

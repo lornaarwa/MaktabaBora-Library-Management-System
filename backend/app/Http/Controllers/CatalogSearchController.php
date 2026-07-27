@@ -24,4 +24,18 @@ class CatalogSearchController extends Controller
 
         return response()->json($results);
     }
+
+    public function recommendations(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $member = $user ? \App\Models\Member::where('user_id', $user->id)->first() : null;
+        if (!$member) {
+            return response()->json(['data' => []]);
+        }
+
+        $recService = app(\App\Contracts\Services\OpenAiRecommendationServiceInterface::class);
+        $recommendations = $recService->getPersonalizedRecommendations($member, 6);
+
+        return response()->json(['data' => $recommendations]);
+    }
 }

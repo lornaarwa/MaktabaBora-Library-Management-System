@@ -13,14 +13,16 @@ import LibrarianDashboard from './pages/LibrarianDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Explore from './pages/Explore';
 
 function AppContent() {
     const [isAiOpen, setIsAiOpen] = useState(false);
     const location = useLocation();
     const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
     const isHomePage = location.pathname === '/';
+    const isExplorePage = location.pathname === '/explore';
     const isMemberDashboard = location.pathname.startsWith('/member');
-    const hideGlobalNav = isAuthPage || isMemberDashboard || isHomePage;
+    const hideGlobalNav = isAuthPage || isMemberDashboard || isHomePage || isExplorePage;
 
     return (
         <div className="min-h-screen flex flex-col justify-between bg-background text-on-background">
@@ -30,6 +32,7 @@ function AppContent() {
                     <main>
                         <Routes>
                             <Route path="/" element={<PublicCatalog />} />
+                            <Route path="/explore" element={<Explore />} />
                             <Route path="/member" element={<MemberDashboard />} />
                             <Route path="/librarian" element={<LibrarianDashboard />} />
                             <Route path="/admin" element={<AdminDashboard />} />
@@ -41,6 +44,7 @@ function AppContent() {
             ) : (
                 <Routes>
                     <Route path="/" element={<PublicCatalog />} />
+                    <Route path="/explore" element={<Explore />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/member/*" element={<MemberDashboard />} />
