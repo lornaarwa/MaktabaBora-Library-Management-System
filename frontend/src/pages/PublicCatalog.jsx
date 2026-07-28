@@ -68,26 +68,26 @@ export default function PublicCatalog() {
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             
-            {/* Hero Banner (Monochrome Shadcn) */}
-            <div className="relative rounded-2xl bg-zinc-900 border border-zinc-800 p-6 sm:p-10 overflow-hidden shadow-sm">
+            {/* Hero Banner (Warm Paper Theme) */}
+            <div className="relative rounded-2xl border border-bark-100 bg-cream-light/60 p-6 sm:p-10 overflow-hidden shadow-card">
                 <div className="max-w-2xl space-y-3 relative z-10">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[10px] font-mono font-bold bg-zinc-800 text-zinc-300 border border-zinc-700 uppercase tracking-wider">
-                        <Layers className="w-3 h-3 text-zinc-400" /> Catalog & E-Book Store
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[10px] font-mono font-bold bg-bark-700 text-cream-light uppercase tracking-wider">
+                        <Layers className="w-3.5 h-3.5" /> Catalog & Digital Library
                     </div>
-                    <h1 className="text-2xl sm:text-4xl font-extrabold text-zinc-100 tracking-tight">
-                        Library Books & Instant Digital Access
+                    <h1 className="text-2xl sm:text-4xl font-extrabold text-bark-900 tracking-tight">
+                        Discover Books & Read Digital Editions
                     </h1>
-                    <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed">
-                        Search across genres, borrow physical copies, or unlock lifetime e-book access. Members enjoy 20% discount on digital titles!
+                    <p className="text-bark-700 text-xs sm:text-sm leading-relaxed">
+                        Search titles across genres, reserve physical copies, or stream e-books online. Pro members enjoy 20% off every digital title!
                     </p>
 
                     {!user?.member?.is_subscribed && (
                         <div className="pt-2">
                             <button
                                 onClick={() => setSubModalOpen(true)}
-                                className="py-2 px-4 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                                className="py-2.5 px-4 rounded-lg bg-bark-700 hover:bg-bark-900 text-cream-light font-bold text-xs flex items-center gap-1.5 shadow-sm transition"
                             >
-                                <Sparkles className="w-3.5 h-3.5" /> Join Pro Perks (20% Off E-Books)
+                                <Sparkles className="w-4 h-4 text-olive" /> Join Pro Perks (20% Off E-Books)
                             </button>
                         </div>
                     )}
@@ -95,28 +95,28 @@ export default function PublicCatalog() {
             </div>
 
             {/* Search & Genre Filter Bar */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="bg-paper border border-bark-100 rounded-xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-card">
                 <div className="relative w-full sm:w-80">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-bark-300" />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search title, author, or ISBN..."
-                        className="w-full pl-9 pr-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-700"
+                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-bark-100 bg-paper text-xs text-bark-900 placeholder:text-bark-300 focus:outline-none focus:border-bark-500"
                     />
                 </div>
 
                 <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-                    <Filter className="w-3.5 h-3.5 text-zinc-500 mr-1" />
+                    <Filter className="w-3.5 h-3.5 text-bark-500 mr-1" />
                     {['All', 'Software', 'Fiction', 'Science', 'History', 'Tech'].map((genre) => (
                         <button
                             key={genre}
                             onClick={() => setSelectedGenre(genre)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border ${
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition border ${
                                 selectedGenre === genre
-                                    ? 'bg-zinc-100 text-zinc-950 border-zinc-100 font-bold'
-                                    : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:border-zinc-700'
+                                    ? 'bg-bark-700 text-cream-light border-bark-900 font-bold'
+                                    : 'bg-paper text-bark-700 border-bark-100 hover:bg-cream'
                             }`}
                         >
                             {genre}
@@ -127,20 +127,20 @@ export default function PublicCatalog() {
 
             {/* Results Grid */}
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 text-zinc-400 space-y-3">
-                    <Loader2 className="w-7 h-7 animate-spin text-zinc-400" />
-                    <p className="text-xs font-mono">Loading catalog...</p>
+                <div className="flex flex-col items-center justify-center py-20 text-bark-500 space-y-3">
+                    <Loader2 className="w-7 h-7 animate-spin text-bark-700" />
+                    <p className="text-xs font-mono">Searching catalog...</p>
                 </div>
             ) : error ? (
-                <div className="p-4 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 flex items-center gap-2.5 text-xs">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0 text-zinc-400" />
+                <div className="p-4 rounded-xl bg-paper border border-[#a8452f]/30 text-[#8c3620] flex items-center gap-2.5 text-xs">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
                     <span>{error}</span>
                 </div>
             ) : books.length === 0 ? (
-                <div className="text-center py-20 space-y-2 bg-zinc-900/40 rounded-2xl border border-zinc-800">
-                    <BookOpen className="w-10 h-10 text-zinc-600 mx-auto" />
-                    <h3 className="text-base font-bold text-zinc-300">No books found</h3>
-                    <p className="text-xs text-zinc-500">Try adjusting your search query or genre filter.</p>
+                <div className="text-center py-20 space-y-2 bg-cream-light/30 rounded-2xl border border-bark-100">
+                    <BookOpen className="w-10 h-10 text-bark-300 mx-auto" />
+                    <h3 className="text-base font-bold text-bark-900">No books found</h3>
+                    <p className="text-xs text-bark-500">Try adjusting your search query or genre filter.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
@@ -148,9 +148,9 @@ export default function PublicCatalog() {
                         <BookCard
                             key={book.id}
                             book={book}
-                            onReserve={handleReserve}
-                            onBuyDigital={(b) => setDarajaModal({ isOpen: true, type: 'digital', item: b })}
                             onReadDigital={handleReadDigital}
+                            onBuyDigital={(b) => setDarajaModal({ isOpen: true, type: 'digital', item: b })}
+                            onReserve={handleReserve}
                         />
                     ))}
                 </div>
