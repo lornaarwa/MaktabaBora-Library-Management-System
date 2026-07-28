@@ -151,28 +151,31 @@ class DatabaseSeeder extends Seeder
                 $bData
             );
 
-            // Create book copies if none exist
-            if ($book->copies()->count() === 0) {
-                for ($i = 1; $i <= $book->total_copies; $i++) {
-                    $copy = BookCopy::create([
+            // Seed generic book copy barcodes
+            for ($i = 1; $i <= $book->total_copies; $i++) {
+                $cleanIsbn = str_replace('-', '', $book->isbn);
+                $barcode = 'BC-' . $cleanIsbn . '-' . str_pad((string)$i, 3, '0', STR_PAD_LEFT);
+
+                $copy = BookCopy::firstOrCreate(
+                    ['barcode' => $barcode],
+                    [
                         'book_id' => $book->id,
-                        'barcode' => 'BC-' . str_replace('-', '', $book->isbn) . '-' . str_pad((string)$i, 3, '0', STR_PAD_LEFT),
                         'condition' => 'good',
                         'status' => ($i === 1 && $book->id === 1) ? 'checked_out' : 'available',
-                        'location_rack' => 'Rack-' . rand(1, 10),
-                    ]);
+                        'location_rack' => 'Rack-' . (($book->id + $i) % 10 + 1),
+                    ]
+                );
 
-                    if ($i === 1 && $book->id === 1) {
-                        Loan::firstOrCreate(
-                            ['book_copy_id' => $copy->id, 'member_id' => $member->id],
-                            [
-                                'loan_date' => now()->subDays(10),
-                                'due_date' => now()->addDays(4),
-                                'status' => 'active',
-                                'renewal_count' => 0,
-                            ]
-                        );
-                    }
+                if ($i === 1 && $book->id === 1) {
+                    Loan::firstOrCreate(
+                        ['book_copy_id' => $copy->id, 'member_id' => $member->id],
+                        [
+                            'loan_date' => now()->subDays(10),
+                            'due_date' => now()->addDays(4),
+                            'status' => 'active',
+                            'renewal_count' => 0,
+                        ]
+                    );
                 }
             }
         }
