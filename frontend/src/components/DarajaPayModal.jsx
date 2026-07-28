@@ -1,60 +1,64 @@
 import React, { useState } from 'react';
-import { X, Smartphone, ShieldCheck, AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import { XIcon, SmartphoneIcon, CheckCircle2Icon, LoaderIcon, TriangleAlertIcon, SparklesIcon } from 'lucide-react';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { Modal } from './ui/Modal';
 
-export default function DarajaPayModal({ isOpen, onClose, type = 'fine', item = null }) {
+export default function DarajaPayModal({ isOpen, open, onClose, type = 'fine', item = null }) {
     const { user } = useAuth();
-    const [phoneNumber, setPhoneNumber] = useState('254712345678');
+    const [phoneNumber, setPhoneNumber] = useState('0712 345 678');
     const [loading, setLoading] = useState(false);
-    const [successMsg, setSuccessMsg] = useState(null);
+    const [stage, setStage] = useState('form'); // 'form' | 'pushing' | 'success' | 'failed'
     const [errorMsg, setErrorMsg] = useState(null);
 
-    if (!isOpen) return null;
+    const isOpenState = open !== undefined ? open : isOpen;
+    if (!isOpenState) return null;
 
     const isSubscribed = user?.member?.is_subscribed;
     const isDigital = type === 'digital';
     const isFine = type === 'fine';
 
-    let title = 'M-Pesa Express Checkout';
+    let title = 'Pay with M-Pesa';
+    let subtitle = 'Safaricom Daraja · STK Push';
     let amount = 0;
     let description = '';
 
     if (isFine && item) {
-        title = `Pay Fine #${item.id}`;
+        title = `Fine Settlement #${item.id}`;
         amount = item.balance || item.amount;
         description = `Settling overdue fine for loan copy #${item.loan_id}`;
     } else if (isDigital && item) {
-        title = `Buy Digital Book: ${item.title}`;
+        title = `E-Book Purchase: ${item.title}`;
         const stdPrice = item.digital_purchase_price || 50.0;
         amount = isSubscribed ? Math.round(stdPrice * 0.8 * 100) / 100 : stdPrice;
-        description = isSubscribed ? '20% Pro Subscriber Discount Applied' : 'Standard One-Time Digital Purchase';
+        description = isSubscribed ? '20% Pro Subscriber Discount Applied' : 'Standard Digital Purchase';
     } else {
-        title = 'Library Payment';
         amount = item?.amount || 500.0;
-        description = 'Library transaction';
+        description = 'Library Account Settlement';
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+        setStage('pushing');
         setErrorMsg(null);
-        setSuccessMsg(null);
 
         try {
             if (isFine) {
                 await api.payFineDaraja(item.id, { phone_number: phoneNumber });
-                setSuccessMsg(`STK Push dispatched to ${phoneNumber}. Enter M-Pesa PIN to settle KES ${amount.toFixed(2)}.`);
             } else if (isDigital) {
                 await api.purchaseDigitalBook(item.id, { phone_number: phoneNumber });
-                setSuccessMsg(`M-Pesa STK Push dispatched. Lifetime access for "${item.title}" unlocked.`);
             }
-
+            
             setTimeout(() => {
-                onClose();
-                setSuccessMsg(null);
-            }, 3000);
+                setStage('success');
+                setTimeout(() => {
+                    onClose();
+                    setStage('form');
+                }, 2800);
+            }, 1200);
         } catch (err) {
+            setStage('failed');
             setErrorMsg(err.message || 'Payment initiation failed.');
         } finally {
             setLoading(false);
@@ -62,83 +66,100 @@ export default function DarajaPayModal({ isOpen, onClose, type = 'fine', item = 
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-md animate-in fade-in duration-200">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-                
-                {/* Header */}
-                <div className="p-5 border-b border-zinc-800 flex items-center justify-between bg-zinc-950/40">
-                    <div className="flex items-center gap-2.5">
-                        <div className="p-2 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300">
-                            <Smartphone className="w-4 h-4" />
-                        </div>
-                        <div>
-                            <h2 className="text-sm font-bold text-zinc-100 leading-tight">{title}</h2>
-                            <p className="text-xs text-zinc-400 font-mono font-bold mt-0.5">KES {amount.toFixed(2)}</p>
-                        </div>
-                    </div>
-                    <button onClick={onClose} className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800">
-                        <X className="w-4 h-4" />
-                    </button>
+        <Modal
+            open={isOpenState}
+            onClose={stage === 'pushing' ? () => undefined : onClose}
+            title={title}
+            subtitle={subtitle}
+            size="sm"
+        >
+            <div className="rounded-xl border border-bark-100 bg-cream-light/50 p-4">
+                <div className="flex items-baseline justify-between">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-bark-500">Amount due</span>
+                    <span className="font-mono text-2xl font-bold text-bark-900">KES {amount.toFixed(2)}</span>
                 </div>
+                <dl className="mt-3 space-y-1.5 border-t border-bark-100 pt-3 text-xs">
+                    <div className="flex justify-between gap-3">
+                        <dt className="text-bark-500">Purpose</dt>
+                        <dd className="font-medium text-bark-900">{description}</dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                        <dt className="text-bark-500">Paybill</dt>
+                        <dd className="font-mono text-bark-900">174379</dd>
+                    </div>
+                </dl>
+            </div>
 
-                {/* Body */}
-                <div className="p-5 space-y-4">
-                    <p className="text-xs text-zinc-400">{description}</p>
+            {isDigital && isSubscribed && (
+                <div className="mt-3 flex items-center gap-2 rounded-lg border border-tan-dark/30 bg-cream/40 p-2.5 text-xs text-bark-700">
+                    <SparklesIcon className="h-4 w-4 shrink-0 text-tan-dark" />
+                    <span>20% Pro Discount Applied automatically</span>
+                </div>
+            )}
 
-                    {isDigital && isSubscribed && (
-                        <div className="p-2.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 text-xs flex items-center gap-2 font-mono">
-                            <Sparkles className="w-3.5 h-3.5 flex-shrink-0 text-zinc-400" />
-                            <span>Pro Member: Saved 20% on this title</span>
-                        </div>
-                    )}
-
-                    <form onSubmit={handleSubmit} className="space-y-3">
-                        <div>
-                            <label className="block text-xs font-semibold text-zinc-300 mb-1">
-                                Safaricom M-Pesa Phone Number
-                            </label>
+            {stage === 'form' && (
+                <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+                    <div>
+                        <label htmlFor="mpesa-phone" className="mb-1.5 block text-sm font-semibold text-bark-900">
+                            M-Pesa phone number
+                        </label>
+                        <div className="flex items-center gap-2 rounded-lg border border-bark-100 bg-paper px-3 focus-within:border-bark-500">
+                            <SmartphoneIcon className="h-4 w-4 text-bark-300" />
+                            <span className="font-mono text-sm text-bark-500">+254</span>
                             <input
-                                type="text"
+                                id="mpesa-phone"
                                 value={phoneNumber}
                                 onChange={(e) => setPhoneNumber(e.target.value)}
-                                placeholder="254712345678"
+                                inputMode="tel"
+                                className="w-full bg-transparent py-2.5 font-mono text-sm text-bark-900 outline-none placeholder:text-bark-300"
+                                placeholder="0712 345 678"
                                 required
-                                className="w-full px-3 py-2 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 focus:outline-none focus:border-zinc-700 font-mono"
                             />
                         </div>
+                        <p className="mt-1.5 text-xs text-bark-500">An STK prompt will be sent to your phone.</p>
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={loading || !phoneNumber.trim()}
+                        className="w-full rounded-lg bg-bark-700 px-4 py-2.5 text-sm font-bold text-cream-light transition hover:bg-bark-900 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                        Send STK push
+                    </button>
+                </form>
+            )}
 
-                        {errorMsg && (
-                            <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 text-xs flex items-center gap-2">
-                                <AlertCircle className="w-4 h-4 flex-shrink-0 text-zinc-400" />
-                                <span>{errorMsg}</span>
-                            </div>
-                        )}
-
-                        {successMsg && (
-                            <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 text-xs flex items-center gap-2">
-                                <ShieldCheck className="w-4 h-4 flex-shrink-0 text-zinc-400" />
-                                <span>{successMsg}</span>
-                            </div>
-                        )}
-
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full py-2.5 px-4 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
-                        >
-                            {loading ? (
-                                <>
-                                    <Loader2 className="w-4 h-4 animate-spin text-zinc-950" /> Triggering M-Pesa STK Push...
-                                </>
-                            ) : (
-                                <>
-                                    <Smartphone className="w-4 h-4" /> Pay KES {amount.toFixed(2)} via M-Pesa
-                                </>
-                            )}
-                        </button>
-                    </form>
+            {stage === 'pushing' && (
+                <div className="mt-5 rounded-xl border border-bark-100 bg-paper p-5 text-center">
+                    <LoaderIcon className="mx-auto h-6 w-6 animate-spin text-bark-500" />
+                    <p className="mt-3 text-sm font-semibold text-bark-900">Sending STK Push to phone...</p>
+                    <p className="mt-1 font-mono text-xs text-bark-500">Enter M-Pesa PIN on your phone</p>
                 </div>
-            </div>
-        </div>
+            )}
+
+            {stage === 'success' && (
+                <div className="mt-5 rounded-xl border border-olive-dark/40 bg-olive/25 p-5 text-center">
+                    <CheckCircle2Icon className="mx-auto h-7 w-7 text-olive-dark" />
+                    <p className="mt-2 text-sm font-bold text-bark-900">Payment confirmed</p>
+                    <p className="mt-1 text-xs text-bark-700">
+                        KES {amount.toFixed(2)} received · Transaction confirmed
+                    </p>
+                </div>
+            )}
+
+            {stage === 'failed' && (
+                <div className="mt-5 rounded-xl border border-[#a8452f]/30 bg-[#a8452f]/10 p-5 text-center">
+                    <TriangleAlertIcon className="mx-auto h-6 w-6 text-[#8c3620]" />
+                    <p className="mt-2 text-sm font-bold text-bark-900">Transaction Failed</p>
+                    {errorMsg && <p className="mt-1 text-xs text-bark-700">{errorMsg}</p>}
+                    <button
+                        type="button"
+                        onClick={() => setStage('form')}
+                        className="mt-4 w-full rounded-lg border border-bark-100 px-4 py-2.5 text-sm font-bold text-bark-900 transition hover:bg-cream"
+                    >
+                        Try again
+                    </button>
+                </div>
+            )}
+        </Modal>
     );
 }
