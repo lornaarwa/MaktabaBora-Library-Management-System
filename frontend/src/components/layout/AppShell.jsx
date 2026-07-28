@@ -25,9 +25,9 @@ export function AppShell({ children, onOpenAiChat }) {
   const navigation = [
     { name: 'Catalog', href: '/', icon: BookOpenIcon, allow: ['member', 'librarian', 'admin'] },
     { name: 'My Library', href: '/member', icon: LibraryIcon, allow: ['member'] },
-    { name: 'Circulation Desk', href: '/librarian', icon: QrCodeIcon, allow: ['librarian', 'admin'] },
+    { name: 'Librarian Dashboard', href: '/librarian', icon: QrCodeIcon, allow: ['librarian', 'admin'] },
     { name: 'Inventory Catalog', href: '/librarian?tab=inventory', icon: LayersIcon, allow: ['librarian', 'admin'] },
-    { name: 'Admin Console', href: '/admin', icon: ShieldCheckIcon, allow: ['admin'] },
+    { name: 'Admin Dashboard', href: '/admin', icon: ShieldCheckIcon, allow: ['admin'] },
   ];
 
   const allowedNav = navigation.filter((item) => item.allow.includes(activeRole));
