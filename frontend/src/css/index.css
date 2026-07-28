@@ -1,25 +1,60 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+/* @import url() FONT IMPORTS MUST ALWAYS BE AT THE VERY TOP OF THIS FILE, ABOVE THE TAILWIND IMPORTS */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
 @import 'design-system.css';
-@import 'tailwindcss';
 
-@source '../**/*.js';
-@source '../**/*.jsx';
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
 
-/* Custom Shadcn Scrollbar (retained for layout components where needed) */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+:root {
+  /* Palette tokens sampled from the brand swatch */
+  --mb-bark: #64493a;
+  --mb-tan: #c9a57c;
+  --mb-olive: #c7cc80;
+  --mb-cream: #dec8b0;
+  --mb-sage: #a9b79e;
+  --mb-paper: #fbf7f1;
+  --mb-ink: #3a2b22;
 }
 
-::-webkit-scrollbar-track {
-    background: transparent;
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
 }
 
-::-webkit-scrollbar-thumb {
-    background: var(--light-gray);
-    border-radius: 9999px;
+body {
+  background-color: var(--mb-paper);
+  color: var(--mb-ink);
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: var(--medium-gray);
+::selection {
+  background-color: var(--mb-olive);
+  color: var(--mb-bark);
+}
+
+.mb-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.mb-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mb-scroll::-webkit-scrollbar-thumb {
+  background: rgba(100, 73, 58, 0.25);
+  border-radius: 999px;
+}
+
+.mb-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 73, 58, 0.45);
+}
+
+.mb-grain {
+  background-image: radial-gradient(rgba(100, 73, 58, 0.07) 1px, transparent 1px);
+  background-size: 18px 18px;
 }
