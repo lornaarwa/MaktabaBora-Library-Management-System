@@ -3,6 +3,37 @@
 @import 'design-system.css';
 
 @import 'tailwindcss';
+@config '../tailwind.config.js';
+
+@theme {
+  --color-bark-50: #f6f1ec;
+  --color-bark-100: #e7dcd2;
+  --color-bark-300: #b99b86;
+  --color-bark-500: #8a6853;
+  --color-bark-700: #64493a;
+  --color-bark-900: #3a2b22;
+  --color-bark: #64493a;
+
+  --color-tan: #c9a57c;
+  --color-tan-light: #dcbf9d;
+  --color-tan-dark: #ad8659;
+
+  --color-olive: #c7cc80;
+  --color-olive-light: #dbdfa8;
+  --color-olive-dark: #9ba455;
+
+  --color-cream: #dec8b0;
+  --color-cream-light: #efe2d3;
+
+  --color-sage: #a9b79e;
+  --color-sage-dark: #7f9072;
+
+  --color-paper: #fbf7f1;
+  --color-ink: #3a2b22;
+
+  --shadow-card: 0 1px 2px rgba(58, 43, 34, 0.06), 0 8px 24px -12px rgba(58, 43, 34, 0.18);
+  --shadow-lift: 0 12px 32px -10px rgba(58, 43, 34, 0.28);
+}
 
 :root {
   /* Palette tokens sampled from the brand swatch */
@@ -23,8 +54,8 @@ body,
 }
 
 body {
-  background-color: var(--mb-paper);
-  color: var(--mb-ink);
+  background-color: var(--mb-paper) !important;
+  color: var(--mb-ink) !important;
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
