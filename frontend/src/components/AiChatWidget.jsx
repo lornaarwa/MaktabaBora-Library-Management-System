@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bot, Send, X, User, Loader2, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
+import { Button } from './ui/Button';
 
 export default function AiChatWidget({ isOpen, onClose }) {
     const [messages, setMessages] = useState([
@@ -59,25 +60,25 @@ export default function AiChatWidget({ isOpen, onClose }) {
     };
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[480px] animate-in slide-in-from-bottom duration-300">
+        <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[480px] animate-in slideUp" style={{ border: '1px solid var(--lightest-gray)' }}>
             {/* Header */}
-            <div className="p-3.5 bg-zinc-950 border-b border-zinc-800 flex items-center justify-between">
+            <div className="p-3.5 flex items-center justify-between" style={{ backgroundColor: 'var(--lightest-gray)', borderBottom: '1px solid var(--lighter-gray)' }}>
                 <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300">
-                        <Bot className="w-4 h-4" />
+                    <div className="p-1.5 rounded-lg text-white shadow-sm" style={{ backgroundColor: 'var(--primary)' }}>
+                        <Bot size={16} color="white" />
                     </div>
                     <div>
-                        <h3 className="text-xs font-bold text-zinc-100">AI Assistant</h3>
-                        <p className="text-[10px] text-zinc-500 font-mono">OpenAI Library Assistant</p>
+                        <h3 className="body-small font-bold" style={{ color: 'var(--black)', margin: 0 }}>AI Assistant</h3>
+                        <p className="caption" style={{ margin: 0 }}>OpenAI Library Assistant</p>
                     </div>
                 </div>
-                <button onClick={onClose} className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800">
-                    <X className="w-4 h-4" />
+                <button onClick={onClose} className="p-1 rounded-lg" style={{ color: 'var(--dark-gray)' }} title="Close">
+                    <X size={16} />
                 </button>
             </div>
 
             {/* Messages Body */}
-            <div className="flex-1 p-3.5 overflow-y-auto space-y-3 bg-zinc-950/60">
+            <div className="flex-1 p-3.5 overflow-y-auto space-y-3" style={{ backgroundColor: '#F8FAFC' }}>
                 {messages.map((msg) => (
                     <div
                         key={msg.id}
@@ -86,25 +87,29 @@ export default function AiChatWidget({ isOpen, onClose }) {
                         }`}
                     >
                         <div
-                            className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-mono font-bold flex-shrink-0 ${
-                                msg.sender === 'user'
-                                    ? 'bg-zinc-100 text-zinc-950'
-                                    : 'bg-zinc-800 text-zinc-300 border border-zinc-700'
-                            }`}
+                            className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-mono font-bold flex-shrink-0 shadow-sm"
+                            style={{ 
+                                backgroundColor: msg.sender === 'user' ? 'var(--primary)' : 'var(--white)',
+                                color: msg.sender === 'user' ? 'var(--white)' : 'var(--primary-dark)',
+                                border: msg.sender === 'user' ? 'none' : '1px solid var(--lighter-gray)'
+                            }}
                         >
-                            {msg.sender === 'user' ? <User className="w-3 h-3 text-zinc-950" /> : <Bot className="w-3 h-3 text-zinc-300" />}
+                            {msg.sender === 'user' ? <User size={12} color="white" /> : <Bot size={12} />}
                         </div>
 
                         <div
-                            className={`p-2.5 rounded-xl text-xs leading-relaxed ${
-                                msg.sender === 'user'
-                                    ? 'bg-zinc-100 text-zinc-950 rounded-tr-none font-medium'
-                                    : 'bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-tl-none'
+                            className={`p-2.5 rounded-xl text-sm leading-relaxed shadow-sm ${
+                                msg.sender === 'user' ? 'rounded-tr-none' : 'rounded-tl-none'
                             }`}
+                            style={{ 
+                                backgroundColor: msg.sender === 'user' ? 'var(--primary)' : 'var(--white)',
+                                color: msg.sender === 'user' ? 'var(--white)' : 'var(--dark-gray)',
+                                border: msg.sender === 'user' ? 'none' : '1px solid var(--lighter-gray)'
+                            }}
                         >
-                            <p className="whitespace-pre-line">{msg.text}</p>
+                            <p className="whitespace-pre-line" style={{ margin: 0 }}>{msg.text}</p>
                             {msg.tokens > 0 && (
-                                <span className="text-[9px] text-zinc-500 block mt-1 font-mono">
+                                <span className="caption block mt-1" style={{ color: msg.sender === 'user' ? 'var(--primary-lightest)' : 'var(--medium-gray)', textTransform: 'none' }}>
                                     Used: {msg.tokens} tokens
                                 </span>
                             )}
@@ -113,14 +118,14 @@ export default function AiChatWidget({ isOpen, onClose }) {
                 ))}
 
                 {loading && (
-                    <div className="flex items-center gap-2 text-xs text-zinc-400 bg-zinc-900 border border-zinc-800 p-2 rounded-lg w-fit font-mono">
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-400" /> Processing...
+                    <div className="flex items-center gap-2 text-xs p-2 rounded-lg w-fit font-mono shadow-sm" style={{ backgroundColor: 'var(--white)', color: 'var(--medium-gray)', border: '1px solid var(--lighter-gray)' }}>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing...
                     </div>
                 )}
 
                 {quotaError && (
-                    <div className="p-2.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 flex-shrink-0 text-zinc-400" />
+                    <div className="p-2.5 rounded-lg text-xs flex items-center gap-2 shadow-sm" style={{ backgroundColor: '#FEE2E2', color: '#991B1B', border: '1px solid #F87171' }}>
+                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
                         <span>{quotaError}</span>
                     </div>
                 )}
@@ -129,21 +134,28 @@ export default function AiChatWidget({ isOpen, onClose }) {
             </div>
 
             {/* Input Form */}
-            <form onSubmit={handleSend} className="p-2.5 border-t border-zinc-800 bg-zinc-900 flex items-center gap-2">
+            <form onSubmit={handleSend} className="p-2.5 flex items-center gap-2" style={{ backgroundColor: 'var(--white)', borderTop: '1px solid var(--lighter-gray)' }}>
                 <input
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder="Ask AI librarian..."
-                    className="flex-1 px-3 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-700"
+                    className="flex-1 px-3 py-2 rounded-lg focus:outline-none"
+                    style={{ 
+                        backgroundColor: 'var(--lightest-gray)', 
+                        border: '1px solid var(--lighter-gray)', 
+                        color: 'var(--black)',
+                        fontSize: '14px'
+                    }}
                 />
-                <button
+                <Button
                     type="submit"
+                    variant="primary"
                     disabled={loading || !input.trim()}
-                    className="p-2 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 disabled:opacity-40 transition-all shadow-sm"
+                    style={{ padding: '8px', minWidth: '40px', borderRadius: '8px' }}
                 >
-                    <Send className="w-3.5 h-3.5 text-zinc-950" />
-                </button>
+                    <Send size={16} />
+                </Button>
             </form>
         </div>
     );

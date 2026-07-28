@@ -1,6 +1,9 @@
 import React from 'react';
 import { Book, Bookmark, CheckCircle2, XCircle, ShieldAlert, ShoppingBag, BookOpen } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { Card, CardContent } from './ui/Card';
+import { Badge } from './ui/Badge';
+import { Button } from './ui/Button';
 
 export default function BookCard({ book, onReserve, onBuyDigital, onReadDigital }) {
     const { user } = useAuth();
@@ -11,118 +14,117 @@ export default function BookCard({ book, onReserve, onBuyDigital, onReadDigital 
     const finalPrice = isSubscribed ? Math.round((stdPrice * 0.8) * 100) / 100 : stdPrice;
 
     return (
-        <div className="group bg-zinc-900 rounded-xl border border-zinc-800 hover:border-zinc-700 p-4 flex flex-col justify-between transition-all duration-200 shadow-sm relative">
+        <Card hover className="flex flex-col justify-between h-full relative" style={{ padding: '16px' }}>
             
             {/* Exclusive Subscriber Badge */}
             {book.is_exclusive && (
                 <div className="absolute top-3 left-3 z-10">
-                    <span className="px-2.5 py-0.5 rounded-md text-[9px] font-mono font-bold bg-zinc-100 text-zinc-950 shadow-sm uppercase tracking-wider">
+                    <Badge variant="primary" className="shadow-sm">
                         PRO EXCLUSIVE
-                    </span>
+                    </Badge>
                 </div>
             )}
 
             <div>
                 {/* Cover Banner */}
-                <div className="relative aspect-[3/4] w-full rounded-lg bg-zinc-950 overflow-hidden flex flex-col items-center justify-center p-3 border border-zinc-800/80 mb-3 group-hover:border-zinc-700 transition-colors">
+                <div className="relative aspect-[3/4] w-full rounded-lg bg-zinc-100 overflow-hidden flex flex-col items-center justify-center border mb-3 transition-colors" style={{ borderColor: 'var(--lightest-gray)' }}>
                     {book.cover_image_path ? (
                         <img src={book.cover_image_path} alt={book.title} className="w-full h-full object-cover rounded-md" />
                     ) : (
                         <div className="text-center p-3">
-                            <Book className="w-10 h-10 text-zinc-600 mx-auto mb-2" />
-                            <span className="text-xs font-semibold text-zinc-300 block line-clamp-2">{book.title}</span>
-                            <span className="text-[10px] text-zinc-500 block mt-1">{book.author}</span>
+                            <Book size={40} style={{ color: 'var(--medium-gray)', margin: '0 auto 8px auto' }} />
+                            <span className="body-small font-semibold block line-clamp-2" style={{ color: 'var(--black)' }}>{book.title}</span>
+                            <span className="caption block mt-1">{book.author}</span>
                         </div>
                     )}
 
                     {/* Stock Status Badge */}
                     <div className="absolute top-2 right-2">
                         {book.is_blocked ? (
-                            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-zinc-800 text-zinc-400 border border-zinc-700 flex items-center gap-1">
-                                <ShieldAlert className="w-3 h-3" /> RESTRICTED
-                            </span>
+                            <Badge variant="error" className="flex items-center gap-1 shadow-sm">
+                                <ShieldAlert size={12} /> RESTRICTED
+                            </Badge>
                         ) : isAvailable ? (
-                            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-zinc-100 text-zinc-950 flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3 text-zinc-950" /> COPIES ({book.available_copies})
-                            </span>
+                            <Badge variant="success" className="flex items-center gap-1 shadow-sm">
+                                <CheckCircle2 size={12} /> COPIES ({book.available_copies})
+                            </Badge>
                         ) : (
-                            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-zinc-800 text-zinc-300 border border-zinc-700 flex items-center gap-1">
-                                <XCircle className="w-3 h-3" /> ON LOAN
-                            </span>
+                            <Badge variant="warning" className="flex items-center gap-1 shadow-sm">
+                                <XCircle size={12} /> ON LOAN
+                            </Badge>
                         )}
                     </div>
                 </div>
 
                 {/* Info */}
-                <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[10px] font-mono text-zinc-400 uppercase">
-                        <span>{book.genre}</span>
-                        <span className="text-zinc-500">ISBN: {book.isbn}</span>
+                <CardContent className="space-y-1 p-0">
+                    <div className="flex items-center justify-between caption">
+                        <span style={{ color: 'var(--primary)' }}>{book.genre}</span>
+                        <span>ISBN: {book.isbn}</span>
                     </div>
 
-                    <h3 className="font-bold text-zinc-100 text-sm line-clamp-1">
+                    <h3 className="heading-3 line-clamp-1" style={{ fontSize: '16px', lineHeight: '24px', margin: '4px 0' }}>
                         {book.title}
                     </h3>
-                    <p className="text-xs text-zinc-400">By {book.author}</p>
+                    <p className="body-small">By {book.author}</p>
                     
                     {/* Digital Purchase Pricing */}
-                    <div className="mt-2.5 p-2 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-between">
+                    <div className="mt-3 p-2 rounded-lg flex items-center justify-between" style={{ backgroundColor: 'var(--lightest-gray)', border: '1px solid var(--lighter-gray)' }}>
                         <div>
-                            <span className="text-[9px] text-zinc-500 block font-mono uppercase">Digital E-Book</span>
+                            <span className="overline block">Digital E-Book</span>
                             <div className="flex items-baseline gap-1">
-                                <span className="text-xs font-bold text-zinc-100">KES {finalPrice.toFixed(2)}</span>
+                                <span className="body-small font-bold" style={{ color: 'var(--black)' }}>KES {finalPrice.toFixed(2)}</span>
                                 {isSubscribed && (
-                                    <span className="text-[9px] text-zinc-500 line-through">KES {stdPrice.toFixed(2)}</span>
+                                    <span className="caption line-through" style={{ textTransform: 'none' }}>KES {stdPrice.toFixed(2)}</span>
                                 )}
                             </div>
                         </div>
                         {isSubscribed ? (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-zinc-800 text-zinc-200 border border-zinc-700">
+                            <Badge variant="primary" style={{ padding: '2px 6px', fontSize: '10px' }}>
                                 20% PRO OFF
-                            </span>
+                            </Badge>
                         ) : (
-                            <span className="text-[9px] text-zinc-500 font-mono">20% off with Pro</span>
+                            <span className="caption" style={{ textTransform: 'none' }}>20% off with Pro</span>
                         )}
                     </div>
-                </div>
+                </CardContent>
             </div>
 
             {/* Actions */}
-            <div className="mt-3 pt-2.5 border-t border-zinc-800/80 flex flex-col gap-1.5">
-                <div className="flex items-center gap-1.5">
-                    <button
+            <div className="mt-4 pt-3 flex flex-col gap-2" style={{ borderTop: '1px solid var(--lightest-gray)' }}>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="primary"
                         onClick={() => onBuyDigital(book)}
-                        className="flex-1 py-1.5 px-2.5 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs flex items-center justify-center gap-1 transition-all shadow-sm"
+                        className="flex-1"
+                        style={{ padding: '8px', fontSize: '14px' }}
                     >
-                        <ShoppingBag className="w-3.5 h-3.5" />
-                        <span>Buy Digital</span>
-                    </button>
+                        <ShoppingBag size={16} />
+                        <span>Buy</span>
+                    </Button>
 
-                    <button
+                    <Button
+                        variant="secondary"
                         onClick={() => onReadDigital(book)}
-                        className="py-1.5 px-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-semibold text-xs flex items-center justify-center gap-1 transition-all"
                         title="Read E-Book Stream"
+                        style={{ padding: '8px', fontSize: '14px' }}
                     >
-                        <BookOpen className="w-3.5 h-3.5" />
+                        <BookOpen size={16} />
                         <span>Read</span>
-                    </button>
+                    </Button>
                 </div>
 
-                <button
+                <Button
+                    variant="ghost"
                     onClick={() => onReserve(book)}
                     disabled={book.is_blocked}
-                    className={`w-full py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 transition-all border ${
-                        book.is_blocked
-                            ? 'bg-zinc-950 text-zinc-600 border-zinc-800 cursor-not-allowed'
-                            : isAvailable
-                            ? 'bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border-zinc-800'
-                            : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border-zinc-700'
-                    }`}
+                    className="w-full"
+                    style={{ padding: '8px', fontSize: '14px', border: '1px solid var(--lighter-gray)' }}
                 >
-                    <Bookmark className="w-3.5 h-3.5 text-zinc-400" />
+                    <Bookmark size={16} style={{ color: book.is_blocked ? 'var(--light-gray)' : 'var(--dark-gray)' }} />
                     <span>{isAvailable ? 'Reserve Physical' : 'Join Hold Queue'}</span>
-                </button>
+                </Button>
             </div>
-        </div>
+        </Card>
     );
 }
