@@ -60,25 +60,25 @@ export default function AiChatWidget({ isOpen, onClose }) {
     };
 
     return (
-        <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[480px] animate-in slideUp" style={{ border: '1px solid var(--lightest-gray)' }}>
+        <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm bg-paper border border-bark-100 rounded-2xl shadow-lift overflow-hidden flex flex-col h-[480px] animate-in slideUp">
             {/* Header */}
-            <div className="p-3.5 flex items-center justify-between" style={{ backgroundColor: 'var(--lightest-gray)', borderBottom: '1px solid var(--lighter-gray)' }}>
+            <div className="p-3.5 bg-cream-light/60 border-b border-bark-100 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                    <div className="p-1.5 rounded-lg text-white shadow-sm" style={{ backgroundColor: 'var(--primary)' }}>
-                        <Bot size={16} color="white" />
+                    <div className="p-1.5 rounded-lg bg-bark-700 text-cream-light shadow-sm">
+                        <Bot size={16} />
                     </div>
                     <div>
-                        <h3 className="body-small font-bold" style={{ color: 'var(--black)', margin: 0 }}>AI Assistant</h3>
-                        <p className="caption" style={{ margin: 0 }}>OpenAI Library Assistant</p>
+                        <h3 className="text-xs font-bold text-bark-900 m-0">AI Assistant</h3>
+                        <p className="font-mono text-[10px] text-bark-500 m-0">OpenAI Library Assistant</p>
                     </div>
                 </div>
-                <button onClick={onClose} className="p-1 rounded-lg" style={{ color: 'var(--dark-gray)' }} title="Close">
+                <button onClick={onClose} className="p-1 rounded-lg text-bark-500 hover:text-bark-900 hover:bg-cream" title="Close">
                     <X size={16} />
                 </button>
             </div>
 
             {/* Messages Body */}
-            <div className="flex-1 p-3.5 overflow-y-auto space-y-3" style={{ backgroundColor: '#F8FAFC' }}>
+            <div className="flex-1 p-3.5 overflow-y-auto space-y-3 mb-scroll bg-paper/60">
                 {messages.map((msg) => (
                     <div
                         key={msg.id}
@@ -87,29 +87,25 @@ export default function AiChatWidget({ isOpen, onClose }) {
                         }`}
                     >
                         <div
-                            className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-mono font-bold flex-shrink-0 shadow-sm"
-                            style={{ 
-                                backgroundColor: msg.sender === 'user' ? 'var(--primary)' : 'var(--white)',
-                                color: msg.sender === 'user' ? 'var(--white)' : 'var(--primary-dark)',
-                                border: msg.sender === 'user' ? 'none' : '1px solid var(--lighter-gray)'
-                            }}
+                            className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-mono font-bold flex-shrink-0 shadow-sm ${
+                                msg.sender === 'user'
+                                    ? 'bg-bark-700 text-cream-light'
+                                    : 'bg-paper border border-bark-100 text-bark-900'
+                            }`}
                         >
-                            {msg.sender === 'user' ? <User size={12} color="white" /> : <Bot size={12} />}
+                            {msg.sender === 'user' ? <User size={12} /> : <Bot size={12} />}
                         </div>
 
                         <div
-                            className={`p-2.5 rounded-xl text-sm leading-relaxed shadow-sm ${
-                                msg.sender === 'user' ? 'rounded-tr-none' : 'rounded-tl-none'
+                            className={`p-2.5 rounded-xl text-xs leading-relaxed shadow-sm ${
+                                msg.sender === 'user'
+                                    ? 'bg-bark-700 text-cream-light rounded-tr-none'
+                                    : 'bg-paper border border-bark-100 text-bark-900 rounded-tl-none'
                             }`}
-                            style={{ 
-                                backgroundColor: msg.sender === 'user' ? 'var(--primary)' : 'var(--white)',
-                                color: msg.sender === 'user' ? 'var(--white)' : 'var(--dark-gray)',
-                                border: msg.sender === 'user' ? 'none' : '1px solid var(--lighter-gray)'
-                            }}
                         >
-                            <p className="whitespace-pre-line" style={{ margin: 0 }}>{msg.text}</p>
+                            <p className="whitespace-pre-line m-0">{msg.text}</p>
                             {msg.tokens > 0 && (
-                                <span className="caption block mt-1" style={{ color: msg.sender === 'user' ? 'var(--primary-lightest)' : 'var(--medium-gray)', textTransform: 'none' }}>
+                                <span className={`block mt-1 font-mono text-[9px] ${msg.sender === 'user' ? 'text-cream/80' : 'text-bark-500'}`}>
                                     Used: {msg.tokens} tokens
                                 </span>
                             )}
@@ -118,13 +114,13 @@ export default function AiChatWidget({ isOpen, onClose }) {
                 ))}
 
                 {loading && (
-                    <div className="flex items-center gap-2 text-xs p-2 rounded-lg w-fit font-mono shadow-sm" style={{ backgroundColor: 'var(--white)', color: 'var(--medium-gray)', border: '1px solid var(--lighter-gray)' }}>
+                    <div className="flex items-center gap-2 text-xs p-2 rounded-lg w-fit font-mono shadow-sm bg-paper border border-bark-100 text-bark-500">
                         <Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing...
                     </div>
                 )}
 
                 {quotaError && (
-                    <div className="p-2.5 rounded-lg text-xs flex items-center gap-2 shadow-sm" style={{ backgroundColor: '#FEE2E2', color: '#991B1B', border: '1px solid #F87171' }}>
+                    <div className="p-2.5 rounded-lg text-xs flex items-center gap-2 shadow-sm bg-[#a8452f]/10 border border-[#a8452f]/30 text-[#8c3620]">
                         <AlertCircle className="w-4 h-4 flex-shrink-0" />
                         <span>{quotaError}</span>
                     </div>
@@ -134,27 +130,21 @@ export default function AiChatWidget({ isOpen, onClose }) {
             </div>
 
             {/* Input Form */}
-            <form onSubmit={handleSend} className="p-2.5 flex items-center gap-2" style={{ backgroundColor: 'var(--white)', borderTop: '1px solid var(--lighter-gray)' }}>
+            <form onSubmit={handleSend} className="p-2.5 bg-paper border-t border-bark-100 flex items-center gap-2">
                 <input
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     placeholder="Ask AI librarian..."
-                    className="flex-1 px-3 py-2 rounded-lg focus:outline-none"
-                    style={{ 
-                        backgroundColor: 'var(--lightest-gray)', 
-                        border: '1px solid var(--lighter-gray)', 
-                        color: 'var(--black)',
-                        fontSize: '14px'
-                    }}
+                    className="flex-1 px-3 py-2 rounded-lg border border-bark-100 bg-cream-light/40 text-xs text-bark-900 placeholder:text-bark-300 focus:outline-none focus:border-bark-500"
                 />
                 <Button
                     type="submit"
                     variant="primary"
                     disabled={loading || !input.trim()}
-                    style={{ padding: '8px', minWidth: '40px', borderRadius: '8px' }}
+                    className="p-2 min-w-[36px] rounded-lg"
                 >
-                    <Send size={16} />
+                    <Send size={14} />
                 </Button>
             </form>
         </div>
