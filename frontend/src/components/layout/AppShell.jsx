@@ -6,10 +6,8 @@ import {
   QrCodeIcon, 
   LayersIcon, 
   ShieldCheckIcon, 
-  UserIcon, 
   MenuIcon, 
   XIcon, 
-  SparklesIcon, 
   BotIcon 
 } from 'lucide-react';
 import { useLibrary } from '../../context/LibraryContext';
@@ -17,10 +15,12 @@ import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/Button';
 
 export function AppShell({ children, onOpenAiChat }) {
-  const { role, setRole } = useLibrary();
+  const { role } = useLibrary();
   const auth = useAuth() || {};
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const activeRole = auth.user?.role || role || 'member';
 
   const navigation = [
     { name: 'Catalog', href: '/', icon: BookOpenIcon, allow: ['member', 'librarian', 'admin'] },
@@ -30,11 +30,7 @@ export function AppShell({ children, onOpenAiChat }) {
     { name: 'Admin Console', href: '/admin', icon: ShieldCheckIcon, allow: ['admin'] },
   ];
 
-  const allowedNav = navigation.filter((item) => item.allow.includes(role));
-
-  const handleRoleChange = (newRole) => {
-    setRole(newRole);
-  };
+  const allowedNav = navigation.filter((item) => item.allow.includes(activeRole));
 
   return (
     <div className="flex min-h-screen bg-paper text-bark-900 mb-grain">
@@ -55,26 +51,6 @@ export function AppShell({ children, onOpenAiChat }) {
               <p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-bark-500">Library System</p>
             </div>
           </Link>
-
-          {/* Role Switcher Pill Bar */}
-          <div className="rounded-xl border border-bark-100 bg-cream-light/50 p-1.5 space-y-1">
-            <span className="block font-mono text-[9px] font-bold uppercase tracking-wider text-bark-500 px-2 pt-1">
-              Active Role Switcher
-            </span>
-            <div className="grid grid-cols-3 gap-1">
-              {['member', 'librarian', 'admin'].map((r) => (
-                <button
-                  key={r}
-                  onClick={() => handleRoleChange(r)}
-                  className={`rounded-lg py-1 text-[11px] font-bold capitalize transition ${
-                    role === r ? 'bg-bark-700 text-cream-light shadow-sm' : 'text-bark-500 hover:text-bark-900 hover:bg-cream/40'
-                  }`}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* Navigation Items */}
           <nav className="space-y-1.5">
@@ -113,7 +89,7 @@ export function AppShell({ children, onOpenAiChat }) {
           <div className="flex items-center justify-between px-2">
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-bold text-bark-900">{auth.user?.name || 'Amina Wanjiru'}</p>
-              <p className="truncate font-mono text-[10px] text-bark-500">{auth.user?.email || 'amina@maktababora.ke'}</p>
+              <p className="truncate font-mono text-[10px] text-bark-500 capitalize">{activeRole} Account</p>
             </div>
           </div>
         </div>
@@ -141,23 +117,6 @@ export function AppShell({ children, onOpenAiChat }) {
         {/* Mobile Menu Dropdown */}
         {mobileMenuOpen && (
           <div className="border-b border-bark-100 bg-paper p-4 md:hidden space-y-3">
-            <div className="grid grid-cols-3 gap-1 rounded-lg border border-bark-100 p-1 bg-cream-light/40">
-              {['member', 'librarian', 'admin'].map((r) => (
-                <button
-                  key={r}
-                  onClick={() => {
-                    handleRoleChange(r);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`rounded py-1 text-xs font-bold capitalize ${
-                    role === r ? 'bg-bark-700 text-cream-light' : 'text-bark-500'
-                  }`}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-
             <nav className="space-y-1">
               {allowedNav.map((item) => (
                 <Link
