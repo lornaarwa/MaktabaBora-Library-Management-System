@@ -26,7 +26,6 @@ export function AppShell({ children, onOpenAiChat }) {
     { name: 'Catalog', href: '/', icon: BookOpenIcon, allow: ['member', 'librarian', 'admin'] },
     { name: 'My Library', href: '/member', icon: LibraryIcon, allow: ['member'] },
     { name: 'Librarian Dashboard', href: '/librarian', icon: QrCodeIcon, allow: ['librarian', 'admin'] },
-    { name: 'Inventory Catalog', href: '/librarian?tab=inventory', icon: LayersIcon, allow: ['librarian', 'admin'] },
     { name: 'Admin Dashboard', href: '/admin', icon: ShieldCheckIcon, allow: ['admin'] },
   ];
 
