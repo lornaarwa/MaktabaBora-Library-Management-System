@@ -22,7 +22,7 @@ Track the progress of restructuring the application layout and brand color palet
 - [x] **Commit Hook 3**: `git commit -m "refactor(catalog): restructure Catalog page with warm swatch palette"`
 - [x] **Sub-phase 3.2**: Restructure `MemberDashboard.jsx` (My Library loans, countdowns, fines).
 - [x] **Commit Hook 4**: `git commit -m "refactor(member): restructure MyLibrary page for member interface"`
-- [ ] **Sub-phase 3.3**: Restructure `LibrarianDashboard.jsx` (Circulation Desk fast barcode checkin/checkout & Inventory).
-- [ ] **Commit Hook 5**: `git commit -m "refactor(staff): restructure CirculationDesk and Inventory pages"`
-- [ ] **Sub-phase 3.4**: Restructure `AdminDashboard.jsx` (Admin Console analytics, live logs, API health).
-- [ ] **Commit Hook 6**: `git commit -m "refactor(admin): restructure AdminConsole with live logs and health metrics"`
+- [x] **Sub-phase 3.3**: Restructure `LibrarianDashboard.jsx` (Circulation Desk fast barcode checkin/checkout & Inventory).
+- [x] **Commit Hook 5**: `git commit -m "refactor(staff): restructure CirculationDesk and Inventory pages"`
+- [x] **Sub-phase 3.4**: Restructure `AdminDashboard.jsx` (Admin Console analytics, live logs, API health).
+- [x] **Commit Hook 6**: `git commit -m "refactor(admin): restructure AdminConsole with live logs and health metrics"`
