@@ -1,98 +1,94 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, User, Shield, BookMarked, LogOut, Search, MessageCircle } from 'lucide-react';
+import { BookOpen, User, Shield, BookMarked, LogOut, Search, Bot } from 'lucide-react';
 import { Button } from './ui/Button';
 
 export default function Navbar({ onOpenAiChat }) {
-    const { user, logout } = useAuth();
+    const { user, logout, switchRole } = useAuth();
     const location = useLocation();
 
     return (
-        <header className="sticky top-0 z-40 bg-white border-b" style={{ borderColor: 'var(--lightest-gray)' }}>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <header className="sticky top-0 z-40 border-b border-bark-100 bg-paper/95 backdrop-blur-md">
+            <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
                 
                 {/* MaktabaBora Brand Logo */}
-                <Link to="/" className="flex items-center gap-3 group" style={{ textDecoration: 'none' }}>
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center transition-all shadow-sm" style={{ backgroundColor: 'var(--primary)', color: 'var(--white)' }}>
-                        <BookOpen size={20} color="white" />
+                <Link to="/" className="flex items-center gap-3 group">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-bark-700 font-black text-cream-light transition group-hover:bg-bark-900 shadow-sm">
+                        <BookOpen className="h-5 w-5 text-cream-light" />
                     </div>
                     <div>
-                        <span className="heading-3 block leading-tight" style={{ color: 'var(--primary-dark)', margin: 0 }}>
-                            Maktaba<span style={{ color: 'var(--primary)' }}>Bora</span>
+                        <span className="text-lg font-extrabold tracking-tight text-bark-900">
+                            Maktaba<span className="text-tan-dark">Bora</span>
                         </span>
-                        <span className="overline block" style={{ marginTop: '-2px' }}>Library System</span>
+                        <span className="block font-mono text-[10px] uppercase tracking-widest text-bark-500">Library System</span>
                     </div>
                 </Link>
 
                 {/* Navigation Links */}
-                <nav className="hidden md:flex items-center gap-2 p-1 rounded-xl" style={{ backgroundColor: 'var(--lightest-gray)' }}>
+                <nav className="hidden items-center gap-1 rounded-xl border border-bark-100 bg-cream-light/60 p-1 md:flex">
                     <Link
                         to="/"
-                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
-                            location.pathname === '/' ? 'bg-white shadow-sm' : ''
+                        className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
+                            location.pathname === '/' ? 'bg-paper font-bold text-bark-900 shadow-sm' : 'text-bark-500 hover:bg-paper/50 hover:text-bark-900'
                         }`}
-                        style={{ color: location.pathname === '/' ? 'var(--primary-dark)' : 'var(--dark-gray)' }}
                     >
-                        <Search size={18} /> Catalog
+                        <Search className="h-3.5 w-3.5" /> Catalog
                     </Link>
 
                     {user?.role === 'member' && (
                         <Link
                             to="/member"
-                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
-                                location.pathname === '/member' ? 'bg-white shadow-sm' : ''
+                            className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
+                                location.pathname === '/member' ? 'bg-paper font-bold text-bark-900 shadow-sm' : 'text-bark-500 hover:bg-paper/50 hover:text-bark-900'
                             }`}
-                            style={{ color: location.pathname === '/member' ? 'var(--primary-dark)' : 'var(--dark-gray)' }}
                         >
-                            <BookMarked size={18} /> My Library
+                            <BookMarked className="h-3.5 w-3.5" /> My Library
                         </Link>
                     )}
 
                     {(user?.role === 'librarian' || user?.role === 'admin') && (
                         <Link
                             to="/librarian"
-                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
-                                location.pathname === '/librarian' ? 'bg-white shadow-sm' : ''
+                            className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
+                                location.pathname === '/librarian' ? 'bg-paper font-bold text-bark-900 shadow-sm' : 'text-bark-500 hover:bg-paper/50 hover:text-bark-900'
                             }`}
-                            style={{ color: location.pathname === '/librarian' ? 'var(--primary-dark)' : 'var(--dark-gray)' }}
                         >
-                            <User size={18} /> Librarian
+                            <User className="h-3.5 w-3.5" /> Circulation Desk
                         </Link>
                     )}
 
                     {user?.role === 'admin' && (
                         <Link
                             to="/admin"
-                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
-                                location.pathname === '/admin' ? 'bg-white shadow-sm' : ''
+                            className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
+                                location.pathname === '/admin' ? 'bg-paper font-bold text-bark-900 shadow-sm' : 'text-bark-500 hover:bg-paper/50 hover:text-bark-900'
                             }`}
-                            style={{ color: location.pathname === '/admin' ? 'var(--primary-dark)' : 'var(--dark-gray)' }}
                         >
-                            <Shield size={18} /> Admin
+                            <Shield className="h-3.5 w-3.5" /> Admin Console
                         </Link>
                     )}
                 </nav>
 
                 {/* Controls & User Account */}
                 <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="small" onClick={onOpenAiChat} style={{ padding: '6px 12px' }}>
-                        <MessageCircle size={18} style={{ color: 'var(--primary)' }} />
-                        <span style={{ marginLeft: 4 }}>Assistant</span>
+                    <Button variant="ghost" onClick={onOpenAiChat}>
+                        <Bot className="h-4 w-4 text-bark-700" />
+                        <span>AI Assistant</span>
                     </Button>
 
                     {user ? (
-                        <div className="flex items-center gap-3 pl-3" style={{ borderLeft: '1px solid var(--lighter-gray)' }}>
+                        <div className="flex items-center gap-3 border-l border-bark-100 pl-3">
                             <div className="hidden sm:block text-right">
-                                <span className="body-small font-bold block leading-tight" style={{ color: 'var(--black)' }}>{user.name}</span>
-                                <span className="caption block">{user.role}</span>
+                                <span className="block text-xs font-bold leading-tight text-bark-900">{user.name}</span>
+                                <span className="block font-mono text-[9px] uppercase tracking-wider text-bark-500">{user.role}</span>
                             </div>
-                            <Button variant="ghost" onClick={() => logout()} title="Sign Out" style={{ padding: '8px' }}>
-                                <LogOut size={20} style={{ color: 'var(--dark-gray)' }} />
+                            <Button variant="ghost" onClick={() => logout()} title="Sign Out">
+                                <LogOut className="h-4 w-4 text-bark-700" />
                             </Button>
                         </div>
                     ) : (
-                        <Link to="/login" style={{ textDecoration: 'none' }}>
+                        <Link to="/login">
                             <Button variant="primary">Sign In</Button>
                         </Link>
                     )}
