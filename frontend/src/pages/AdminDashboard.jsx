@@ -254,25 +254,25 @@ export default function AdminDashboard() {
         
         return (
             <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs font-mono text-gray-600">
-                    <span className="font-semibold text-gray-700">{label}</span>
-                    <span className="text-[10px] text-gray-500 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded font-mono">
+                <div className="flex items-center justify-between text-xs font-mono text-bark-500">
+                    <span className="font-semibold text-bark-700">{label}</span>
+                    <span className="text-[10px] text-bark-500 bg-cream-light/40 border border-bark-100 px-2 py-0.5 rounded font-mono">
                         Range: {minVal} - {maxVal} events/day
                     </span>
                 </div>
-                <div className="h-48 w-full bg-black border border-gray-200 rounded-xl p-4 flex items-end justify-between gap-2 shadow-inner">
+                <div className="h-48 w-full bg-black border border-bark-100 rounded-xl p-4 flex items-end justify-between gap-2 shadow-inner">
                     {dataArr.map((d, i) => {
                         const heightPct = Math.round((d.count / maxVal) * 100);
                         return (
                             <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative">
-                                <div className="text-[9px] font-mono text-white bg-gray-50 border border-gray-300 px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity absolute -top-7 z-10 shadow-lg pointer-events-none">
+                                <div className="text-[9px] font-mono text-white bg-cream-light/40 border border-bark-100 px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity absolute -top-7 z-10 shadow-lg pointer-events-none">
                                     {d.count}
                                 </div>
                                 <div 
                                     style={{ height: `${Math.max(heightPct, 6)}%` }} 
-                                    className="w-full bg-white hover:bg-zinc-200 rounded-t-sm transition-all shadow-[0_0_12px_rgba(255,255,255,0.4)] group-hover:shadow-[0_0_16px_rgba(255,255,255,0.8)]"
+                                    className="w-full bg-paper hover:bg-zinc-200 rounded-t-sm transition-all shadow-[0_0_12px_rgba(255,255,255,0.4)] group-hover:shadow-[0_0_16px_rgba(255,255,255,0.8)]"
                                 />
-                                <span className="text-[9px] font-mono text-gray-600 truncate w-full text-center mt-1.5 group-hover:text-white transition-colors">
+                                <span className="text-[9px] font-mono text-bark-500 truncate w-full text-center mt-1.5 group-hover:text-white transition-colors">
                                     {d.date.slice(5)}
                                 </span>
                             </div>
@@ -287,20 +287,20 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             
             {/* Header */}
-            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 sm:p-8 flex items-center justify-between shadow-sm">
+            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 sm:p-8 flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                        className="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 hover:text-gray-900 transition-colors"
+                        className="p-2 rounded-lg bg-paper border border-bark-100 text-bark-500 hover:text-bark-900 transition-colors"
                         title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                     >
                         {isSidebarCollapsed ? <Menu className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
                     </button>
                     <div>
-                        <span className="px-2.5 py-0.5 rounded text-[9px] font-mono font-bold bg-gray-200 text-gray-700 border border-gray-300 uppercase tracking-wider">
+                        <span className="px-2.5 py-0.5 rounded text-[9px] font-mono font-bold bg-cream text-bark-700 border border-bark-100 uppercase tracking-wider">
                             ADMIN CONSOLE
                         </span>
-                        <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 mt-1">
+                        <h1 className="text-xl sm:text-2xl font-extrabold text-bark-900 mt-1">
                             System Administration & Management Portal
                         </h1>
                     </div>
@@ -309,20 +309,20 @@ export default function AdminDashboard() {
 
             {/* Notifications */}
             {successMsg && (
-                <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 text-zinc-200 text-xs flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-cream-light/40 border border-bark-100 text-zinc-200 text-xs flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-gray-600" /> {successMsg}
+                        <CheckCircle2 className="w-4 h-4 text-bark-500" /> {successMsg}
                     </div>
-                    <button onClick={() => setSuccessMsg(null)}><X className="w-4 h-4 text-gray-600" /></button>
+                    <button onClick={() => setSuccessMsg(null)}><X className="w-4 h-4 text-bark-500" /></button>
                 </div>
             )}
 
             {error && (
-                <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 text-zinc-200 text-xs flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-cream-light/40 border border-bark-100 text-zinc-200 text-xs flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 text-gray-600" /> {error}
+                        <AlertCircle className="w-4 h-4 text-bark-500" /> {error}
                     </div>
-                    <button onClick={() => setError(null)}><X className="w-4 h-4 text-gray-600" /></button>
+                    <button onClick={() => setError(null)}><X className="w-4 h-4 text-bark-500" /></button>
                 </div>
             )}
 
@@ -330,16 +330,16 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
                 {/* Task 2: Collapsible Mini Sidebar */}
-                <div className={`${isSidebarCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} bg-gray-50 border border-gray-200 rounded-2xl p-3.5 space-y-2 h-fit shadow-sm transition-all`}>
+                <div className={`${isSidebarCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} bg-cream-light/40 border border-bark-100 rounded-2xl p-3.5 space-y-2 h-fit shadow-sm transition-all`}>
                     <div className="flex items-center justify-between px-2 py-1">
                         {!isSidebarCollapsed && (
-                            <h3 className="text-[10px] font-mono font-extrabold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                                <Database className="w-3.5 h-3.5 text-gray-600" /> Navigation
+                            <h3 className="text-[10px] font-mono font-extrabold text-bark-500 uppercase tracking-wider flex items-center gap-2">
+                                <Database className="w-3.5 h-3.5 text-bark-500" /> Navigation
                             </h3>
                         )}
                         <button
                             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                            className="p-1 rounded text-gray-500 hover:text-zinc-200"
+                            className="p-1 rounded text-bark-500 hover:text-zinc-200"
                         >
                             {isSidebarCollapsed ? <ChevronRight className="w-4 h-4 mx-auto" /> : <ChevronLeft className="w-4 h-4" />}
                         </button>
@@ -352,12 +352,12 @@ export default function AdminDashboard() {
                             className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                                 activeTab === 'overview'
                                     ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
-                                    : 'text-gray-600 hover:text-zinc-200 hover:bg-gray-200/60'
+                                    : 'text-bark-500 hover:text-zinc-200 hover:bg-cream/60'
                             }`}
                             title="Analytics Overview"
                         >
                             <div className="flex items-center gap-2.5">
-                                <Activity className="w-4 h-4 text-gray-600" />
+                                <Activity className="w-4 h-4 text-bark-500" />
                                 {!isSidebarCollapsed && <span>Landing Overview</span>}
                             </div>
                         </button>
@@ -365,7 +365,7 @@ export default function AdminDashboard() {
                         {/* Logs Section Header & Button */}
                         <div className="pt-3 pb-1">
                             {!isSidebarCollapsed && (
-                                <h4 className="px-2 text-[9px] font-mono font-extrabold text-gray-500 uppercase tracking-wider mb-1">
+                                <h4 className="px-2 text-[9px] font-mono font-extrabold text-bark-500 uppercase tracking-wider mb-1">
                                     SYSTEM LOGS
                                 </h4>
                             )}
@@ -374,12 +374,12 @@ export default function AdminDashboard() {
                                 className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                                     activeTab === 'logs'
                                         ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
-                                        : 'text-gray-600 hover:text-zinc-200 hover:bg-gray-200/60'
+                                        : 'text-bark-500 hover:text-zinc-200 hover:bg-cream/60'
                                 }`}
                                 title="API Logs & Health"
                             >
                                 <div className="flex items-center gap-2.5">
-                                    <Clock className="w-4 h-4 text-gray-600" />
+                                    <Clock className="w-4 h-4 text-bark-500" />
                                     {!isSidebarCollapsed && <span>API Logs & Health</span>}
                                 </div>
                             </button>
@@ -388,7 +388,7 @@ export default function AdminDashboard() {
                         {/* Collections Section Header & Domain Tables */}
                         <div className="pt-2 pb-1">
                             {!isSidebarCollapsed && (
-                                <h4 className="px-2 text-[9px] font-mono font-extrabold text-gray-500 uppercase tracking-wider mb-1">
+                                <h4 className="px-2 text-[9px] font-mono font-extrabold text-bark-500 uppercase tracking-wider mb-1">
                                     COLLECTIONS
                                 </h4>
                             )}
@@ -399,12 +399,12 @@ export default function AdminDashboard() {
                                     className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                                         activeTab === tName
                                             ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
-                                            : 'text-gray-600 hover:text-zinc-200 hover:bg-gray-200/60'
+                                            : 'text-bark-500 hover:text-zinc-200 hover:bg-cream/60'
                                     }`}
                                     title={tName.replace('_', ' ')}
                                 >
                                     <div className="flex items-center gap-2.5 capitalize">
-                                        <Table className="w-4 h-4 text-gray-600" />
+                                        <Table className="w-4 h-4 text-bark-500" />
                                         {!isSidebarCollapsed && <span>{tName.replace('_', ' ')}</span>}
                                     </div>
                                 </button>
@@ -422,15 +422,15 @@ export default function AdminDashboard() {
                             
                             {/* Counter Card */}
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                                <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-2">
-                                    <div className="flex justify-between items-center text-gray-600">
+                                <div className="bg-cream-light/40 border border-bark-100 rounded-xl p-5 space-y-2">
+                                    <div className="flex justify-between items-center text-bark-500">
                                         <span className="text-xs font-mono font-semibold uppercase">Registered Members</span>
-                                        <Users className="w-4 h-4 text-gray-600" />
+                                        <Users className="w-4 h-4 text-bark-500" />
                                     </div>
-                                    <span className="text-3xl font-extrabold text-gray-900 block">
+                                    <span className="text-3xl font-extrabold text-bark-900 block">
                                         {analyticsLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : (analytics?.registered_members_count ?? 0)}
                                     </span>
-                                    <span className="text-[10px] text-gray-500 font-mono">Active member profiles</span>
+                                    <span className="text-[10px] text-bark-500 font-mono">Active member profiles</span>
                                 </div>
                             </div>
 
@@ -438,15 +438,15 @@ export default function AdminDashboard() {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 
                                 {/* Graph 1: Logged In Users Over Time */}
-                                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-4 shadow-sm">
+                                <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
                                     <div className="flex items-center justify-between">
-                                        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2 font-mono">
-                                            <TrendingUp className="w-4 h-4 text-gray-600" /> Logged In Users Over Time
+                                        <h3 className="text-sm font-bold text-bark-900 flex items-center gap-2 font-mono">
+                                            <TrendingUp className="w-4 h-4 text-bark-500" /> Logged In Users Over Time
                                         </h3>
                                     </div>
 
                                     {analyticsLoading ? (
-                                        <div className="flex items-center justify-center h-44 text-gray-500 font-mono text-xs">
+                                        <div className="flex items-center justify-center h-44 text-bark-500 font-mono text-xs">
                                             <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading timeline data...
                                         </div>
                                     ) : (
@@ -455,20 +455,20 @@ export default function AdminDashboard() {
                                 </div>
 
                                 {/* Graph 2: Books Activity Over Time with Toggle */}
-                                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-4 shadow-sm">
+                                <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
                                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                                        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2 font-mono">
-                                            <Activity className="w-4 h-4 text-gray-600" /> Book Activity Over Time
+                                        <h3 className="text-sm font-bold text-bark-900 flex items-center gap-2 font-mono">
+                                            <Activity className="w-4 h-4 text-bark-500" /> Book Activity Over Time
                                         </h3>
 
                                         {/* Toggle Switch */}
-                                        <div className="flex bg-white p-1 rounded-lg border border-gray-200 text-[10px] font-mono font-bold">
+                                        <div className="flex bg-paper p-1 rounded-lg border border-bark-100 text-[10px] font-mono font-bold">
                                             {['loaned', 'reserved', 'bought'].map((type) => (
                                                 <button
                                                     key={type}
                                                     onClick={() => setActivityGraphType(type)}
                                                     className={`px-2.5 py-1 rounded capitalize transition-all ${
-                                                        activityGraphType === type ? 'bg-zinc-100 text-zinc-950 shadow-sm' : 'text-gray-600 hover:text-zinc-200'
+                                                        activityGraphType === type ? 'bg-zinc-100 text-zinc-950 shadow-sm' : 'text-bark-500 hover:text-zinc-200'
                                                     }`}
                                                 >
                                                     {type}
@@ -478,7 +478,7 @@ export default function AdminDashboard() {
                                     </div>
 
                                     {analyticsLoading ? (
-                                        <div className="flex items-center justify-center h-44 text-gray-500 font-mono text-xs">
+                                        <div className="flex items-center justify-center h-44 text-bark-500 font-mono text-xs">
                                             <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading activity data...
                                         </div>
                                     ) : (
@@ -491,23 +491,23 @@ export default function AdminDashboard() {
 
                     {/* Task 2: API Logs & Terminal Activity Page */}
                     {activeTab === 'logs' && (
-                        <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-6 shadow-sm">
+                        <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-6 shadow-sm">
                             
                             {/* Header & Mini Navbar */}
-                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-gray-200 pb-5">
+                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-bark-100 pb-5">
                                 <div>
-                                    <h2 className="text-base font-bold text-gray-900 flex items-center gap-2 font-mono">
+                                    <h2 className="text-base font-bold text-bark-900 flex items-center gap-2 font-mono">
                                         <Activity className="w-4 h-4 text-emerald-400" /> Terminal Activity & API Logs Stream
                                     </h2>
-                                    <p className="text-xs text-gray-600 mt-0.5">Real-time live logs from php artisan serve (backend) & npm run dev (frontend) processes</p>
+                                    <p className="text-xs text-bark-500 mt-0.5">Real-time live logs from php artisan serve (backend) & npm run dev (frontend) processes</p>
                                 </div>
 
                                 {/* Mini Navbar */}
-                                <div className="flex flex-wrap bg-white p-1 rounded-xl border border-gray-200 text-xs font-mono font-semibold">
+                                <div className="flex flex-wrap bg-paper p-1 rounded-xl border border-bark-100 text-xs font-mono font-semibold">
                                     <button
                                         onClick={() => setLogsMiniTab('backend_terminal')}
                                         className={`px-3 py-1.5 rounded-lg transition-all ${
-                                            logsMiniTab === 'backend_terminal' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-gray-600 hover:text-zinc-200'
+                                            logsMiniTab === 'backend_terminal' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-bark-500 hover:text-zinc-200'
                                         }`}
                                     >
                                         Backend Terminal
@@ -515,7 +515,7 @@ export default function AdminDashboard() {
                                     <button
                                         onClick={() => setLogsMiniTab('frontend_terminal')}
                                         className={`px-3 py-1.5 rounded-lg transition-all ${
-                                            logsMiniTab === 'frontend_terminal' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-gray-600 hover:text-zinc-200'
+                                            logsMiniTab === 'frontend_terminal' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-bark-500 hover:text-zinc-200'
                                         }`}
                                     >
                                         Frontend Terminal
@@ -523,7 +523,7 @@ export default function AdminDashboard() {
                                     <button
                                         onClick={() => setLogsMiniTab('split_terminal')}
                                         className={`px-3 py-1.5 rounded-lg transition-all ${
-                                            logsMiniTab === 'split_terminal' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-gray-600 hover:text-zinc-200'
+                                            logsMiniTab === 'split_terminal' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-bark-500 hover:text-zinc-200'
                                         }`}
                                     >
                                         Split Dual View
@@ -531,7 +531,7 @@ export default function AdminDashboard() {
                                     <button
                                         onClick={() => setLogsMiniTab('health')}
                                         className={`px-3 py-1.5 rounded-lg transition-all ${
-                                            logsMiniTab === 'health' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-gray-600 hover:text-zinc-200'
+                                            logsMiniTab === 'health' ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm' : 'text-bark-500 hover:text-zinc-200'
                                         }`}
                                     >
                                         Health Matrix
@@ -540,7 +540,7 @@ export default function AdminDashboard() {
                             </div>
 
                             {logsLoading ? (
-                                <div className="flex items-center justify-center py-12 text-gray-600 text-xs font-mono">
+                                <div className="flex items-center justify-center py-12 text-bark-500 text-xs font-mono">
                                     <Loader2 className="w-5 h-5 animate-spin mr-2" /> Fetching live terminal stream...
                                 </div>
                             ) : (
@@ -548,26 +548,26 @@ export default function AdminDashboard() {
                                     {/* 1. Backend Terminal Log Stream View */}
                                     {logsMiniTab === 'backend_terminal' && (
                                         <div className="space-y-3 font-mono">
-                                            <div className="flex items-center justify-between text-xs text-gray-600 px-1">
+                                            <div className="flex items-center justify-between text-xs text-bark-500 px-1">
                                                 <div className="flex items-center gap-2">
                                                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
                                                     <span className="font-bold text-zinc-200">Terminal Process: php artisan serve</span>
                                                 </div>
-                                                <div className="flex items-center gap-3 text-[11px] text-gray-500">
+                                                <div className="flex items-center gap-3 text-[11px] text-bark-500">
                                                     <span>CWD: backend/</span>
                                                     <span>PORT: 8000</span>
-                                                    <button onClick={() => fetchApiLogs()} className="hover:text-zinc-200 text-gray-600 underline">Refresh Log Stream</button>
+                                                    <button onClick={() => fetchApiLogs()} className="hover:text-zinc-200 text-bark-500 underline">Refresh Log Stream</button>
                                                 </div>
                                             </div>
 
-                                            <div className="bg-black border border-gray-200 rounded-xl p-4 font-mono text-xs text-gray-700 space-y-1.5 max-h-[500px] overflow-y-auto shadow-inner select-text">
+                                            <div className="bg-black border border-bark-100 rounded-xl p-4 font-mono text-xs text-bark-700 space-y-1.5 max-h-[500px] overflow-y-auto shadow-inner select-text">
                                                 <div className="text-emerald-400 font-bold mb-2">
                                                     kimushzyyy@smartlib:~/backend$ php artisan serve --host=127.0.0.1 --port=8000
                                                 </div>
                                                 {apiLogsData?.backend_terminal_logs?.map((line, idx) => (
-                                                    <div key={idx} className="leading-relaxed hover:bg-gray-50/60 px-1 py-0.5 rounded transition-colors">
-                                                        <span className="text-gray-500 mr-2">[{idx + 1}]</span>
-                                                        <span className={line.includes('ERROR') ? 'text-red-400' : line.includes('HTTP 200') ? 'text-emerald-400' : 'text-gray-700'}>
+                                                    <div key={idx} className="leading-relaxed hover:bg-cream-light/40/60 px-1 py-0.5 rounded transition-colors">
+                                                        <span className="text-bark-500 mr-2">[{idx + 1}]</span>
+                                                        <span className={line.includes('ERROR') ? 'text-red-400' : line.includes('HTTP 200') ? 'text-emerald-400' : 'text-bark-700'}>
                                                             {line}
                                                         </span>
                                                     </div>
@@ -579,26 +579,26 @@ export default function AdminDashboard() {
                                     {/* 2. Frontend Terminal Log Stream View */}
                                     {logsMiniTab === 'frontend_terminal' && (
                                         <div className="space-y-3 font-mono">
-                                            <div className="flex items-center justify-between text-xs text-gray-600 px-1">
+                                            <div className="flex items-center justify-between text-xs text-bark-500 px-1">
                                                 <div className="flex items-center gap-2">
                                                     <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
                                                     <span className="font-bold text-zinc-200">Terminal Process: npm run dev (Vite)</span>
                                                 </div>
-                                                <div className="flex items-center gap-3 text-[11px] text-gray-500">
+                                                <div className="flex items-center gap-3 text-[11px] text-bark-500">
                                                     <span>CWD: frontend/</span>
                                                     <span>PORT: 5173</span>
-                                                    <button onClick={() => fetchApiLogs()} className="hover:text-zinc-200 text-gray-600 underline">Refresh Stream</button>
+                                                    <button onClick={() => fetchApiLogs()} className="hover:text-zinc-200 text-bark-500 underline">Refresh Stream</button>
                                                 </div>
                                             </div>
 
-                                            <div className="bg-black border border-gray-200 rounded-xl p-4 font-mono text-xs text-gray-700 space-y-1.5 max-h-[500px] overflow-y-auto shadow-inner select-text">
+                                            <div className="bg-black border border-bark-100 rounded-xl p-4 font-mono text-xs text-bark-700 space-y-1.5 max-h-[500px] overflow-y-auto shadow-inner select-text">
                                                 <div className="text-cyan-400 font-bold mb-2">
                                                     kimushzyyy@smartlib:~/frontend$ npm run dev
                                                 </div>
                                                 {frontendLogs.map((line, idx) => (
-                                                    <div key={idx} className="leading-relaxed hover:bg-gray-50/60 px-1 py-0.5 rounded transition-colors">
-                                                        <span className="text-gray-500 mr-2">[{idx + 1}]</span>
-                                                        <span className={line.includes('ERROR') ? 'text-red-400' : line.includes('RESPONSE') ? 'text-emerald-400' : line.includes('vite') ? 'text-cyan-300' : 'text-gray-700'}>
+                                                    <div key={idx} className="leading-relaxed hover:bg-cream-light/40/60 px-1 py-0.5 rounded transition-colors">
+                                                        <span className="text-bark-500 mr-2">[{idx + 1}]</span>
+                                                        <span className={line.includes('ERROR') ? 'text-red-400' : line.includes('RESPONSE') ? 'text-emerald-400' : line.includes('vite') ? 'text-cyan-300' : 'text-bark-700'}>
                                                             {line}
                                                         </span>
                                                     </div>
@@ -612,17 +612,17 @@ export default function AdminDashboard() {
                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 font-mono">
                                             {/* Backend Screen */}
                                             <div className="space-y-2">
-                                                <div className="flex items-center justify-between text-xs text-gray-600">
+                                                <div className="flex items-center justify-between text-xs text-bark-500">
                                                     <span className="text-emerald-400 font-bold flex items-center gap-1.5">
                                                         <span className="w-2 h-2 rounded-full bg-emerald-500" /> Backend (php artisan serve)
                                                     </span>
                                                 </div>
-                                                <div className="bg-black border border-gray-200 rounded-xl p-3 text-[11px] text-gray-700 space-y-1 max-h-[420px] overflow-y-auto shadow-inner">
+                                                <div className="bg-black border border-bark-100 rounded-xl p-3 text-[11px] text-bark-700 space-y-1 max-h-[420px] overflow-y-auto shadow-inner">
                                                     <div className="text-emerald-400 font-bold mb-1">
                                                         $ php artisan serve
                                                     </div>
                                                     {apiLogsData?.backend_terminal_logs?.slice(-20).map((line, idx) => (
-                                                        <div key={idx} className="truncate text-gray-700">
+                                                        <div key={idx} className="truncate text-bark-700">
                                                             {line}
                                                         </div>
                                                     ))}
@@ -631,17 +631,17 @@ export default function AdminDashboard() {
 
                                             {/* Frontend Screen */}
                                             <div className="space-y-2">
-                                                <div className="flex items-center justify-between text-xs text-gray-600">
+                                                <div className="flex items-center justify-between text-xs text-bark-500">
                                                     <span className="text-cyan-400 font-bold flex items-center gap-1.5">
                                                         <span className="w-2 h-2 rounded-full bg-cyan-400" /> Frontend (npm run dev)
                                                     </span>
                                                 </div>
-                                                <div className="bg-black border border-gray-200 rounded-xl p-3 text-[11px] text-gray-700 space-y-1 max-h-[420px] overflow-y-auto shadow-inner">
+                                                <div className="bg-black border border-bark-100 rounded-xl p-3 text-[11px] text-bark-700 space-y-1 max-h-[420px] overflow-y-auto shadow-inner">
                                                     <div className="text-cyan-400 font-bold mb-1">
                                                         $ npm run dev
                                                     </div>
                                                     {frontendLogs.slice(-20).map((line, idx) => (
-                                                        <div key={idx} className="truncate text-gray-700">
+                                                        <div key={idx} className="truncate text-bark-700">
                                                             {line}
                                                         </div>
                                                     ))}
@@ -653,7 +653,7 @@ export default function AdminDashboard() {
                                     {/* 4. Health Matrix */}
                                     {logsMiniTab === 'health' && (
                                         <div className="space-y-4">
-                                            <div className="flex items-center justify-between text-xs text-gray-600 font-mono">
+                                            <div className="flex items-center justify-between text-xs text-bark-500 font-mono">
                                                 <span>Active Route Endpoints ({apiLogsData?.endpoints?.length || 0})</span>
                                                 <span className="text-emerald-400 flex items-center gap-1">
                                                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> 100% Operational
@@ -661,20 +661,20 @@ export default function AdminDashboard() {
                                             </div>
 
                                             <div className="overflow-x-auto">
-                                                <table className="w-full text-left text-xs text-gray-700 border-collapse">
-                                                    <thead className="bg-white text-gray-600 uppercase text-[10px] tracking-wider font-mono">
+                                                <table className="w-full text-left text-xs text-bark-700 border-collapse">
+                                                    <thead className="bg-paper text-bark-500 uppercase text-[10px] tracking-wider font-mono">
                                                         <tr>
-                                                            <th className="p-3 border-b border-gray-200">HTTP Method</th>
-                                                            <th className="p-3 border-b border-gray-200">Endpoint Route</th>
-                                                            <th className="p-3 border-b border-gray-200 text-center">Status</th>
-                                                            <th className="p-3 border-b border-gray-200 text-center">Latency (ms)</th>
-                                                            <th className="p-3 border-b border-gray-200 text-center">Uptime %</th>
-                                                            <th className="p-3 border-b border-gray-200 text-right">Health Badge</th>
+                                                            <th className="p-3 border-b border-bark-100">HTTP Method</th>
+                                                            <th className="p-3 border-b border-bark-100">Endpoint Route</th>
+                                                            <th className="p-3 border-b border-bark-100 text-center">Status</th>
+                                                            <th className="p-3 border-b border-bark-100 text-center">Latency (ms)</th>
+                                                            <th className="p-3 border-b border-bark-100 text-center">Uptime %</th>
+                                                            <th className="p-3 border-b border-bark-100 text-right">Health Badge</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-zinc-800/60 font-mono">
                                                         {apiLogsData?.endpoints?.map((ep, idx) => (
-                                                            <tr key={idx} className="hover:bg-white/50">
+                                                            <tr key={idx} className="hover:bg-paper/50">
                                                                 <td className="p-3">
                                                                     <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
                                                                         ep.method === 'GET' ? 'bg-blue-950/80 text-blue-400 border border-blue-800' : 'bg-emerald-950/80 text-emerald-400 border border-emerald-800'
@@ -682,14 +682,14 @@ export default function AdminDashboard() {
                                                                         {ep.method}
                                                                     </span>
                                                                 </td>
-                                                                <td className="p-3 font-bold text-gray-900">{ep.route}</td>
+                                                                <td className="p-3 font-bold text-bark-900">{ep.route}</td>
                                                                 <td className="p-3 text-center">
-                                                                    <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-gray-200 text-zinc-200 border border-gray-300">
+                                                                    <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-cream text-zinc-200 border border-bark-100">
                                                                         {ep.status} OK
                                                                     </span>
                                                                 </td>
-                                                                <td className="p-3 text-center text-gray-700">{ep.latency_ms} ms</td>
-                                                                <td className="p-3 text-center text-gray-700">{ep.uptime}%</td>
+                                                                <td className="p-3 text-center text-bark-700">{ep.latency_ms} ms</td>
+                                                                <td className="p-3 text-center text-bark-700">{ep.uptime}%</td>
                                                                 <td className="p-3 text-right">
                                                                     <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-800 inline-flex items-center gap-1">
                                                                         <CheckCircle2 className="w-3 h-3 text-emerald-400" /> HEALTHY
@@ -707,54 +707,54 @@ export default function AdminDashboard() {
                         </div>
                     )}
                     {activeTab === 'members' && (
-                        <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-4 shadow-sm">
-                            <div className="flex items-center justify-between border-b border-gray-200 pb-4">
+                        <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
+                            <div className="flex items-center justify-between border-b border-bark-100 pb-4">
                                 <div>
-                                    <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                                        <Shield className="w-4 h-4 text-gray-600" /> Member Accounts & Ban Management
+                                    <h2 className="text-base font-bold text-bark-900 flex items-center gap-2">
+                                        <Shield className="w-4 h-4 text-bark-500" /> Member Accounts & Ban Management
                                     </h2>
-                                    <p className="text-xs text-gray-600 mt-0.5">Enforce suspension rules and reason tracking</p>
+                                    <p className="text-xs text-bark-500 mt-0.5">Enforce suspension rules and reason tracking</p>
                                 </div>
 
                                 <div className="relative w-64">
-                                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-bark-500" />
                                     <input
                                         type="text"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         placeholder="Filter members..."
-                                        className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-white border border-gray-200 text-xs text-gray-900 focus:outline-none focus:border-gray-300 font-mono"
+                                        className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-paper border border-bark-100 text-xs text-bark-900 focus:outline-none focus:border-bark-100 font-mono"
                                     />
                                 </div>
                             </div>
 
                             {loading ? (
-                                <div className="flex items-center justify-center py-12 text-gray-600 text-xs font-mono">
+                                <div className="flex items-center justify-center py-12 text-bark-500 text-xs font-mono">
                                     <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading member directory...
                                 </div>
                             ) : (
                                 <div className="overflow-x-auto">
-                                    <table className="w-full text-left text-xs text-gray-700 border-collapse">
-                                        <thead className="bg-white text-gray-600 uppercase text-[10px] tracking-wider font-mono">
+                                    <table className="w-full text-left text-xs text-bark-700 border-collapse">
+                                        <thead className="bg-paper text-bark-500 uppercase text-[10px] tracking-wider font-mono">
                                             <tr>
-                                                <th className="p-3 border-b border-gray-200">Member #</th>
-                                                <th className="p-3 border-b border-gray-200">Tier / Borrow Limit</th>
-                                                <th className="p-3 border-b border-gray-200">Status</th>
-                                                <th className="p-3 border-b border-gray-200">Ban Reason</th>
-                                                <th className="p-3 border-b border-gray-200 text-right">Actions</th>
+                                                <th className="p-3 border-b border-bark-100">Member #</th>
+                                                <th className="p-3 border-b border-bark-100">Tier / Borrow Limit</th>
+                                                <th className="p-3 border-b border-bark-100">Status</th>
+                                                <th className="p-3 border-b border-bark-100">Ban Reason</th>
+                                                <th className="p-3 border-b border-bark-100 text-right">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-zinc-800/60">
                                             {filteredRecords.map((m) => (
-                                                <tr key={m.id} className="hover:bg-white/50">
+                                                <tr key={m.id} className="hover:bg-paper/50">
                                                     <td className="p-3 font-mono font-bold text-zinc-200">{m.member_number}</td>
                                                     <td className="p-3">
                                                         <span className="capitalize font-semibold text-zinc-200">{m.membership_tier}</span>
-                                                        <div className="text-[10px] text-gray-500 font-mono">Max: {m.borrow_limit}</div>
+                                                        <div className="text-[10px] text-bark-500 font-mono">Max: {m.borrow_limit}</div>
                                                     </td>
                                                     <td className="p-3">
                                                         {m.is_banned ? (
-                                                            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-gray-200 text-gray-700 border border-gray-300 flex items-center gap-1 w-fit">
+                                                            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-cream text-bark-700 border border-bark-100 flex items-center gap-1 w-fit">
                                                                 <ShieldAlert className="w-3 h-3" /> BANNED
                                                             </span>
                                                         ) : (
@@ -763,14 +763,14 @@ export default function AdminDashboard() {
                                                             </span>
                                                         )}
                                                     </td>
-                                                    <td className="p-3 text-gray-600 text-xs italic">{m.ban_reason || 'None'}</td>
+                                                    <td className="p-3 text-bark-500 text-xs italic">{m.ban_reason || 'None'}</td>
                                                     <td className="p-3 text-right">
                                                         <button
                                                             onClick={() => setBanModal({ isOpen: true, member: m })}
                                                             className={`py-1 px-3 rounded-lg text-xs font-bold font-mono transition-all border ${
                                                                 m.is_banned
-                                                                    ? 'bg-zinc-100 hover:bg-white text-zinc-950 border-zinc-100'
-                                                                    : 'bg-gray-200 hover:bg-zinc-700 text-gray-700 border-gray-300'
+                                                                    ? 'bg-zinc-100 hover:bg-paper text-zinc-950 border-zinc-100'
+                                                                    : 'bg-cream hover:bg-zinc-700 text-bark-700 border-bark-100'
                                                             }`}
                                                         >
                                                             {m.is_banned ? 'Lift Ban' : 'Ban Member'}
@@ -789,62 +789,62 @@ export default function AdminDashboard() {
                     {activeTab === 'librarians' && (
                         <div className="space-y-6">
                             {/* Add Librarian Form */}
-                            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-4 shadow-sm">
-                                <div className="flex items-center gap-2.5 border-b border-gray-200 pb-3">
-                                    <div className="p-2 rounded-lg bg-white border border-gray-200 text-gray-700">
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
+                                <div className="flex items-center gap-2.5 border-b border-bark-100 pb-3">
+                                    <div className="p-2 rounded-lg bg-paper border border-bark-100 text-bark-700">
                                         <UserPlus className="w-4 h-4" />
                                     </div>
                                     <div>
-                                        <h3 className="text-sm font-bold text-gray-900">Register New Librarian</h3>
-                                        <p className="text-xs text-gray-600">Create staff credential account with librarian privileges</p>
+                                        <h3 className="text-sm font-bold text-bark-900">Register New Librarian</h3>
+                                        <p className="text-xs text-bark-500">Create staff credential account with librarian privileges</p>
                                     </div>
                                 </div>
 
                                 <form onSubmit={handleAddLibrarian} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Staff Full Name</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Staff Full Name</label>
                                         <input
                                             type="text"
                                             value={libForm.name}
                                             onChange={(e) => setLibForm({ ...libForm, name: e.target.value })}
                                             placeholder="e.g. John Staff"
                                             required
-                                            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-gray-300"
+                                            className="w-full bg-paper border border-bark-100 rounded-lg px-3 py-2 text-xs text-bark-900 focus:outline-none focus:border-bark-100"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Email Address</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Email Address</label>
                                         <input
                                             type="email"
                                             value={libForm.email}
                                             onChange={(e) => setLibForm({ ...libForm, email: e.target.value })}
                                             placeholder="librarian@maktababora.org"
                                             required
-                                            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-gray-300"
+                                            className="w-full bg-paper border border-bark-100 rounded-lg px-3 py-2 text-xs text-bark-900 focus:outline-none focus:border-bark-100"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Password</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Password</label>
                                         <input
                                             type="password"
                                             value={libForm.password}
                                             onChange={(e) => setLibForm({ ...libForm, password: e.target.value })}
                                             placeholder="••••••••"
                                             required
-                                            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-gray-300 font-mono"
+                                            className="w-full bg-paper border border-bark-100 rounded-lg px-3 py-2 text-xs text-bark-900 focus:outline-none focus:border-bark-100 font-mono"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Department</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Department</label>
                                         <input
                                             type="text"
                                             value={libForm.department}
                                             onChange={(e) => setLibForm({ ...libForm, department: e.target.value })}
                                             placeholder="General Circulation"
-                                            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-gray-300"
+                                            className="w-full bg-paper border border-bark-100 rounded-lg px-3 py-2 text-xs text-bark-900 focus:outline-none focus:border-bark-100"
                                         />
                                     </div>
 
@@ -852,7 +852,7 @@ export default function AdminDashboard() {
                                         <button
                                             type="submit"
                                             disabled={libSubmitting}
-                                            className="py-2.5 px-4 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+                                            className="py-2.5 px-4 rounded-lg bg-zinc-100 hover:bg-paper text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
                                         >
                                             {libSubmitting ? <Loader2 className="w-4 h-4 animate-spin text-zinc-950" /> : <UserPlus className="w-4 h-4" />}
                                             <span>Register Staff Librarian</span>
@@ -862,33 +862,33 @@ export default function AdminDashboard() {
                             </div>
 
                             {/* Librarians List */}
-                            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-4 shadow-sm">
-                                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                                    <UserCheck className="w-4 h-4 text-gray-600" /> Active Librarians Directory
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
+                                <h3 className="text-sm font-bold text-bark-900 flex items-center gap-2">
+                                    <UserCheck className="w-4 h-4 text-bark-500" /> Active Librarians Directory
                                 </h3>
 
                                 {loading ? (
-                                    <div className="flex items-center justify-center py-8 text-gray-600 text-xs font-mono">
+                                    <div className="flex items-center justify-center py-8 text-bark-500 text-xs font-mono">
                                         <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading librarians...
                                     </div>
                                 ) : (
                                     <div className="overflow-x-auto">
-                                        <table className="w-full text-left text-xs text-gray-700 border-collapse">
-                                            <thead className="bg-white text-gray-600 uppercase text-[10px] tracking-wider font-mono">
+                                        <table className="w-full text-left text-xs text-bark-700 border-collapse">
+                                            <thead className="bg-paper text-bark-500 uppercase text-[10px] tracking-wider font-mono">
                                                 <tr>
-                                                    <th className="p-3 border-b border-gray-200">Employee ID</th>
-                                                    <th className="p-3 border-b border-gray-200">User ID</th>
-                                                    <th className="p-3 border-b border-gray-200">Department</th>
-                                                    <th className="p-3 border-b border-gray-200 font-mono text-right">Registered Date</th>
+                                                    <th className="p-3 border-b border-bark-100">Employee ID</th>
+                                                    <th className="p-3 border-b border-bark-100">User ID</th>
+                                                    <th className="p-3 border-b border-bark-100">Department</th>
+                                                    <th className="p-3 border-b border-bark-100 font-mono text-right">Registered Date</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-zinc-800/60">
                                                 {records.map((lib) => (
-                                                    <tr key={lib.id} className="hover:bg-white/50">
-                                                        <td className="p-3 font-mono font-bold text-gray-900">{lib.employee_id}</td>
-                                                        <td className="p-3 font-mono text-gray-600">User #{lib.user_id}</td>
-                                                        <td className="p-3 text-gray-700">{lib.department || 'Circulation'}</td>
-                                                        <td className="p-3 text-right font-mono text-gray-500">{String(lib.created_at || '').slice(0, 10)}</td>
+                                                    <tr key={lib.id} className="hover:bg-paper/50">
+                                                        <td className="p-3 font-mono font-bold text-bark-900">{lib.employee_id}</td>
+                                                        <td className="p-3 font-mono text-bark-500">User #{lib.user_id}</td>
+                                                        <td className="p-3 text-bark-700">{lib.department || 'Circulation'}</td>
+                                                        <td className="p-3 text-right font-mono text-bark-500">{String(lib.created_at || '').slice(0, 10)}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -901,34 +901,34 @@ export default function AdminDashboard() {
 
                     {/* Generic Table View (Users, Books, Copies, Loans, Fines, etc.) */}
                     {activeTab !== 'overview' && activeTab !== 'members' && activeTab !== 'librarians' && (
-                        <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-4 shadow-sm">
+                        <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
                             
                             {/* Control Bar */}
-                            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-gray-200 pb-4">
+                            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-bark-100 pb-4">
                                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                                    <h2 className="text-base font-bold text-gray-900 capitalize flex items-center gap-2">
-                                        <Table className="w-4 h-4 text-gray-600" /> {activeTab.replace('_', ' ')}
+                                    <h2 className="text-base font-bold text-bark-900 capitalize flex items-center gap-2">
+                                        <Table className="w-4 h-4 text-bark-500" /> {activeTab.replace('_', ' ')}
                                     </h2>
-                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-white text-gray-600 border border-gray-200">
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-paper text-bark-500 border border-bark-100">
                                         {records.length} Records
                                     </span>
                                 </div>
 
                                 <div className="flex items-center gap-2.5 w-full sm:w-auto">
                                     <div className="relative flex-1 sm:w-60">
-                                        <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                                        <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-bark-500" />
                                         <input
                                             type="text"
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
                                             placeholder="Filter records..."
-                                            className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300 font-mono"
+                                            className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
                                         />
                                     </div>
 
                                     <button
                                         onClick={handleOpenCreate}
-                                        className="py-1.5 px-3 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs flex items-center gap-1 shadow-sm whitespace-nowrap"
+                                        className="py-1.5 px-3 rounded-lg bg-zinc-100 hover:bg-paper text-zinc-950 font-bold text-xs flex items-center gap-1 shadow-sm whitespace-nowrap"
                                     >
                                         <Plus className="w-3.5 h-3.5" /> Add Record
                                     </button>
@@ -937,34 +937,34 @@ export default function AdminDashboard() {
 
                             {/* Table */}
                             {loading ? (
-                                <div className="flex items-center justify-center py-16 text-gray-600 font-mono text-xs">
-                                    <Loader2 className="w-6 h-6 animate-spin text-gray-600 mr-2" /> Loading records...
+                                <div className="flex items-center justify-center py-16 text-bark-500 font-mono text-xs">
+                                    <Loader2 className="w-6 h-6 animate-spin text-bark-500 mr-2" /> Loading records...
                                 </div>
                             ) : filteredRecords.length === 0 ? (
-                                <div className="text-center py-16 text-gray-500 space-y-1">
+                                <div className="text-center py-16 text-bark-500 space-y-1">
                                     <Table className="w-8 h-8 mx-auto text-zinc-600" />
                                     <p className="text-xs">No records found in {activeTab}.</p>
                                 </div>
                             ) : (
                                 <div className="overflow-x-auto max-h-[500px]">
-                                    <table className="w-full text-left text-xs text-gray-700 border-collapse">
-                                        <thead className="bg-white sticky top-0 text-gray-600 uppercase text-[10px] font-mono tracking-wider z-10">
+                                    <table className="w-full text-left text-xs text-bark-700 border-collapse">
+                                        <thead className="bg-paper sticky top-0 text-bark-500 uppercase text-[10px] font-mono tracking-wider z-10">
                                             <tr>
                                                 {columns.map(col => (
-                                                    <th key={col} className="p-3 border-b border-gray-200 whitespace-nowrap">{col}</th>
+                                                    <th key={col} className="p-3 border-b border-bark-100 whitespace-nowrap">{col}</th>
                                                 ))}
-                                                <th className="p-3 border-b border-gray-200 text-right whitespace-nowrap">Actions</th>
+                                                <th className="p-3 border-b border-bark-100 text-right whitespace-nowrap">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-zinc-800/60">
                                             {filteredRecords.map((row) => (
-                                                <tr key={row.id} className="hover:bg-white/60 transition-colors">
+                                                <tr key={row.id} className="hover:bg-paper/60 transition-colors">
                                                     {columns.map(col => (
                                                         <td key={col} className="p-3 max-w-xs truncate font-mono text-[11px]">
                                                             {row[col] === null || row[col] === undefined ? (
                                                                 <span className="text-zinc-600 italic">null</span>
                                                             ) : typeof row[col] === 'boolean' ? (
-                                                                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${row[col] ? 'bg-zinc-100 text-zinc-950' : 'bg-gray-200 text-gray-600'}`}>
+                                                                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${row[col] ? 'bg-zinc-100 text-zinc-950' : 'bg-cream text-bark-500'}`}>
                                                                     {row[col] ? 'TRUE' : 'FALSE'}
                                                                 </span>
                                                             ) : (
@@ -975,14 +975,14 @@ export default function AdminDashboard() {
                                                     <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
                                                         <button
                                                             onClick={() => handleOpenEdit(row)}
-                                                            className="p-1.5 rounded-md bg-white hover:bg-gray-200 border border-gray-200 text-gray-700 transition-colors"
+                                                            className="p-1.5 rounded-md bg-paper hover:bg-cream border border-bark-100 text-bark-700 transition-colors"
                                                             title="Edit Record"
                                                         >
                                                             <Edit2 className="w-3.5 h-3.5" />
                                                         </button>
                                                         <button
                                                             onClick={() => handleDelete(row.id)}
-                                                            className="p-1.5 rounded-md bg-white hover:bg-gray-200 border border-gray-200 text-gray-600 hover:text-gray-900 transition-colors"
+                                                            className="p-1.5 rounded-md bg-paper hover:bg-cream border border-bark-100 text-bark-500 hover:text-bark-900 transition-colors"
                                                             title="Delete Record"
                                                         >
                                                             <Trash2 className="w-3.5 h-3.5" />
@@ -1002,24 +1002,24 @@ export default function AdminDashboard() {
 
             {/* Task 4: Member Ban Modal with Reason Dropdown & Custom Text Area */}
             {banModal.isOpen && banModal.member && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/80 backdrop-blur-md animate-in fade-in duration-200">
-                    <div className="bg-gray-50 border border-gray-200 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl relative">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-paper/80 backdrop-blur-md animate-in fade-in duration-200">
+                    <div className="bg-cream-light/40 border border-bark-100 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl relative">
                         <button
                             onClick={() => setBanModal({ isOpen: false, member: null })}
-                            className="absolute top-4 right-4 p-1.5 text-gray-600 hover:text-white"
+                            className="absolute top-4 right-4 p-1.5 text-bark-500 hover:text-white"
                         >
                             <X className="w-4 h-4" />
                         </button>
 
                         <div className="flex items-center gap-2.5">
-                            <div className="p-2 rounded-lg bg-white border border-gray-200 text-gray-700">
+                            <div className="p-2 rounded-lg bg-paper border border-bark-100 text-bark-700">
                                 <ShieldAlert className="w-4 h-4" />
                             </div>
                             <div>
-                                <h3 className="text-sm font-bold text-gray-900">
+                                <h3 className="text-sm font-bold text-bark-900">
                                     {banModal.member.is_banned ? 'Lift Member Suspension' : 'Suspend Member Account'}
                                 </h3>
-                                <p className="text-xs text-gray-600 font-mono">Member #{banModal.member.member_number}</p>
+                                <p className="text-xs text-bark-500 font-mono">Member #{banModal.member.member_number}</p>
                             </div>
                         </div>
 
@@ -1027,11 +1027,11 @@ export default function AdminDashboard() {
                             {!banModal.member.is_banned && (
                                 <>
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Select Suspension Reason</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Select Suspension Reason</label>
                                         <select
                                             value={banReasonSelect}
                                             onChange={(e) => setBanReasonSelect(e.target.value)}
-                                            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-gray-300"
+                                            className="w-full bg-paper border border-bark-100 rounded-lg px-3 py-2 text-xs text-bark-900 focus:outline-none focus:border-bark-100"
                                         >
                                             <option value="Overdue Fines Unpaid">Overdue Fines Unpaid</option>
                                             <option value="Damaged Library Property">Damaged Library Property</option>
@@ -1043,31 +1043,31 @@ export default function AdminDashboard() {
 
                                     {banReasonSelect === 'Custom Reason' && (
                                         <div>
-                                            <label className="block text-xs font-semibold text-gray-700 mb-1">Specify Custom Reason</label>
+                                            <label className="block text-xs font-semibold text-bark-700 mb-1">Specify Custom Reason</label>
                                             <textarea
                                                 value={customBanReason}
                                                 onChange={(e) => setCustomBanReason(e.target.value)}
                                                 placeholder="Provide detailed ban reason..."
                                                 required
-                                                className="w-full bg-white border border-gray-200 rounded-lg p-3 text-xs text-gray-900 focus:outline-none focus:border-gray-300 h-20"
+                                                className="w-full bg-paper border border-bark-100 rounded-lg p-3 text-xs text-bark-900 focus:outline-none focus:border-bark-100 h-20"
                                             />
                                         </div>
                                     )}
                                 </>
                             )}
 
-                            <div className="pt-2 flex items-center justify-end gap-2 border-t border-gray-200">
+                            <div className="pt-2 flex items-center justify-end gap-2 border-t border-bark-100">
                                 <button
                                     type="button"
                                     onClick={() => setBanModal({ isOpen: false, member: null })}
-                                    className="py-1.5 px-3 rounded-lg bg-gray-200 hover:bg-zinc-700 text-gray-700 text-xs font-semibold"
+                                    className="py-1.5 px-3 rounded-lg bg-cream hover:bg-zinc-700 text-bark-700 text-xs font-semibold"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={banLoading}
-                                    className="py-1.5 px-4 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs shadow-sm flex items-center gap-1.5"
+                                    className="py-1.5 px-4 rounded-lg bg-zinc-100 hover:bg-paper text-zinc-950 font-bold text-xs shadow-sm flex items-center gap-1.5"
                                 >
                                     {banLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : (banModal.member.is_banned ? 'Confirm Lift Ban' : 'Confirm Suspension')}
                                 </button>
@@ -1079,24 +1079,24 @@ export default function AdminDashboard() {
 
             {/* General Create / Edit Modal */}
             {modal.type && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/80 backdrop-blur-md animate-in fade-in duration-200">
-                    <div className="bg-gray-50 border border-gray-200 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl relative max-h-[85vh] flex flex-col">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-paper/80 backdrop-blur-md animate-in fade-in duration-200">
+                    <div className="bg-cream-light/40 border border-bark-100 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl relative max-h-[85vh] flex flex-col">
                         <button
                             onClick={() => setModal({ type: null, record: null })}
-                            className="absolute top-4 right-4 p-1.5 text-gray-600 hover:text-white"
+                            className="absolute top-4 right-4 p-1.5 text-bark-500 hover:text-white"
                         >
                             <X className="w-4 h-4" />
                         </button>
 
                         <div className="flex items-center gap-2.5">
-                            <div className="p-2 rounded-lg bg-white border border-gray-200 text-gray-700">
+                            <div className="p-2 rounded-lg bg-paper border border-bark-100 text-bark-700">
                                 <Table className="w-4 h-4" />
                             </div>
                             <div>
-                                <h3 className="text-sm font-bold text-gray-900 capitalize">
+                                <h3 className="text-sm font-bold text-bark-900 capitalize">
                                     {modal.type === 'create' ? `Create Record` : `Edit Record #${modal.record?.id}`}
                                 </h3>
-                                <p className="text-xs text-gray-600">Fill in record attribute fields below</p>
+                                <p className="text-xs text-bark-500">Fill in record attribute fields below</p>
                             </div>
                         </div>
 
@@ -1105,7 +1105,7 @@ export default function AdminDashboard() {
                                 .filter(col => col !== 'id' && col !== 'created_at' && col !== 'updated_at')
                                 .map(col => (
                                     <div key={col}>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1 capitalize font-mono">
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1 capitalize font-mono">
                                             {col.replace('_', ' ')}
                                         </label>
                                         <input
@@ -1113,7 +1113,7 @@ export default function AdminDashboard() {
                                             value={formData[col] ?? ''}
                                             onChange={(e) => handleFieldChange(col, e.target.value)}
                                             placeholder={`Enter ${col}`}
-                                            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-gray-300 font-mono"
+                                            className="w-full bg-paper border border-bark-100 rounded-lg px-3 py-2 text-xs text-bark-900 focus:outline-none focus:border-bark-100 font-mono"
                                         />
                                     </div>
                                 ))}
@@ -1121,7 +1121,7 @@ export default function AdminDashboard() {
                             {/* If creating user, ensure password field is rendered */}
                             {modal.type === 'create' && activeTab === 'users' && !columns.includes('password') && (
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-700 mb-1 capitalize font-mono">
+                                    <label className="block text-xs font-semibold text-bark-700 mb-1 capitalize font-mono">
                                         Password
                                     </label>
                                     <input
@@ -1130,23 +1130,23 @@ export default function AdminDashboard() {
                                         onChange={(e) => handleFieldChange('password', e.target.value)}
                                         placeholder="Enter password"
                                         required
-                                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 focus:outline-none focus:border-gray-300 font-mono"
+                                        className="w-full bg-paper border border-bark-100 rounded-lg px-3 py-2 text-xs text-bark-900 focus:outline-none focus:border-bark-100 font-mono"
                                     />
                                 </div>
                             )}
 
-                            <div className="pt-2 flex items-center justify-end gap-2 border-t border-gray-200">
+                            <div className="pt-2 flex items-center justify-end gap-2 border-t border-bark-100">
                                 <button
                                     type="button"
                                     onClick={() => setModal({ type: null, record: null })}
-                                    className="py-1.5 px-3 rounded-lg bg-gray-200 hover:bg-zinc-700 text-gray-700 text-xs font-semibold"
+                                    className="py-1.5 px-3 rounded-lg bg-cream hover:bg-zinc-700 text-bark-700 text-xs font-semibold"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={submitting}
-                                    className="py-1.5 px-4 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs shadow-sm flex items-center gap-1.5"
+                                    className="py-1.5 px-4 rounded-lg bg-zinc-100 hover:bg-paper text-zinc-950 font-bold text-xs shadow-sm flex items-center gap-1.5"
                                 >
                                     {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : (modal.type === 'create' ? 'Insert Record' : 'Save Changes')}
                                 </button>

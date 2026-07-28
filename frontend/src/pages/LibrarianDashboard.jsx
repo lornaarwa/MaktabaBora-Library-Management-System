@@ -269,20 +269,20 @@ export default function LibrarianDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             
             {/* Header */}
-            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 sm:p-8 flex items-center justify-between shadow-sm">
+            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 sm:p-8 flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                        className="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 hover:text-gray-900 transition-colors"
+                        className="p-2 rounded-lg bg-paper border border-bark-100 text-bark-500 hover:text-bark-900 transition-colors"
                         title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                     >
                         {isSidebarCollapsed ? <Menu className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
                     </button>
                     <div>
-                        <span className="px-2.5 py-0.5 rounded text-[9px] font-mono font-bold bg-gray-200 text-gray-700 border border-gray-300 uppercase tracking-wider">
+                        <span className="px-2.5 py-0.5 rounded text-[9px] font-mono font-bold bg-cream text-bark-700 border border-bark-100 uppercase tracking-wider">
                             LIBRARIAN PORTAL
                         </span>
-                        <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 mt-1">
+                        <h1 className="text-xl sm:text-2xl font-extrabold text-bark-900 mt-1">
                             Circulation Desk & Inventory Operations
                         </h1>
                     </div>
@@ -291,20 +291,20 @@ export default function LibrarianDashboard() {
 
             {/* Notifications */}
             {successMsg && (
-                <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 text-zinc-200 text-xs flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-cream-light/40 border border-bark-100 text-zinc-200 text-xs flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-gray-600" /> {successMsg}
+                        <CheckCircle2 className="w-4 h-4 text-bark-500" /> {successMsg}
                     </div>
-                    <button onClick={() => setSuccessMsg(null)}><X className="w-4 h-4 text-gray-600" /></button>
+                    <button onClick={() => setSuccessMsg(null)}><X className="w-4 h-4 text-bark-500" /></button>
                 </div>
             )}
 
             {errorMsg && (
-                <div className="p-3.5 rounded-xl bg-gray-50 border border-gray-200 text-zinc-200 text-xs flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-cream-light/40 border border-bark-100 text-zinc-200 text-xs flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 text-gray-600" /> {errorMsg}
+                        <AlertCircle className="w-4 h-4 text-bark-500" /> {errorMsg}
                     </div>
-                    <button onClick={() => setErrorMsg(null)}><X className="w-4 h-4 text-gray-600" /></button>
+                    <button onClick={() => setErrorMsg(null)}><X className="w-4 h-4 text-bark-500" /></button>
                 </div>
             )}
 
@@ -312,16 +312,16 @@ export default function LibrarianDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
                 {/* Task 3: Librarian Sidebar Navigation */}
-                <div className={`${isSidebarCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} bg-gray-50 border border-gray-200 rounded-2xl p-3.5 space-y-2 h-fit shadow-sm transition-all`}>
+                <div className={`${isSidebarCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} bg-cream-light/40 border border-bark-100 rounded-2xl p-3.5 space-y-2 h-fit shadow-sm transition-all`}>
                     <div className="flex items-center justify-between px-2 py-1">
                         {!isSidebarCollapsed && (
-                            <h3 className="text-[10px] font-mono font-extrabold text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                                <Table className="w-3.5 h-3.5 text-gray-600" /> Desk Navigation
+                            <h3 className="text-[10px] font-mono font-extrabold text-bark-500 uppercase tracking-wider flex items-center gap-2">
+                                <Table className="w-3.5 h-3.5 text-bark-500" /> Desk Navigation
                             </h3>
                         )}
                         <button
                             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                            className="p-1 rounded text-gray-500 hover:text-zinc-200"
+                            className="p-1 rounded text-bark-500 hover:text-zinc-200"
                         >
                             {isSidebarCollapsed ? <ChevronRight className="w-4 h-4 mx-auto" /> : <ChevronLeft className="w-4 h-4" />}
                         </button>
@@ -333,12 +333,12 @@ export default function LibrarianDashboard() {
                             className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                                 activeTab === 'overview'
                                     ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
-                                    : 'text-gray-600 hover:text-zinc-200 hover:bg-gray-200/60'
+                                    : 'text-bark-500 hover:text-zinc-200 hover:bg-cream/60'
                             }`}
                             title="Circulation Overview"
                         >
                             <div className="flex items-center gap-2.5">
-                                <Activity className="w-4 h-4 text-gray-600" />
+                                <Activity className="w-4 h-4 text-bark-500" />
                                 {!isSidebarCollapsed && <span>Overview & Directory</span>}
                             </div>
                         </button>
@@ -348,12 +348,12 @@ export default function LibrarianDashboard() {
                             className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                                 activeTab === 'add_books'
                                     ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
-                                    : 'text-gray-600 hover:text-zinc-200 hover:bg-gray-200/60'
+                                    : 'text-bark-500 hover:text-zinc-200 hover:bg-cream/60'
                             }`}
                             title="Add Books to Inventory"
                         >
                             <div className="flex items-center gap-2.5">
-                                <BookOpen className="w-4 h-4 text-gray-600" />
+                                <BookOpen className="w-4 h-4 text-bark-500" />
                                 {!isSidebarCollapsed && <span>Add Books / Inventory</span>}
                             </div>
                         </button>
@@ -363,12 +363,12 @@ export default function LibrarianDashboard() {
                             className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                                 activeTab === 'book_copies'
                                     ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
-                                    : 'text-gray-600 hover:text-zinc-200 hover:bg-gray-200/60'
+                                    : 'text-bark-500 hover:text-zinc-200 hover:bg-cream/60'
                             }`}
                             title="Book Copies"
                         >
                             <div className="flex items-center gap-2.5">
-                                <Layers className="w-4 h-4 text-gray-600" />
+                                <Layers className="w-4 h-4 text-bark-500" />
                                 {!isSidebarCollapsed && <span>Book Copies ({copies.length})</span>}
                             </div>
                         </button>
@@ -378,12 +378,12 @@ export default function LibrarianDashboard() {
                             className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                                 activeTab === 'returns'
                                     ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
-                                    : 'text-gray-600 hover:text-zinc-200 hover:bg-gray-200/60'
+                                    : 'text-bark-500 hover:text-zinc-200 hover:bg-cream/60'
                             }`}
                             title="Process Book Returns"
                         >
                             <div className="flex items-center gap-2.5">
-                                <BookCheck className="w-4 h-4 text-gray-600" />
+                                <BookCheck className="w-4 h-4 text-bark-500" />
                                 {!isSidebarCollapsed && <span>Process Returns ({activeLoans.length})</span>}
                             </div>
                         </button>
@@ -393,12 +393,12 @@ export default function LibrarianDashboard() {
                             className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                                 activeTab === 'subscriptions'
                                     ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
-                                    : 'text-gray-600 hover:text-zinc-200 hover:bg-gray-200/60'
+                                    : 'text-bark-500 hover:text-zinc-200 hover:bg-cream/60'
                             }`}
                             title="Valid Subscriptions (CRUD)"
                         >
                             <div className="flex items-center gap-2.5">
-                                <CreditCard className="w-4 h-4 text-gray-600" />
+                                <CreditCard className="w-4 h-4 text-bark-500" />
                                 {!isSidebarCollapsed && <span>Subscriptions (CRUD)</span>}
                             </div>
                         </button>
@@ -413,94 +413,94 @@ export default function LibrarianDashboard() {
                         <div className="space-y-6">
                             {/* Metrics Overview Cards */}
                             <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
-                                <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-2">
-                                    <div className="flex justify-between items-center text-gray-600">
-                                        <span className="text-xs font-semibold text-gray-600 uppercase font-mono">Catalog Titles</span>
-                                        <div className="p-2 rounded-lg bg-white border border-gray-200 text-gray-700">
+                                <div className="bg-cream-light/40 border border-bark-100 rounded-xl p-5 space-y-2">
+                                    <div className="flex justify-between items-center text-bark-500">
+                                        <span className="text-xs font-semibold text-bark-500 uppercase font-mono">Catalog Titles</span>
+                                        <div className="p-2 rounded-lg bg-paper border border-bark-100 text-bark-700">
                                             <BarChart3 className="w-4 h-4" />
                                         </div>
                                     </div>
-                                    <span className="text-2xl font-extrabold text-gray-900 block">{loading ? '...' : metrics.total_books}</span>
+                                    <span className="text-2xl font-extrabold text-bark-900 block">{loading ? '...' : metrics.total_books}</span>
                                 </div>
 
-                                <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-2">
-                                    <div className="flex justify-between items-center text-gray-600">
-                                        <span className="text-xs font-semibold text-gray-600 uppercase font-mono">Active Loans</span>
-                                        <div className="p-2 rounded-lg bg-white border border-gray-200 text-gray-700">
+                                <div className="bg-cream-light/40 border border-bark-100 rounded-xl p-5 space-y-2">
+                                    <div className="flex justify-between items-center text-bark-500">
+                                        <span className="text-xs font-semibold text-bark-500 uppercase font-mono">Active Loans</span>
+                                        <div className="p-2 rounded-lg bg-paper border border-bark-100 text-bark-700">
                                             <BookCheck className="w-4 h-4" />
                                         </div>
                                     </div>
-                                    <span className="text-2xl font-extrabold text-gray-900 block">{loading ? '...' : metrics.active_loans}</span>
+                                    <span className="text-2xl font-extrabold text-bark-900 block">{loading ? '...' : metrics.active_loans}</span>
                                 </div>
 
-                                <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-2">
-                                    <div className="flex justify-between items-center text-gray-600">
-                                        <span className="text-xs font-semibold text-gray-600 uppercase font-mono">Overdue Returns</span>
-                                        <div className="p-2 rounded-lg bg-white border border-gray-200 text-gray-700">
+                                <div className="bg-cream-light/40 border border-bark-100 rounded-xl p-5 space-y-2">
+                                    <div className="flex justify-between items-center text-bark-500">
+                                        <span className="text-xs font-semibold text-bark-500 uppercase font-mono">Overdue Returns</span>
+                                        <div className="p-2 rounded-lg bg-paper border border-bark-100 text-bark-700">
                                             <ShieldAlert className="w-4 h-4" />
                                         </div>
                                     </div>
-                                    <span className="text-2xl font-extrabold text-gray-900 block">{loading ? '...' : metrics.overdue_loans}</span>
+                                    <span className="text-2xl font-extrabold text-bark-900 block">{loading ? '...' : metrics.overdue_loans}</span>
                                 </div>
 
-                                <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-2">
-                                    <div className="flex justify-between items-center text-gray-600">
-                                        <span className="text-xs font-semibold text-gray-600 uppercase font-mono">Unpaid Fines</span>
-                                        <div className="p-2 rounded-lg bg-white border border-gray-200 text-gray-700">
+                                <div className="bg-cream-light/40 border border-bark-100 rounded-xl p-5 space-y-2">
+                                    <div className="flex justify-between items-center text-bark-500">
+                                        <span className="text-xs font-semibold text-bark-500 uppercase font-mono">Unpaid Fines</span>
+                                        <div className="p-2 rounded-lg bg-paper border border-bark-100 text-bark-700">
                                             <QrCode className="w-4 h-4" />
                                         </div>
                                     </div>
-                                    <span className="text-2xl font-extrabold text-gray-900 block">KES {loading ? '...' : metrics.total_unpaid_fines}</span>
+                                    <span className="text-2xl font-extrabold text-bark-900 block">KES {loading ? '...' : metrics.total_unpaid_fines}</span>
                                 </div>
                             </div>
 
                             {/* Member Activity Directory */}
-                            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-4 shadow-sm">
-                                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                                    <Users className="w-4 h-4 text-gray-600" /> Member Activity Directory
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
+                                <h3 className="text-base font-bold text-bark-900 flex items-center gap-2">
+                                    <Users className="w-4 h-4 text-bark-500" /> Member Activity Directory
                                 </h3>
 
                                 {loading ? (
-                                    <div className="flex items-center justify-center py-8 text-gray-600 font-mono text-xs">
+                                    <div className="flex items-center justify-center py-8 text-bark-500 font-mono text-xs">
                                         <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading member directory...
                                     </div>
                                 ) : (
                                     <div className="overflow-x-auto">
-                                        <table className="w-full text-left text-xs text-gray-700 border-collapse">
-                                            <thead className="bg-white text-gray-600 uppercase text-[10px] tracking-wider font-mono">
+                                        <table className="w-full text-left text-xs text-bark-700 border-collapse">
+                                            <thead className="bg-paper text-bark-500 uppercase text-[10px] tracking-wider font-mono">
                                                 <tr>
-                                                    <th className="p-3 border-b border-gray-200">Member #</th>
-                                                    <th className="p-3 border-b border-gray-200">Full Name & Email</th>
-                                                    <th className="p-3 border-b border-gray-200">Tier / Limit</th>
-                                                    <th className="p-3 border-b border-gray-200 text-center">Active Loans</th>
-                                                    <th className="p-3 border-b border-gray-200 text-center">Holds</th>
-                                                    <th className="p-3 border-b border-gray-200 text-center">Digital E-Books</th>
+                                                    <th className="p-3 border-b border-bark-100">Member #</th>
+                                                    <th className="p-3 border-b border-bark-100">Full Name & Email</th>
+                                                    <th className="p-3 border-b border-bark-100">Tier / Limit</th>
+                                                    <th className="p-3 border-b border-bark-100 text-center">Active Loans</th>
+                                                    <th className="p-3 border-b border-bark-100 text-center">Holds</th>
+                                                    <th className="p-3 border-b border-bark-100 text-center">Digital E-Books</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-zinc-800/60">
                                                 {members.map((m) => (
-                                                    <tr key={m.id} className="hover:bg-white/50">
+                                                    <tr key={m.id} className="hover:bg-paper/50">
                                                         <td className="p-3 font-mono font-bold text-zinc-200">{m.member_number}</td>
                                                         <td className="p-3">
-                                                            <div className="font-semibold text-gray-900">{m.name}</div>
-                                                            <div className="text-[11px] text-gray-600">{m.email}</div>
+                                                            <div className="font-semibold text-bark-900">{m.name}</div>
+                                                            <div className="text-[11px] text-bark-500">{m.email}</div>
                                                         </td>
                                                         <td className="p-3">
-                                                            <span className="capitalize text-gray-700 font-medium">{m.membership_tier}</span>
-                                                            <div className="text-[10px] text-gray-500 font-mono">Limit: {m.borrow_limit}</div>
+                                                            <span className="capitalize text-bark-700 font-medium">{m.membership_tier}</span>
+                                                            <div className="text-[10px] text-bark-500 font-mono">Limit: {m.borrow_limit}</div>
                                                         </td>
                                                         <td className="p-3 text-center">
-                                                            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-gray-200 text-zinc-200 border border-gray-300">
+                                                            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-cream text-zinc-200 border border-bark-100">
                                                                 {m.active_loans_count} active
                                                             </span>
                                                         </td>
                                                         <td className="p-3 text-center">
-                                                            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-gray-200 text-zinc-200 border border-gray-300">
+                                                            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-cream text-zinc-200 border border-bark-100">
                                                                 {m.reserved_books_count} holds
                                                             </span>
                                                         </td>
                                                         <td className="p-3 text-center">
-                                                            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-gray-200 text-zinc-200 border border-gray-300">
+                                                            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-cream text-zinc-200 border border-bark-100">
                                                                 {m.digital_purchases_count} e-books
                                                             </span>
                                                         </td>
@@ -513,39 +513,39 @@ export default function LibrarianDashboard() {
                             </div>
 
                             {/* Barcode Checkout Form */}
-                            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-4 shadow-sm">
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
                                 <div className="flex items-center gap-2.5">
-                                    <div className="p-2 rounded-lg bg-white border border-gray-200 text-gray-700">
+                                    <div className="p-2 rounded-lg bg-paper border border-bark-100 text-bark-700">
                                         <QrCode className="w-4 h-4" />
                                     </div>
                                     <div>
-                                        <h3 className="text-sm font-bold text-gray-900">Issue Physical Book Copy</h3>
-                                        <p className="text-xs text-gray-600">Scan barcode to check out physical copy to member</p>
+                                        <h3 className="text-sm font-bold text-bark-900">Issue Physical Book Copy</h3>
+                                        <p className="text-xs text-bark-500">Scan barcode to check out physical copy to member</p>
                                     </div>
                                 </div>
 
                                 <form onSubmit={handleCheckout} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Book Barcode</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Book Barcode</label>
                                         <input
                                             type="text"
                                             value={checkoutForm.barcode}
                                             onChange={(e) => setCheckoutForm({ ...checkoutForm, barcode: e.target.value })}
                                             placeholder="e.g. BC-9780132350884-001"
                                             required
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300 font-mono"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Member ID</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Member ID</label>
                                         <input
                                             type="number"
                                             value={checkoutForm.member_id}
                                             onChange={(e) => setCheckoutForm({ ...checkoutForm, member_id: e.target.value })}
                                             placeholder="e.g. 1"
                                             required
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300 font-mono"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
                                         />
                                     </div>
 
@@ -553,7 +553,7 @@ export default function LibrarianDashboard() {
                                         <button
                                             type="submit"
                                             disabled={checkoutSubmitting}
-                                            className="w-full py-2 px-4 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm h-9"
+                                            className="w-full py-2 px-4 rounded-lg bg-zinc-100 hover:bg-paper text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm h-9"
                                         >
                                             {checkoutSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <BookCheck className="w-4 h-4" />}
                                             <span>Issue Book Copy</span>
@@ -567,18 +567,18 @@ export default function LibrarianDashboard() {
                     {/* TAB 2: Add Books to Inventory & Catalog Management */}
                     {activeTab === 'add_books' && (
                         <div className="space-y-6">
-                            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-4 shadow-sm">
-                                <div className="flex items-center justify-between border-b border-gray-200 pb-4">
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
+                                <div className="flex items-center justify-between border-b border-bark-100 pb-4">
                                     <div>
-                                        <h2 className="text-base font-bold text-gray-900 flex items-center gap-2 font-mono">
-                                            <BookOpen className="w-4 h-4 text-gray-700" /> {editingBook ? 'Edit Book Record' : 'Add New Book to Inventory'}
+                                        <h2 className="text-base font-bold text-bark-900 flex items-center gap-2 font-mono">
+                                            <BookOpen className="w-4 h-4 text-bark-700" /> {editingBook ? 'Edit Book Record' : 'Add New Book to Inventory'}
                                         </h2>
-                                        <p className="text-xs text-gray-600 mt-0.5">Register new physical & digital title catalog entry</p>
+                                        <p className="text-xs text-bark-500 mt-0.5">Register new physical & digital title catalog entry</p>
                                     </div>
                                     {editingBook && (
                                         <button
                                             onClick={() => setEditingBook(null)}
-                                            className="px-3 py-1 rounded bg-gray-200 text-gray-700 text-xs hover:bg-zinc-700 font-mono"
+                                            className="px-3 py-1 rounded bg-cream text-bark-700 text-xs hover:bg-zinc-700 font-mono"
                                         >
                                             Cancel Editing
                                         </button>
@@ -587,7 +587,7 @@ export default function LibrarianDashboard() {
 
                                 <form onSubmit={handleBookSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">ISBN Number</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">ISBN Number</label>
                                         <input
                                             type="text"
                                             value={bookForm.isbn}
@@ -595,98 +595,98 @@ export default function LibrarianDashboard() {
                                             placeholder="e.g. 978-0132350884"
                                             required
                                             disabled={!!editingBook}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300 font-mono"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Book Title</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Book Title</label>
                                         <input
                                             type="text"
                                             value={bookForm.title}
                                             onChange={(e) => setBookForm({ ...bookForm, title: e.target.value })}
                                             placeholder="e.g. Clean Code"
                                             required
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Author Name</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Author Name</label>
                                         <input
                                             type="text"
                                             value={bookForm.author}
                                             onChange={(e) => setBookForm({ ...bookForm, author: e.target.value })}
                                             placeholder="e.g. Robert C. Martin"
                                             required
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Publisher</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Publisher</label>
                                         <input
                                             type="text"
                                             value={bookForm.publisher}
                                             onChange={(e) => setBookForm({ ...bookForm, publisher: e.target.value })}
                                             placeholder="e.g. Prentice Hall"
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Genre Category</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Genre Category</label>
                                         <input
                                             type="text"
                                             value={bookForm.genre}
                                             onChange={(e) => setBookForm({ ...bookForm, genre: e.target.value })}
                                             placeholder="e.g. Software, Tech, Fiction"
                                             required
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Digital Purchase Price (KES)</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Digital Purchase Price (KES)</label>
                                         <input
                                             type="number"
                                             step="0.01"
                                             value={bookForm.digital_purchase_price}
                                             onChange={(e) => setBookForm({ ...bookForm, digital_purchase_price: e.target.value })}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300 font-mono"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
                                         />
                                     </div>
 
                                     <div className="sm:col-span-2">
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Cover Image URL</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Cover Image URL</label>
                                         <input
                                             type="text"
                                             value={bookForm.cover_image_path}
                                             onChange={(e) => setBookForm({ ...bookForm, cover_image_path: e.target.value })}
                                             placeholder="https://images.unsplash.com/photo-..."
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300 font-mono"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
                                         />
                                     </div>
 
                                     <div className="sm:col-span-2">
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Base64 PDF / File Path</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Base64 PDF / File Path</label>
                                         <input
                                             type="text"
                                             value={bookForm.file_path}
                                             onChange={(e) => setBookForm({ ...bookForm, file_path: e.target.value })}
                                             placeholder="data:application/pdf;base64,JVBERi0x..."
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300 font-mono"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
                                         />
                                     </div>
 
                                     <div className="sm:col-span-2">
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Description</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Description</label>
                                         <textarea
                                             value={bookForm.description}
                                             onChange={(e) => setBookForm({ ...bookForm, description: e.target.value })}
                                             rows="2"
                                             placeholder="Brief overview of book content..."
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100"
                                         />
                                     </div>
 
@@ -694,7 +694,7 @@ export default function LibrarianDashboard() {
                                         <button
                                             type="submit"
                                             disabled={bookSubmitting}
-                                            className="py-2.5 px-6 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs flex items-center gap-2 transition-all shadow-sm"
+                                            className="py-2.5 px-6 rounded-lg bg-zinc-100 hover:bg-paper text-zinc-950 font-bold text-xs flex items-center gap-2 transition-all shadow-sm"
                                         >
                                             {bookSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                                             <span>{editingBook ? 'Save Book Changes' : 'Add Book to Inventory'}</span>
@@ -704,32 +704,32 @@ export default function LibrarianDashboard() {
                             </div>
 
                             {/* Books Catalog Table */}
-                            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-4 shadow-sm">
-                                <h3 className="text-base font-bold text-gray-900 font-mono">Catalog Books Inventory ({books.length})</h3>
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
+                                <h3 className="text-base font-bold text-bark-900 font-mono">Catalog Books Inventory ({books.length})</h3>
 
                                 <div className="overflow-x-auto">
-                                    <table className="w-full text-left text-xs text-gray-700 border-collapse">
-                                        <thead className="bg-white text-gray-600 uppercase text-[10px] tracking-wider font-mono">
+                                    <table className="w-full text-left text-xs text-bark-700 border-collapse">
+                                        <thead className="bg-paper text-bark-500 uppercase text-[10px] tracking-wider font-mono">
                                             <tr>
-                                                <th className="p-3 border-b border-gray-200">ISBN</th>
-                                                <th className="p-3 border-b border-gray-200">Title & Author</th>
-                                                <th className="p-3 border-b border-gray-200">Genre</th>
-                                                <th className="p-3 border-b border-gray-200 text-center">Copies (Total/Avail)</th>
-                                                <th className="p-3 border-b border-gray-200 text-center">Price</th>
-                                                <th className="p-3 border-b border-gray-200 text-right">Actions</th>
+                                                <th className="p-3 border-b border-bark-100">ISBN</th>
+                                                <th className="p-3 border-b border-bark-100">Title & Author</th>
+                                                <th className="p-3 border-b border-bark-100">Genre</th>
+                                                <th className="p-3 border-b border-bark-100 text-center">Copies (Total/Avail)</th>
+                                                <th className="p-3 border-b border-bark-100 text-center">Price</th>
+                                                <th className="p-3 border-b border-bark-100 text-right">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-zinc-800/60">
                                             {books.map((b) => (
-                                                <tr key={b.id} className="hover:bg-white/50">
-                                                    <td className="p-3 font-mono font-bold text-gray-700">{b.isbn}</td>
+                                                <tr key={b.id} className="hover:bg-paper/50">
+                                                    <td className="p-3 font-mono font-bold text-bark-700">{b.isbn}</td>
                                                     <td className="p-3">
-                                                        <div className="font-bold text-gray-900">{b.title}</div>
-                                                        <div className="text-[11px] text-gray-600">By {b.author}</div>
+                                                        <div className="font-bold text-bark-900">{b.title}</div>
+                                                        <div className="text-[11px] text-bark-500">By {b.author}</div>
                                                     </td>
-                                                    <td className="p-3 text-gray-600 font-mono">{b.genre}</td>
+                                                    <td className="p-3 text-bark-500 font-mono">{b.genre}</td>
                                                     <td className="p-3 text-center font-mono">
-                                                        <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-gray-200 text-zinc-200 border border-gray-300">
+                                                        <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-cream text-zinc-200 border border-bark-100">
                                                             {b.available_copies} / {b.total_copies}
                                                         </span>
                                                     </td>
@@ -742,7 +742,7 @@ export default function LibrarianDashboard() {
                                                             className={`px-2 py-1 rounded text-[10px] font-bold border transition-colors ${
                                                                 b.is_blocked
                                                                     ? 'bg-red-950 text-red-300 border-red-800'
-                                                                    : 'bg-gray-200 text-gray-700 border-gray-300 hover:bg-zinc-700'
+                                                                    : 'bg-cream text-bark-700 border-bark-100 hover:bg-zinc-700'
                                                             }`}
                                                             title="Toggle restriction"
                                                         >
@@ -763,7 +763,7 @@ export default function LibrarianDashboard() {
                                                                     initial_copies: b.total_copies || 1
                                                                 });
                                                             }}
-                                                            className="p-1.5 rounded bg-gray-200 text-gray-700 hover:bg-zinc-700"
+                                                            className="p-1.5 rounded bg-cream text-bark-700 hover:bg-zinc-700"
                                                             title="Edit book"
                                                         >
                                                             <Edit2 className="w-3.5 h-3.5" />
@@ -771,7 +771,7 @@ export default function LibrarianDashboard() {
 
                                                         <button
                                                             onClick={() => handleDeleteBook(b.id)}
-                                                            className="p-1.5 rounded bg-gray-200 text-gray-600 hover:text-red-400 hover:bg-zinc-700"
+                                                            className="p-1.5 rounded bg-cream text-bark-500 hover:text-red-400 hover:bg-zinc-700"
                                                             title="Delete book"
                                                         >
                                                             <Trash2 className="w-3.5 h-3.5" />
@@ -789,20 +789,20 @@ export default function LibrarianDashboard() {
                     {/* TAB 3: Book Copies Management */}
                     {activeTab === 'book_copies' && (
                         <div className="space-y-6">
-                            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-4 shadow-sm">
-                                <h2 className="text-base font-bold text-gray-900 flex items-center gap-2 font-mono">
-                                    <Layers className="w-4 h-4 text-gray-700" /> {editingCopy ? 'Edit Copy Record' : 'Register New Physical Book Copy'}
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
+                                <h2 className="text-base font-bold text-bark-900 flex items-center gap-2 font-mono">
+                                    <Layers className="w-4 h-4 text-bark-700" /> {editingCopy ? 'Edit Copy Record' : 'Register New Physical Book Copy'}
                                 </h2>
 
                                 <form onSubmit={handleCopySubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Select Book Title</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Select Book Title</label>
                                         <select
                                             value={copyForm.book_id}
                                             onChange={(e) => setCopyForm({ ...copyForm, book_id: e.target.value })}
                                             required
                                             disabled={!!editingCopy}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100"
                                         >
                                             <option value="">-- Choose Book --</option>
                                             {books.map((b) => (
@@ -812,7 +812,7 @@ export default function LibrarianDashboard() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Barcode</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Barcode</label>
                                         <input
                                             type="text"
                                             value={copyForm.barcode}
@@ -820,27 +820,27 @@ export default function LibrarianDashboard() {
                                             placeholder="e.g. BC-9780132350884-005"
                                             required
                                             disabled={!!editingCopy}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300 font-mono"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Location Rack</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Location Rack</label>
                                         <input
                                             type="text"
                                             value={copyForm.location_rack}
                                             onChange={(e) => setCopyForm({ ...copyForm, location_rack: e.target.value })}
                                             placeholder="e.g. Rack-4"
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300 font-mono"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Condition</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Condition</label>
                                         <select
                                             value={copyForm.condition}
                                             onChange={(e) => setCopyForm({ ...copyForm, condition: e.target.value })}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100"
                                         >
                                             <option value="good">Good</option>
                                             <option value="damaged">Damaged</option>
@@ -849,11 +849,11 @@ export default function LibrarianDashboard() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Availability Status</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Availability Status</label>
                                         <select
                                             value={copyForm.status}
                                             onChange={(e) => setCopyForm({ ...copyForm, status: e.target.value })}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300 font-mono"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
                                         >
                                             <option value="available">available</option>
                                             <option value="checked_out">checked_out</option>
@@ -866,7 +866,7 @@ export default function LibrarianDashboard() {
                                         <button
                                             type="submit"
                                             disabled={copySubmitting}
-                                            className="flex-1 py-2 px-4 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm h-9"
+                                            className="flex-1 py-2 px-4 rounded-lg bg-zinc-100 hover:bg-paper text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm h-9"
                                         >
                                             {copySubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                                             <span>{editingCopy ? 'Save Copy' : 'Add Copy'}</span>
@@ -875,7 +875,7 @@ export default function LibrarianDashboard() {
                                             <button
                                                 type="button"
                                                 onClick={() => { setEditingCopy(null); setCopyForm({ book_id: '', barcode: '', condition: 'good', status: 'available', location_rack: 'Rack-1' }); }}
-                                                className="px-3 py-2 rounded-lg bg-gray-200 text-gray-700 text-xs hover:bg-zinc-700 h-9"
+                                                className="px-3 py-2 rounded-lg bg-cream text-bark-700 text-xs hover:bg-zinc-700 h-9"
                                             >
                                                 Cancel
                                             </button>
@@ -885,33 +885,33 @@ export default function LibrarianDashboard() {
                             </div>
 
                             {/* Book Copies Table */}
-                            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-4 shadow-sm">
-                                <h3 className="text-base font-bold text-gray-900 font-mono">Registered Physical Copies ({copies.length})</h3>
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
+                                <h3 className="text-base font-bold text-bark-900 font-mono">Registered Physical Copies ({copies.length})</h3>
 
                                 <div className="overflow-x-auto">
-                                    <table className="w-full text-left text-xs text-gray-700 border-collapse">
-                                        <thead className="bg-white text-gray-600 uppercase text-[10px] tracking-wider font-mono">
+                                    <table className="w-full text-left text-xs text-bark-700 border-collapse">
+                                        <thead className="bg-paper text-bark-500 uppercase text-[10px] tracking-wider font-mono">
                                             <tr>
-                                                <th className="p-3 border-b border-gray-200">Barcode</th>
-                                                <th className="p-3 border-b border-gray-200">Book Title</th>
-                                                <th className="p-3 border-b border-gray-200">Rack Location</th>
-                                                <th className="p-3 border-b border-gray-200 text-center">Condition</th>
-                                                <th className="p-3 border-b border-gray-200 text-center">Status</th>
-                                                <th className="p-3 border-b border-gray-200 text-right">Actions</th>
+                                                <th className="p-3 border-b border-bark-100">Barcode</th>
+                                                <th className="p-3 border-b border-bark-100">Book Title</th>
+                                                <th className="p-3 border-b border-bark-100">Rack Location</th>
+                                                <th className="p-3 border-b border-bark-100 text-center">Condition</th>
+                                                <th className="p-3 border-b border-bark-100 text-center">Status</th>
+                                                <th className="p-3 border-b border-bark-100 text-right">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-zinc-800/60 font-mono">
                                             {copies.map((c) => (
-                                                <tr key={c.id} className="hover:bg-white/50">
-                                                    <td className="p-3 font-bold text-gray-900">{c.barcode}</td>
+                                                <tr key={c.id} className="hover:bg-paper/50">
+                                                    <td className="p-3 font-bold text-bark-900">{c.barcode}</td>
                                                     <td className="p-3 font-sans font-semibold text-zinc-200">
                                                         {c.book ? c.book.title : `Book #${c.book_id}`}
                                                     </td>
-                                                    <td className="p-3 text-gray-600">{c.location_rack || 'N/A'}</td>
+                                                    <td className="p-3 text-bark-500">{c.location_rack || 'N/A'}</td>
                                                     <td className="p-3 text-center capitalize">{c.condition}</td>
                                                     <td className="p-3 text-center">
                                                         <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
-                                                            c.status === 'available' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-gray-200 text-gray-700 border border-gray-300'
+                                                            c.status === 'available' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-cream text-bark-700 border border-bark-100'
                                                         }`}>
                                                             {c.status}
                                                         </span>
@@ -928,13 +928,13 @@ export default function LibrarianDashboard() {
                                                                     location_rack: c.location_rack || 'Rack-1'
                                                                 });
                                                             }}
-                                                            className="p-1.5 rounded bg-gray-200 text-gray-700 hover:bg-zinc-700"
+                                                            className="p-1.5 rounded bg-cream text-bark-700 hover:bg-zinc-700"
                                                         >
                                                             <Edit2 className="w-3.5 h-3.5" />
                                                         </button>
                                                         <button
                                                             onClick={() => handleDeleteCopy(c.id)}
-                                                            className="p-1.5 rounded bg-gray-200 text-gray-600 hover:text-red-400 hover:bg-zinc-700"
+                                                            className="p-1.5 rounded bg-cream text-bark-500 hover:text-red-400 hover:bg-zinc-700"
                                                         >
                                                             <Trash2 className="w-3.5 h-3.5" />
                                                         </button>
@@ -951,47 +951,47 @@ export default function LibrarianDashboard() {
                     {/* TAB 4: Process Book Returns */}
                     {activeTab === 'returns' && (
                         <div className="space-y-6">
-                            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-4 shadow-sm">
-                                <h2 className="text-base font-bold text-gray-900 flex items-center gap-2 font-mono">
-                                    <BookCheck className="w-4 h-4 text-gray-700" /> Active Loans Directory & Instant Return Desk
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
+                                <h2 className="text-base font-bold text-bark-900 flex items-center gap-2 font-mono">
+                                    <BookCheck className="w-4 h-4 text-bark-700" /> Active Loans Directory & Instant Return Desk
                                 </h2>
 
                                 {loading ? (
-                                    <div className="flex items-center justify-center py-8 text-gray-600 font-mono text-xs">
+                                    <div className="flex items-center justify-center py-8 text-bark-500 font-mono text-xs">
                                         <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading active loans...
                                     </div>
                                 ) : (
                                     <div className="overflow-x-auto">
-                                        <table className="w-full text-left text-xs text-gray-700 border-collapse">
-                                            <thead className="bg-white text-gray-600 uppercase text-[10px] tracking-wider font-mono">
+                                        <table className="w-full text-left text-xs text-bark-700 border-collapse">
+                                            <thead className="bg-paper text-bark-500 uppercase text-[10px] tracking-wider font-mono">
                                                 <tr>
-                                                    <th className="p-3 border-b border-gray-200">Loan ID</th>
-                                                    <th className="p-3 border-b border-gray-200">Member Info</th>
-                                                    <th className="p-3 border-b border-gray-200">Book Copy & Barcode</th>
-                                                    <th className="p-3 border-b border-gray-200 font-mono">Loan / Due Date</th>
-                                                    <th className="p-3 border-b border-gray-200 text-center">Status</th>
-                                                    <th className="p-3 border-b border-gray-200 text-right">Process Action</th>
+                                                    <th className="p-3 border-b border-bark-100">Loan ID</th>
+                                                    <th className="p-3 border-b border-bark-100">Member Info</th>
+                                                    <th className="p-3 border-b border-bark-100">Book Copy & Barcode</th>
+                                                    <th className="p-3 border-b border-bark-100 font-mono">Loan / Due Date</th>
+                                                    <th className="p-3 border-b border-bark-100 text-center">Status</th>
+                                                    <th className="p-3 border-b border-bark-100 text-right">Process Action</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-zinc-800/60 font-mono">
                                                 {activeLoans.map((loan) => (
-                                                    <tr key={loan.id} className="hover:bg-white/50">
+                                                    <tr key={loan.id} className="hover:bg-paper/50">
                                                         <td className="p-3 font-bold text-zinc-200">#LOAN-{loan.id}</td>
                                                         <td className="p-3 font-sans">
-                                                            <div className="font-semibold text-gray-900">{loan.member?.user?.name || `Member #${loan.member_id}`}</div>
-                                                            <div className="text-[11px] font-mono text-gray-600">{loan.member?.member_number}</div>
+                                                            <div className="font-semibold text-bark-900">{loan.member?.user?.name || `Member #${loan.member_id}`}</div>
+                                                            <div className="text-[11px] font-mono text-bark-500">{loan.member?.member_number}</div>
                                                         </td>
                                                         <td className="p-3 font-sans">
                                                             <div className="font-bold text-zinc-200">{loan.copy?.book?.title || 'Book Title'}</div>
-                                                            <div className="text-[11px] font-mono text-gray-600">{loan.copy?.barcode}</div>
+                                                            <div className="text-[11px] font-mono text-bark-500">{loan.copy?.barcode}</div>
                                                         </td>
-                                                        <td className="p-3 text-gray-700 text-[11px]">
+                                                        <td className="p-3 text-bark-700 text-[11px]">
                                                             <div>Loan: {loan.loan_date}</div>
-                                                            <div className="text-gray-600">Due: {loan.due_date}</div>
+                                                            <div className="text-bark-500">Due: {loan.due_date}</div>
                                                         </td>
                                                         <td className="p-3 text-center">
                                                             <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
-                                                                loan.status === 'returned' ? 'bg-gray-200 text-gray-600 border border-gray-300' : loan.status === 'overdue' ? 'bg-red-950 text-red-300 border border-red-800' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                                                                loan.status === 'returned' ? 'bg-cream text-bark-500 border border-bark-100' : loan.status === 'overdue' ? 'bg-red-950 text-red-300 border border-red-800' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
                                                             }`}>
                                                                 {loan.status}
                                                             </span>
@@ -1001,12 +1001,12 @@ export default function LibrarianDashboard() {
                                                                 <button
                                                                     onClick={() => handleReturn(loan.id)}
                                                                     disabled={returnSubmitting}
-                                                                    className="py-1.5 px-3 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs transition-all shadow-sm font-sans"
+                                                                    className="py-1.5 px-3 rounded-lg bg-zinc-100 hover:bg-paper text-zinc-950 font-bold text-xs transition-all shadow-sm font-sans"
                                                                 >
                                                                     Process Return
                                                                 </button>
                                                             ) : (
-                                                                <span className="text-[11px] text-gray-500">Returned</span>
+                                                                <span className="text-[11px] text-bark-500">Returned</span>
                                                             )}
                                                         </td>
                                                     </tr>
@@ -1022,20 +1022,20 @@ export default function LibrarianDashboard() {
                     {/* TAB 5: Valid Subscriptions (CRUD Operations) */}
                     {activeTab === 'subscriptions' && (
                         <div className="space-y-6">
-                            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-4 shadow-sm">
-                                <h2 className="text-base font-bold text-gray-900 flex items-center gap-2 font-mono">
-                                    <CreditCard className="w-4 h-4 text-gray-700" /> {editingSub ? 'Edit Member Subscription' : 'Grant New Member Perk Subscription'}
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
+                                <h2 className="text-base font-bold text-bark-900 flex items-center gap-2 font-mono">
+                                    <CreditCard className="w-4 h-4 text-bark-700" /> {editingSub ? 'Edit Member Subscription' : 'Grant New Member Perk Subscription'}
                                 </h2>
 
                                 <form onSubmit={handleSubSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Select Member</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Select Member</label>
                                         <select
                                             value={subForm.member_id}
                                             onChange={(e) => setSubForm({ ...subForm, member_id: e.target.value })}
                                             required
                                             disabled={!!editingSub}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100"
                                         >
                                             <option value="">-- Choose Member --</option>
                                             {members.map((m) => (
@@ -1045,19 +1045,19 @@ export default function LibrarianDashboard() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Subscription Plan Type</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Subscription Plan Type</label>
                                         <input
                                             type="text"
                                             value={subForm.plan_type}
                                             onChange={(e) => setSubForm({ ...subForm, plan_type: e.target.value })}
                                             placeholder="e.g. pro_perks_monthly, vip_annual"
                                             required
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300 font-mono"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Payment Amount (KES)</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Payment Amount (KES)</label>
                                         <input
                                             type="number"
                                             step="0.01"
@@ -1065,16 +1065,16 @@ export default function LibrarianDashboard() {
                                             onChange={(e) => setSubForm({ ...subForm, amount_paid: e.target.value })}
                                             required
                                             disabled={!!editingSub}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300 font-mono"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Payment Status</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Payment Status</label>
                                         <select
                                             value={subForm.payment_status}
                                             onChange={(e) => setSubForm({ ...subForm, payment_status: e.target.value })}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300 font-mono"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
                                         >
                                             <option value="paid">paid</option>
                                             <option value="pending">pending</option>
@@ -1083,12 +1083,12 @@ export default function LibrarianDashboard() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-700 mb-1">Expiration Date</label>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Expiration Date</label>
                                         <input
                                             type="date"
                                             value={subForm.expires_at}
                                             onChange={(e) => setSubForm({ ...subForm, expires_at: e.target.value })}
-                                            className="w-full px-3 py-2 rounded-lg bg-white border border-gray-200 text-xs text-zinc-200 focus:outline-none focus:border-gray-300 font-mono"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
                                         />
                                     </div>
 
@@ -1096,7 +1096,7 @@ export default function LibrarianDashboard() {
                                         <button
                                             type="submit"
                                             disabled={subSubmitting}
-                                            className="flex-1 py-2 px-4 rounded-lg bg-zinc-100 hover:bg-white text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm h-9"
+                                            className="flex-1 py-2 px-4 rounded-lg bg-zinc-100 hover:bg-paper text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm h-9"
                                         >
                                             {subSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                                             <span>{editingSub ? 'Save Subscription' : 'Grant Subscription'}</span>
@@ -1105,7 +1105,7 @@ export default function LibrarianDashboard() {
                                             <button
                                                 type="button"
                                                 onClick={() => { setEditingSub(null); setSubForm({ member_id: '', plan_type: 'pro_perks_monthly', amount_paid: 500.00, payment_status: 'paid', expires_at: '' }); }}
-                                                className="px-3 py-2 rounded-lg bg-gray-200 text-gray-700 text-xs hover:bg-zinc-700 h-9"
+                                                className="px-3 py-2 rounded-lg bg-cream text-bark-700 text-xs hover:bg-zinc-700 h-9"
                                             >
                                                 Cancel
                                             </button>
@@ -1115,45 +1115,45 @@ export default function LibrarianDashboard() {
                             </div>
 
                             {/* Subscriptions Table */}
-                            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 space-y-4 shadow-sm">
-                                <h3 className="text-base font-bold text-gray-900 font-mono">Valid Member Perk Subscriptions ({subscriptions.length})</h3>
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
+                                <h3 className="text-base font-bold text-bark-900 font-mono">Valid Member Perk Subscriptions ({subscriptions.length})</h3>
 
                                 <div className="overflow-x-auto">
-                                    <table className="w-full text-left text-xs text-gray-700 border-collapse">
-                                        <thead className="bg-white text-gray-600 uppercase text-[10px] tracking-wider font-mono">
+                                    <table className="w-full text-left text-xs text-bark-700 border-collapse">
+                                        <thead className="bg-paper text-bark-500 uppercase text-[10px] tracking-wider font-mono">
                                             <tr>
-                                                <th className="p-3 border-b border-gray-200">Sub ID / Reference</th>
-                                                <th className="p-3 border-b border-gray-200">Member</th>
-                                                <th className="p-3 border-b border-gray-200">Plan Type</th>
-                                                <th className="p-3 border-b border-gray-200 text-center">Discount</th>
-                                                <th className="p-3 border-b border-gray-200 text-center">Amount Paid</th>
-                                                <th className="p-3 border-b border-gray-200 text-center">Status</th>
-                                                <th className="p-3 border-b border-gray-200 font-mono">Expires At</th>
-                                                <th className="p-3 border-b border-gray-200 text-right">Actions</th>
+                                                <th className="p-3 border-b border-bark-100">Sub ID / Reference</th>
+                                                <th className="p-3 border-b border-bark-100">Member</th>
+                                                <th className="p-3 border-b border-bark-100">Plan Type</th>
+                                                <th className="p-3 border-b border-bark-100 text-center">Discount</th>
+                                                <th className="p-3 border-b border-bark-100 text-center">Amount Paid</th>
+                                                <th className="p-3 border-b border-bark-100 text-center">Status</th>
+                                                <th className="p-3 border-b border-bark-100 font-mono">Expires At</th>
+                                                <th className="p-3 border-b border-bark-100 text-right">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-zinc-800/60 font-mono">
                                             {subscriptions.map((s) => (
-                                                <tr key={s.id} className="hover:bg-white/50">
+                                                <tr key={s.id} className="hover:bg-paper/50">
                                                     <td className="p-3 font-bold text-zinc-200">
                                                         #{s.id}
-                                                        <div className="text-[10px] text-gray-500 font-mono">{s.transaction_reference || 'REF-N/A'}</div>
+                                                        <div className="text-[10px] text-bark-500 font-mono">{s.transaction_reference || 'REF-N/A'}</div>
                                                     </td>
                                                     <td className="p-3 font-sans">
-                                                        <div className="font-semibold text-gray-900">{s.member?.user?.name || s.user?.name || `Member #${s.member_id}`}</div>
-                                                        <div className="text-[11px] font-mono text-gray-600">{s.member?.member_number}</div>
+                                                        <div className="font-semibold text-bark-900">{s.member?.user?.name || s.user?.name || `Member #${s.member_id}`}</div>
+                                                        <div className="text-[11px] font-mono text-bark-500">{s.member?.member_number}</div>
                                                     </td>
-                                                    <td className="p-3 text-gray-700">{s.plan_type}</td>
-                                                    <td className="p-3 text-center text-gray-700">{s.discount_percentage}% OFF</td>
-                                                    <td className="p-3 text-center font-bold text-gray-900">KES {s.amount_paid}</td>
+                                                    <td className="p-3 text-bark-700">{s.plan_type}</td>
+                                                    <td className="p-3 text-center text-bark-700">{s.discount_percentage}% OFF</td>
+                                                    <td className="p-3 text-center font-bold text-bark-900">KES {s.amount_paid}</td>
                                                     <td className="p-3 text-center">
                                                         <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
-                                                            s.payment_status === 'paid' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-gray-200 text-gray-600 border border-gray-300'
+                                                            s.payment_status === 'paid' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-cream text-bark-500 border border-bark-100'
                                                         }`}>
                                                             {s.payment_status}
                                                         </span>
                                                     </td>
-                                                    <td className="p-3 text-gray-600 text-[11px]">
+                                                    <td className="p-3 text-bark-500 text-[11px]">
                                                         {s.expires_at ? s.expires_at.slice(0, 10) : 'Permanent'}
                                                     </td>
                                                     <td className="p-3 text-right space-x-1.5 font-sans">
@@ -1168,13 +1168,13 @@ export default function LibrarianDashboard() {
                                                                     expires_at: s.expires_at ? s.expires_at.slice(0, 10) : ''
                                                                 });
                                                             }}
-                                                            className="p-1.5 rounded bg-gray-200 text-gray-700 hover:bg-zinc-700"
+                                                            className="p-1.5 rounded bg-cream text-bark-700 hover:bg-zinc-700"
                                                         >
                                                             <Edit2 className="w-3.5 h-3.5" />
                                                         </button>
                                                         <button
                                                             onClick={() => handleDeleteSub(s.id)}
-                                                            className="p-1.5 rounded bg-gray-200 text-gray-600 hover:text-red-400 hover:bg-zinc-700"
+                                                            className="p-1.5 rounded bg-cream text-bark-500 hover:text-red-400 hover:bg-zinc-700"
                                                         >
                                                             <Trash2 className="w-3.5 h-3.5" />
                                                         </button>
