@@ -3,7 +3,6 @@
 @import 'design-system.css';
 
 @import 'tailwindcss';
-@config '../tailwind.config.js';
 
 @theme {
   --color-bark-50: #f6f1ec;
