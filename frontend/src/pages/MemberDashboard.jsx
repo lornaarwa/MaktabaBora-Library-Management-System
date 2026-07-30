@@ -80,7 +80,7 @@ export default function MemberDashboard() {
                         )}
                     </div>
                     <p className="text-xs font-mono text-bark-500">
-                        Card #: <span className="text-bark-900 font-bold">{user?.member?.member_number || 'MEM-2026-0418'}</span> | Borrow Limit: {user?.member?.borrow_limit || 5} Items
+                        Card #: <span className="text-bark-900 font-bold">{user?.member?.member_number || 'N/A'}</span> | Borrow Limit: {user?.member?.borrow_limit || 5} Items
                     </p>
                 </div>
 
