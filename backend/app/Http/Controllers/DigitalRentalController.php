@@ -61,6 +61,64 @@ class DigitalRentalController extends Controller
         ], 'Digital book purchase completed. Lifetime access unlocked.', 201);
     }
 
+    public function checkoutCart(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $member = $user->member;
+
+        if (!$member) {
+            return $this->sendError('User does not have an active Member profile.', [], 403);
+        }
+
+        $validated = $request->validate([
+            'phone_number' => 'required|string',
+            'items' => 'required|array|min:1',
+            'items.*.book_id' => 'required|integer|exists:books,id',
+            'items.*.quantity' => 'nullable|integer|min:1',
+        ]);
+
+        $totalAmount = 0;
+        $booksToPurchase = [];
+
+        foreach ($validated['items'] as $item) {
+            $book = Book::find($item['book_id']);
+            $qty = $item['quantity'] ?? 1;
+            if ($book) {
+                $unitPrice = $this->digitalService->calculatePurchasePrice($book, $member);
+                $totalAmount += ($unitPrice * $qty);
+                $booksToPurchase[] = ['book' => $book, 'qty' => $qty];
+            }
+        }
+
+        if (empty($booksToPurchase)) {
+            return $this->sendError('No valid books found in cart.', [], 400);
+        }
+
+        // Initiate ONE Daraja M-Pesa STK Push for grand total
+        $stkResponse = $this->darajaService->initiateStkPush(
+            null,
+            $validated['phone_number'],
+            round($totalAmount, 2),
+            "CART-CHECKOUT-" . count($booksToPurchase) . "-ITEMS"
+        );
+
+        $purchases = [];
+        foreach ($booksToPurchase as $entry) {
+            $purchases[] = $this->digitalService->purchaseDigitalBook(
+                $user,
+                $member,
+                $entry['book'],
+                $stkResponse['CheckoutRequestID'] ?? null
+            );
+        }
+
+        return $this->sendResponse([
+            'purchases' => $purchases,
+            'total_amount' => round($totalAmount, 2),
+            'stk_push' => $stkResponse,
+        ], 'Cart checkout completed. Lifetime access unlocked for all items.', 201);
+    }
+
     public function read(Request $request, int|string $id): JsonResponse
     {
         $book = Book::find($id);
