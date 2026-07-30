@@ -11,14 +11,15 @@ import {
   BotIcon,
   LogOutIcon,
   LogInIcon,
-  UserPlusIcon
+  UserPlusIcon,
+  ShoppingCartIcon
 } from 'lucide-react';
 import { useLibrary } from '../../context/LibraryContext';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/Button';
 
 export function AppShell({ children, onOpenAiChat }) {
-  const { role } = useLibrary();
+  const { role, cartCount } = useLibrary();
   const auth = useAuth() || {};
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -27,6 +28,7 @@ export function AppShell({ children, onOpenAiChat }) {
 
   const navigation = [
     { name: 'Catalog', href: '/catalog', icon: BookOpenIcon, allow: ['member', 'librarian', 'admin'] },
+    { name: 'My Cart', href: '/cart', icon: ShoppingCartIcon, allow: ['member', 'librarian', 'admin'], badge: cartCount },
     { name: 'My Library', href: '/member', icon: LibraryIcon, allow: ['member'] },
     { name: 'Librarian Dashboard', href: '/librarian', icon: QrCodeIcon, allow: ['librarian', 'admin'] },
     { name: 'Admin Dashboard', href: '/admin', icon: ShieldCheckIcon, allow: ['admin'] },
@@ -70,7 +72,12 @@ export function AppShell({ children, onOpenAiChat }) {
                   }`}
                 >
                   <Icon className={`h-4 w-4 ${active ? 'text-cream-light' : 'text-bark-500'}`} />
-                  <span>{item.name}</span>
+                  <span className="flex-1">{item.name}</span>
+                  {item.badge > 0 && (
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-tan-dark font-mono text-[9px] font-bold text-paper shadow-sm">
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
