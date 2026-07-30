@@ -34,6 +34,19 @@ export function LibraryProvider({ children }) {
   const [logs, setLogs] = useState(seedLogs);
   const [toasts, setToasts] = useState([]);
 
+  const [cart, setCart] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smartlib_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('smartlib_cart', JSON.stringify(cart));
+  }, [cart]);
+
   useEffect(() => {
     if (auth.user) {
       setRoleState(auth.user.role || null);
@@ -145,6 +158,50 @@ export function LibraryProvider({ children }) {
     [log, pushToast],
   );
 
+  const addToCart = useCallback(
+    (book) => {
+      setCart((prev) => {
+        const existingIndex = prev.findIndex((item) => item.book.id === book.id);
+        if (existingIndex > -1) {
+          const updated = [...prev];
+          updated[existingIndex] = { ...updated[existingIndex], quantity: updated[existingIndex].quantity + 1 };
+          return updated;
+        }
+        return [...prev, { book, quantity: 1 }];
+      });
+      pushToast({ title: 'Added to Cart', detail: `"${book.title}" added to shopping cart`, tone: 'success' });
+    },
+    [pushToast],
+  );
+
+  const updateQuantity = useCallback((bookId, quantity) => {
+    setCart((prev) => {
+      if (quantity <= 0) {
+        return prev.filter((item) => item.book.id !== bookId);
+      }
+      return prev.map((item) => (item.book.id === bookId ? { ...item, quantity } : item));
+    });
+  }, []);
+
+  const removeFromCart = useCallback(
+    (bookId) => {
+      setCart((prev) => prev.filter((item) => item.book.id !== bookId));
+      pushToast({ title: 'Item Removed', detail: 'Book removed from cart', tone: 'info' });
+    },
+    [pushToast],
+  );
+
+  const clearCart = useCallback(() => {
+    setCart([]);
+  }, []);
+
+  const cartCount = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
+
+  const cartTotal = useMemo(
+    () => cart.reduce((sum, item) => sum + digitalPriceFor(item.book) * item.quantity, 0),
+    [cart, digitalPriceFor],
+  );
+
   const value = useMemo(
     () => ({
       role,
@@ -167,6 +224,13 @@ export function LibraryProvider({ children }) {
       checkinCopy,
       saveBook,
       setCopyStatus,
+      cart,
+      addToCart,
+      updateQuantity,
+      removeFromCart,
+      clearCart,
+      cartCount,
+      cartTotal,
     }),
     [
       role,
@@ -188,6 +252,13 @@ export function LibraryProvider({ children }) {
       checkinCopy,
       saveBook,
       setCopyStatus,
+      cart,
+      addToCart,
+      updateQuantity,
+      removeFromCart,
+      clearCart,
+      cartCount,
+      cartTotal,
     ],
   );
 
