@@ -14,8 +14,7 @@ const apiClient = axios.create({
 const frontendTerminalLogBuffer = [
     `[${new Date().toISOString().slice(11, 19)}] [vite] v5.4.15 dev server running at http://localhost:5173/`,
     `[${new Date().toISOString().slice(11, 19)}] [vite] ready in 340 ms`,
-    `[${new Date().toISOString().slice(11, 19)}] [vite] hmr update /src/pages/AdminDashboard.jsx`,
-    `[${new Date().toISOString().slice(11, 19)}] [REACT ROUTER] Auth Context initialized [USER: admin@library.org]`,
+    `[${new Date().toISOString().slice(11, 19)}] [REACT ROUTER] Auth Context initialized`,
 ];
 
 export const appendFrontendTerminalLog = (logMessage) => {
