@@ -86,6 +86,7 @@ export const api = {
     // Digital Book Store
     getMyDigitalLibrary: () => apiClient.get('/digital-books/my-library'),
     purchaseDigitalBook: (id, data) => apiClient.post(`/digital-books/${id}/purchase`, data),
+    checkoutCart: (data) => apiClient.post('/digital-books/checkout-cart', data),
     readDigitalBook: (id) => apiClient.get(`/digital-books/${id}/read`),
 
     // Loans & Reservations
