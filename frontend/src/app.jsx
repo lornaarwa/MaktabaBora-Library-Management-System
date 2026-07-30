@@ -11,6 +11,7 @@ import { Loader2 } from 'lucide-react';
 
 import Home from './pages/Home';
 import PublicCatalog from './pages/PublicCatalog';
+import CartPage from './pages/CartPage';
 import MemberDashboard from './pages/MemberDashboard';
 import LibrarianDashboard from './pages/LibrarianDashboard';
 import AdminDashboard from './pages/AdminDashboard';
@@ -53,6 +54,14 @@ function Shell() {
           element={
             <RequireRole allow={['member', 'librarian', 'admin']}>
               <PublicCatalog />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/cart"
+          element={
+            <RequireRole allow={['member', 'librarian', 'admin']}>
+              <CartPage />
             </RequireRole>
           }
         />
