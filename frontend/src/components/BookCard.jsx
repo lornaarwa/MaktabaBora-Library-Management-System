@@ -1,12 +1,14 @@
 import React from 'react';
-import { Bookmark, CheckCircle2, XCircle, ShieldAlert, ShoppingBag, BookOpen } from 'lucide-react';
+import { Bookmark, CheckCircle2, XCircle, ShieldAlert, ShoppingBag, BookOpen, ShoppingCart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLibrary } from '../context/LibraryContext';
 import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
 import { BookCover } from './ui/BookCover';
 
 export default function BookCard({ book, onReserve, onBuyDigital, onReadDigital }) {
     const { user } = useAuth();
+    const { addToCart } = useLibrary();
     const isAvailable = (book.available_copies > 0 || (book.copies && book.copies.some(c => c.status === 'available'))) && !book.is_blocked;
     const isSubscribed = user?.member?.is_subscribed;
 
@@ -80,36 +82,48 @@ export default function BookCard({ book, onReserve, onBuyDigital, onReadDigital 
 
             {/* Actions */}
             <div className="mt-3 flex flex-col gap-1.5 border-t border-bark-100 pt-2.5">
-                <div className="flex items-center gap-1.5">
+                <div className="grid grid-cols-2 gap-1.5">
                     <Button
-                        variant="primary"
-                        onClick={() => onBuyDigital(book)}
-                        className="flex-1 py-1.5 text-xs"
+                        variant="secondary"
+                        onClick={() => addToCart(book)}
+                        className="py-1.5 text-xs justify-center"
+                        title="Add item to shopping cart"
                     >
-                        <ShoppingBag size={14} />
-                        <span>Buy Digital</span>
+                        <ShoppingCart size={14} />
+                        <span>Add Cart</span>
                     </Button>
 
                     <Button
-                        variant="secondary"
+                        variant="primary"
+                        onClick={() => onBuyDigital(book)}
+                        className="py-1.5 text-xs justify-center"
+                    >
+                        <ShoppingBag size={14} />
+                        <span>Buy Now</span>
+                    </Button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-1.5">
+                    <Button
+                        variant="ghost"
                         onClick={() => onReadDigital(book)}
                         title="Read E-Book Stream"
-                        className="py-1.5 text-xs"
+                        className="py-1.5 text-xs border border-bark-100 justify-center"
                     >
                         <BookOpen size={14} />
                         <span>Read</span>
                     </Button>
-                </div>
 
-                <Button
-                    variant="ghost"
-                    onClick={() => onReserve(book)}
-                    disabled={book.is_blocked}
-                    className="w-full py-1.5 text-xs border border-bark-100"
-                >
-                    <Bookmark size={14} className="text-bark-500" />
-                    <span>{isAvailable ? 'Reserve Physical' : 'Join Hold Queue'}</span>
-                </Button>
+                    <Button
+                        variant="ghost"
+                        onClick={() => onReserve(book)}
+                        disabled={book.is_blocked}
+                        className="py-1.5 text-xs border border-bark-100 justify-center"
+                    >
+                        <Bookmark size={14} className="text-bark-500" />
+                        <span>{isAvailable ? 'Reserve' : 'Queue'}</span>
+                    </Button>
+                </div>
             </div>
         </div>
     );
