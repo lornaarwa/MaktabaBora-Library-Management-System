@@ -21,6 +21,7 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
 
     // Auth Routes
     Route::post('/auth/register', [AuthController::class, 'register']);
+    Route::post('/auth/register-membership-stk', [AuthController::class, 'registerMembershipStk']);
     Route::post('/auth/login', [AuthController::class, 'login']);
 
     // Public Catalog & Search
