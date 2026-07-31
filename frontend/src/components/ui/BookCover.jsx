@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export const coverTheme = (id) => {
   const themes = [
@@ -14,13 +14,29 @@ export const coverTheme = (id) => {
 };
 
 export function BookCover({ book, className = '' }) {
+  const [hasError, setHasError] = useState(false);
   if (!book) return null;
   const theme = coverTheme(book.id || 1);
 
-  if (book.cover_image_path) {
+  const getImageUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
+      return path;
+    }
+    return `http://127.0.0.1:8000${path.startsWith('/') ? '' : '/'}${path}`;
+  };
+
+  const src = getImageUrl(book.cover_image_path);
+
+  if (src && !hasError) {
     return (
       <div className={`relative overflow-hidden rounded-md ${className}`}>
-        <img src={book.cover_image_path} alt={book.title} className="w-full h-full object-cover rounded-md" />
+        <img
+          src={src}
+          alt={book.title}
+          onError={() => setHasError(true)}
+          className="w-full h-full object-cover rounded-md"
+        />
       </div>
     );
   }
