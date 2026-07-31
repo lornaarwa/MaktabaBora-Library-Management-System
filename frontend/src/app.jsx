@@ -16,6 +16,10 @@ import MemberDashboard from './pages/MemberDashboard';
 import LibrarianDashboard from './pages/LibrarianDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import Login from './pages/Login';
+import About from './pages/About';
+import Contact from './pages/Contact';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import MembershipRegistration from './pages/MembershipRegistration';
 
 function RequireRole({ allow, children }) {
   const { user, loading } = useAuth();
@@ -49,6 +53,10 @@ function Shell() {
     <AppShell onOpenAiChat={() => setIsAiOpen(true)}>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/membership" element={<MembershipRegistration />} />
         <Route
           path="/catalog"
           element={
