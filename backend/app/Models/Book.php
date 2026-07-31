@@ -36,6 +36,19 @@ class Book extends Model
         'available_copies' => 'integer',
     ];
 
+    public function getCoverImagePathAttribute(?string $value): ?string
+    {
+        if (!$value) {
+            return null;
+        }
+
+        if (str_starts_with($value, 'http://') || str_starts_with($value, 'https://') || str_starts_with($value, 'data:')) {
+            return $value;
+        }
+
+        return url($value);
+    }
+
     public function copies(): HasMany
     {
         return $this->hasMany(BookCopy::class);
