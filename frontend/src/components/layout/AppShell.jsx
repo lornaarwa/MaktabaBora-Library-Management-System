@@ -12,7 +12,10 @@ import {
   LogOutIcon,
   LogInIcon,
   UserPlusIcon,
-  ShoppingCartIcon
+  ShoppingCartIcon,
+  InfoIcon,
+  PhoneIcon,
+  ShieldCheckIcon as ShieldNavIcon
 } from 'lucide-react';
 import { useLibrary } from '../../context/LibraryContext';
 import { useAuth } from '../../context/AuthContext';
@@ -82,6 +85,58 @@ export function AppShell({ children, onOpenAiChat }) {
               );
             })}
           </nav>
+
+          {/* Public About link — always visible */}
+          <Link
+            to="/about"
+            className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition ${
+              location.pathname === '/about'
+                ? 'bg-bark-700 text-cream-light shadow-card'
+                : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+            }`}
+          >
+            <InfoIcon className={`h-4 w-4 ${location.pathname === '/about' ? 'text-cream-light' : 'text-bark-500'}`} />
+            <span className="flex-1">About</span>
+          </Link>
+
+          {/* Public Contact link — always visible */}
+          <Link
+            to="/contact"
+            className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition ${
+              location.pathname === '/contact'
+                ? 'bg-bark-700 text-cream-light shadow-card'
+                : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+            }`}
+          >
+            <PhoneIcon className={`h-4 w-4 ${location.pathname === '/contact' ? 'text-cream-light' : 'text-bark-500'}`} />
+            <span className="flex-1">Contact</span>
+          </Link>
+
+          {/* Public Privacy Policy link — always visible */}
+          <Link
+            to="/privacy"
+            className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition ${
+              location.pathname === '/privacy'
+                ? 'bg-bark-700 text-cream-light shadow-card'
+                : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+            }`}
+          >
+            <ShieldNavIcon className={`h-4 w-4 ${location.pathname === '/privacy' ? 'text-cream-light' : 'text-bark-500'}`} />
+            <span className="flex-1">Privacy Policy</span>
+          </Link>
+
+          {/* Public Membership Registration link — always visible */}
+          <Link
+            to="/membership"
+            className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition ${
+              location.pathname === '/membership'
+                ? 'bg-bark-700 text-cream-light shadow-card'
+                : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+            }`}
+          >
+            <UserPlusIcon className={`h-4 w-4 ${location.pathname === '/membership' ? 'text-cream-light' : 'text-bark-500'}`} />
+            <span className="flex-1">Membership</span>
+          </Link>
         </div>
 
         {/* Sidebar Footer User Info */}
@@ -162,11 +217,58 @@ export function AppShell({ children, onOpenAiChat }) {
                 </Link>
               ))}
             </nav>
+            <Link
+              to="/about"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-bark-700 hover:bg-cream"
+            >
+              <InfoIcon className="h-4 w-4 text-bark-500" />
+              <span>About</span>
+            </Link>
+            <Link
+              to="/contact"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-bark-700 hover:bg-cream"
+            >
+              <PhoneIcon className="h-4 w-4 text-bark-500" />
+              <span>Contact</span>
+            </Link>
+            <Link
+              to="/privacy"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-bark-700 hover:bg-cream"
+            >
+              <ShieldNavIcon className="h-4 w-4 text-bark-500" />
+              <span>Privacy Policy</span>
+            </Link>
+            <Link
+              to="/membership"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold text-bark-700 hover:bg-cream"
+            >
+              <UserPlusIcon className="h-4 w-4 text-bark-500" />
+              <span>Membership</span>
+            </Link>
           </div>
         )}
 
         {/* Page Content */}
         <main className="flex-1">{children}</main>
+
+        {/* Footer */}
+        <footer className="border-t border-bark-100 bg-paper/80 px-4 py-5 sm:px-6 lg:px-8">
+          <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 sm:flex-row sm:justify-between">
+            <p className="text-[11px] text-bark-400">
+              &copy; {new Date().getFullYear()} MaktabaBora Library System. All rights reserved.
+            </p>
+            <nav className="flex items-center gap-4">
+              <Link to="/about" className="text-[11px] font-semibold text-bark-400 transition hover:text-bark-700">About</Link>
+              <Link to="/contact" className="text-[11px] font-semibold text-bark-400 transition hover:text-bark-700">Contact</Link>
+              <Link to="/privacy" className="text-[11px] font-semibold text-bark-400 transition hover:text-bark-700">Privacy Policy</Link>
+              <Link to="/membership" className="text-[11px] font-semibold text-bark-400 transition hover:text-bark-700">Membership</Link>
+            </nav>
+          </div>
+        </footer>
       </div>
     </div>
   );
