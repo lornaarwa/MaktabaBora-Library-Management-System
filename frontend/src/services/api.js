@@ -69,6 +69,7 @@ apiClient.interceptors.response.use(
 export const api = {
     // Auth
     register: (data) => apiClient.post('/auth/register', data),
+    registerMembershipStk: (data) => apiClient.post('/auth/register-membership-stk', data),
     login: (data) => apiClient.post('/auth/login', data),
     refreshToken: () => apiClient.post('/auth/refresh'),
     logout: () => apiClient.post('/auth/logout'),
