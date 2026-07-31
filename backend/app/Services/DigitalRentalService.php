@@ -75,9 +75,9 @@ class DigitalRentalService implements DigitalRentalServiceInterface
 
     public function hasDigitalAccess(Member $member, Book $book): bool
     {
-        // 1. Check if subscriber exclusive book
-        if ($book->is_exclusive && !$member->is_subscribed) {
-            return false;
+        // 1. Check if subscriber exclusive book and member is subscribed
+        if ($book->is_exclusive && $member->is_subscribed) {
+            return true;
         }
 
         // 2. Check for active lifetime purchase
