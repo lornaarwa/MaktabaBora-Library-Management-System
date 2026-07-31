@@ -8,28 +8,33 @@ import {
   ShieldCheckIcon, 
   MenuIcon, 
   XIcon, 
-  BotIcon 
+  BotIcon,
+  LogOutIcon,
+  LogInIcon,
+  UserPlusIcon,
+  ShoppingCartIcon
 } from 'lucide-react';
 import { useLibrary } from '../../context/LibraryContext';
 import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/Button';
 
 export function AppShell({ children, onOpenAiChat }) {
-  const { role } = useLibrary();
+  const { role, cartCount } = useLibrary();
   const auth = useAuth() || {};
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const activeRole = auth.user?.role || role || 'member';
+  const activeRole = auth.user?.role || role || null;
 
   const navigation = [
-    { name: 'Catalog', href: '/', icon: BookOpenIcon, allow: ['member', 'librarian', 'admin'] },
+    { name: 'Catalog', href: '/catalog', icon: BookOpenIcon, allow: ['member', 'librarian', 'admin'] },
+    { name: 'My Cart', href: '/cart', icon: ShoppingCartIcon, allow: ['member', 'librarian', 'admin'], badge: cartCount },
     { name: 'My Library', href: '/member', icon: LibraryIcon, allow: ['member'] },
     { name: 'Librarian Dashboard', href: '/librarian', icon: QrCodeIcon, allow: ['librarian', 'admin'] },
     { name: 'Admin Dashboard', href: '/admin', icon: ShieldCheckIcon, allow: ['admin'] },
   ];
 
-  const allowedNav = navigation.filter((item) => item.allow.includes(activeRole));
+  const allowedNav = activeRole ? navigation.filter((item) => item.allow.includes(activeRole)) : [];
 
   return (
     <div className="flex min-h-screen bg-paper text-bark-900 mb-grain">
@@ -67,7 +72,12 @@ export function AppShell({ children, onOpenAiChat }) {
                   }`}
                 >
                   <Icon className={`h-4 w-4 ${active ? 'text-cream-light' : 'text-bark-500'}`} />
-                  <span>{item.name}</span>
+                  <span className="flex-1">{item.name}</span>
+                  {item.badge > 0 && (
+                    <span className="flex h-4 w-4 items-center justify-center rounded-full bg-tan-dark font-mono text-[9px] font-bold text-paper shadow-sm">
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -85,12 +95,35 @@ export function AppShell({ children, onOpenAiChat }) {
             <span>AI Librarian</span>
           </Button>
 
-          <div className="flex items-center justify-between px-2">
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-bold text-bark-900">{auth.user?.name || 'Amina Wanjiru'}</p>
-              <p className="truncate font-mono text-[10px] text-bark-500 capitalize">{activeRole} Account</p>
+          {auth.user ? (
+            <div className="space-y-2 px-1">
+              <div className="min-w-0">
+                <p className="truncate text-xs font-bold text-bark-900">{auth.user.name}</p>
+                <p className="truncate font-mono text-[10px] text-bark-500 capitalize">{auth.user.role} Account</p>
+              </div>
+              <Button
+                variant="ghost"
+                onClick={() => auth.logout()}
+                className="w-full justify-start text-xs border border-bark-100 hover:bg-cream"
+              >
+                <LogOutIcon className="h-4 w-4 text-bark-700" />
+                <span>Sign Out</span>
+              </Button>
             </div>
-          </div>
+          ) : (
+            <div className="flex flex-col gap-2 pt-1">
+              <Link to="/login?mode=signin">
+                <Button variant="primary" className="w-full justify-center text-xs">
+                  <LogInIcon className="h-3.5 w-3.5" /> Log In
+                </Button>
+              </Link>
+              <Link to="/login?mode=signup">
+                <Button variant="secondary" className="w-full justify-center text-xs">
+                  <UserPlusIcon className="h-3.5 w-3.5" /> Register
+                </Button>
+              </Link>
+            </div>
+          )}
         </div>
       </aside>
 

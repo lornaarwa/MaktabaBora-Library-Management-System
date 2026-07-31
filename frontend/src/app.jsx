@@ -2,29 +2,42 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './css/index.css';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { LibraryProvider, useLibrary } from './context/LibraryContext';
 import { AppShell } from './components/layout/AppShell';
 import AiChatWidget from './components/AiChatWidget';
 import { ToastStack } from './components/ui/ToastStack';
+import { Loader2 } from 'lucide-react';
 
+import Home from './pages/Home';
 import PublicCatalog from './pages/PublicCatalog';
+import CartPage from './pages/CartPage';
 import MemberDashboard from './pages/MemberDashboard';
 import LibrarianDashboard from './pages/LibrarianDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import Login from './pages/Login';
 
 function RequireRole({ allow, children }) {
-  const { role } = useLibrary();
-  if (allow && !allow.includes(role)) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
     return (
-      <div className="mx-auto max-w-md my-16 rounded-xl border border-bark-100 bg-paper px-6 py-14 text-center shadow-card">
-        <p className="font-mono text-xs uppercase tracking-[0.18em] text-bark-500">403 Forbidden</p>
-        <p className="mt-2 text-sm font-bold text-bark-900">This area requires {allow.join(' or ')} permission</p>
-        <p className="mt-1 text-sm text-bark-500">Switch active role in the sidebar to view this section.</p>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-6 h-6 animate-spin text-bark-700" />
       </div>
     );
   }
+
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (allow && !allow.includes(user.role)) {
+    if (user.role === 'admin') return <Navigate to="/admin" replace />;
+    if (user.role === 'librarian') return <Navigate to="/librarian" replace />;
+    return <Navigate to="/member" replace />;
+  }
+
   return <>{children}</>;
 }
 
@@ -35,8 +48,23 @@ function Shell() {
   return (
     <AppShell onOpenAiChat={() => setIsAiOpen(true)}>
       <Routes>
-        <Route path="/" element={<PublicCatalog />} />
-        <Route path="/catalog" element={<PublicCatalog />} />
+        <Route path="/" element={<Home />} />
+        <Route
+          path="/catalog"
+          element={
+            <RequireRole allow={['member', 'librarian', 'admin']}>
+              <PublicCatalog />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/cart"
+          element={
+            <RequireRole allow={['member', 'librarian', 'admin']}>
+              <CartPage />
+            </RequireRole>
+          }
+        />
         <Route
           path="/member"
           element={
@@ -62,6 +90,7 @@ function Shell() {
           }
         />
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Login />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <AiChatWidget isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />

@@ -1,15 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { BookOpen, KeyRound, Mail, User, ShieldCheck, Loader2, AlertCircle, ArrowRight, HelpCircle, X, CheckSquare, Square } from 'lucide-react';
 
 export default function Login() {
-    const { login, register } = useAuth();
+    const { user, login, register } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     
     // Auth Mode: 'signin' | 'signup'
-    const [mode, setMode] = useState('signin');
+    const initialMode = searchParams.get('mode') === 'signup' ? 'signup' : 'signin';
+    const [mode, setMode] = useState(initialMode);
     const [forgotModalOpen, setForgotModalOpen] = useState(false);
+
+    useEffect(() => {
+        const paramMode = searchParams.get('mode');
+        if (paramMode === 'signup' || paramMode === 'signin') {
+            setMode(paramMode);
+        }
+    }, [searchParams]);
+
+    useEffect(() => {
+        if (user) {
+            if (user.role === 'admin') navigate('/admin', { replace: true });
+            else if (user.role === 'librarian') navigate('/librarian', { replace: true });
+            else navigate('/member', { replace: true });
+        }
+    }, [user, navigate]);
 
     // Form fields
     const [name, setName] = useState('');

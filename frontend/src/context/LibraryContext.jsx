@@ -4,19 +4,10 @@ import { api } from '../services/api';
 
 const LibraryContext = createContext(null);
 
-const initialMember = {
-  id: 4,
-  name: 'Amina Wanjiru',
-  email: 'amina.w@maktababora.ke',
-  membershipNo: 'MB-2026-0418',
-  isPro: false,
-  proExpiresOn: null,
-};
-
 const seedLogs = [
   { id: 1, time: '09:14:02', source: 'backend', level: 'info', message: 'Server running on [http://127.0.0.1:8000]' },
   { id: 2, time: '09:14:03', source: 'backend', level: 'info', message: 'GET /api/books ................ 200 OK (82.11 ms)' },
-  { id: 3, time: '09:14:05', source: 'backend', level: 'info', message: 'Sanctum: token abilities resolved for user #4' },
+  { id: 3, time: '09:14:05', source: 'backend', level: 'info', message: 'Sanctum: token abilities resolved for user' },
   { id: 4, time: '09:14:09', source: 'backend', level: 'warn', message: 'Eloquent: N+1 detected on BookCopy::loans (eager load suggested)' },
   { id: 5, time: '09:14:12', source: 'backend', level: 'info', message: 'POST /api/loans/checkin ....... 201 CREATED (151.40 ms)' },
   { id: 6, time: '09:14:18', source: 'backend', level: 'error', message: 'Daraja: STK callback timeout for CheckoutRequestID ws_CO_2807' },
@@ -34,8 +25,8 @@ const stamp = () =>
 
 export function LibraryProvider({ children }) {
   const auth = useAuth() || {};
-  const [roleState, setRoleState] = useState(auth.user?.role || 'member');
-  const [member, setMember] = useState(initialMember);
+  const [roleState, setRoleState] = useState(auth.user?.role || null);
+  const [member, setMember] = useState(auth.user?.member || null);
   const [books, setBooks] = useState([]);
   const [loans, setLoans] = useState([]);
   const [fines, setFines] = useState([]);
@@ -43,13 +34,30 @@ export function LibraryProvider({ children }) {
   const [logs, setLogs] = useState(seedLogs);
   const [toasts, setToasts] = useState([]);
 
+  const [cart, setCart] = useState(() => {
+    try {
+      const saved = localStorage.getItem('smartlib_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
   useEffect(() => {
-    if (auth.user?.role) {
-      setRoleState(auth.user.role);
+    localStorage.setItem('smartlib_cart', JSON.stringify(cart));
+  }, [cart]);
+
+  useEffect(() => {
+    if (auth.user) {
+      setRoleState(auth.user.role || null);
+      setMember(auth.user.member || auth.user || null);
+    } else {
+      setRoleState(null);
+      setMember(null);
     }
   }, [auth.user]);
 
-  const role = auth.user?.role || roleState;
+  const role = auth.user?.role || roleState || null;
   const setRole = (newRole) => {
     setRoleState(newRole);
     if (auth.setUser && auth.user) {
@@ -74,9 +82,10 @@ export function LibraryProvider({ children }) {
   const digitalPriceFor = useCallback(
     (book) => {
       const price = book.digital_purchase_price || book.digitalPurchasePrice || 50;
-      return member.isPro || auth.user?.member?.is_subscribed ? Math.round(price * 0.8) : price;
+      const isPro = member?.isPro || auth.user?.member?.is_subscribed;
+      return isPro ? Math.round(price * 0.8) : price;
     },
-    [member.isPro, auth.user],
+    [member, auth.user],
   );
 
   const purchaseEbook = useCallback(
@@ -89,7 +98,7 @@ export function LibraryProvider({ children }) {
   );
 
   const activatePro = useCallback(() => {
-    setMember((prev) => ({ ...prev, isPro: true, proExpiresOn: '2027-07-28' }));
+    setMember((prev) => (prev ? { ...prev, isPro: true, proExpiresOn: '2027-07-28' } : null));
     if (auth.setUser && auth.user) {
       auth.setUser({ ...auth.user, member: { ...(auth.user.member || {}), is_subscribed: true } });
     }
@@ -149,6 +158,50 @@ export function LibraryProvider({ children }) {
     [log, pushToast],
   );
 
+  const addToCart = useCallback(
+    (book) => {
+      setCart((prev) => {
+        const existingIndex = prev.findIndex((item) => item.book.id === book.id);
+        if (existingIndex > -1) {
+          const updated = [...prev];
+          updated[existingIndex] = { ...updated[existingIndex], quantity: updated[existingIndex].quantity + 1 };
+          return updated;
+        }
+        return [...prev, { book, quantity: 1 }];
+      });
+      pushToast({ title: 'Added to Cart', detail: `"${book.title}" added to shopping cart`, tone: 'success' });
+    },
+    [pushToast],
+  );
+
+  const updateQuantity = useCallback((bookId, quantity) => {
+    setCart((prev) => {
+      if (quantity <= 0) {
+        return prev.filter((item) => item.book.id !== bookId);
+      }
+      return prev.map((item) => (item.book.id === bookId ? { ...item, quantity } : item));
+    });
+  }, []);
+
+  const removeFromCart = useCallback(
+    (bookId) => {
+      setCart((prev) => prev.filter((item) => item.book.id !== bookId));
+      pushToast({ title: 'Item Removed', detail: 'Book removed from cart', tone: 'info' });
+    },
+    [pushToast],
+  );
+
+  const clearCart = useCallback(() => {
+    setCart([]);
+  }, []);
+
+  const cartCount = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
+
+  const cartTotal = useMemo(
+    () => cart.reduce((sum, item) => sum + digitalPriceFor(item.book) * item.quantity, 0),
+    [cart, digitalPriceFor],
+  );
+
   const value = useMemo(
     () => ({
       role,
@@ -171,6 +224,13 @@ export function LibraryProvider({ children }) {
       checkinCopy,
       saveBook,
       setCopyStatus,
+      cart,
+      addToCart,
+      updateQuantity,
+      removeFromCart,
+      clearCart,
+      cartCount,
+      cartTotal,
     }),
     [
       role,
@@ -192,6 +252,13 @@ export function LibraryProvider({ children }) {
       checkinCopy,
       saveBook,
       setCopyStatus,
+      cart,
+      addToCart,
+      updateQuantity,
+      removeFromCart,
+      clearCart,
+      cartCount,
+      cartTotal,
     ],
   );
 

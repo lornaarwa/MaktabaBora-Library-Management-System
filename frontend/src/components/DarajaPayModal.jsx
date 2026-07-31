@@ -4,7 +4,7 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { Modal } from './ui/Modal';
 
-export default function DarajaPayModal({ isOpen, open, onClose, type = 'fine', item = null }) {
+export default function DarajaPayModal({ isOpen, open, onClose, type = 'fine', item = null, onSuccess = null }) {
     const { user } = useAuth();
     const [phoneNumber, setPhoneNumber] = useState('0712 345 678');
     const [loading, setLoading] = useState(false);
@@ -16,6 +16,7 @@ export default function DarajaPayModal({ isOpen, open, onClose, type = 'fine', i
 
     const isSubscribed = user?.member?.is_subscribed;
     const isDigital = type === 'digital';
+    const isCart = type === 'cart';
     const isFine = type === 'fine';
 
     let title = 'Pay with M-Pesa';
@@ -23,7 +24,12 @@ export default function DarajaPayModal({ isOpen, open, onClose, type = 'fine', i
     let amount = 0;
     let description = '';
 
-    if (isFine && item) {
+    if (isCart && item) {
+        title = 'Cart Multi-Book Checkout';
+        amount = item.amount || 0;
+        const itemCount = item.items ? item.items.reduce((s, i) => s + i.quantity, 0) : 0;
+        description = `${itemCount} Digital E-Book${itemCount > 1 ? 's' : ''} in Shopping Cart`;
+    } else if (isFine && item) {
         title = `Fine Settlement #${item.id}`;
         amount = item.balance || item.amount;
         description = `Settling overdue fine for loan copy #${item.loan_id}`;
@@ -44,7 +50,12 @@ export default function DarajaPayModal({ isOpen, open, onClose, type = 'fine', i
         setErrorMsg(null);
 
         try {
-            if (isFine) {
+            if (isCart && item?.items) {
+                await api.checkoutCart({
+                    phone_number: phoneNumber,
+                    items: item.items.map((i) => ({ book_id: i.book.id, quantity: i.quantity })),
+                });
+            } else if (isFine) {
                 await api.payFineDaraja(item.id, { phone_number: phoneNumber });
             } else if (isDigital) {
                 await api.purchaseDigitalBook(item.id, { phone_number: phoneNumber });
@@ -55,6 +66,7 @@ export default function DarajaPayModal({ isOpen, open, onClose, type = 'fine', i
                 setTimeout(() => {
                     onClose();
                     setStage('form');
+                    if (onSuccess) onSuccess();
                 }, 2800);
             }, 1200);
         } catch (err) {
