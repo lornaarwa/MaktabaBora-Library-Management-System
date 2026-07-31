@@ -81,7 +81,7 @@ export function LibraryProvider({ children }) {
 
   const digitalPriceFor = useCallback(
     (book) => {
-      const price = book.digital_purchase_price || book.digitalPurchasePrice || 50;
+      const price = Number(book.digital_purchase_price || book.digitalPurchasePrice || 50);
       const isPro = member?.isPro || auth.user?.member?.is_subscribed;
       return isPro ? Math.round(price * 0.8) : price;
     },
