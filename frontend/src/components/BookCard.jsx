@@ -12,7 +12,7 @@ export default function BookCard({ book, onReserve, onBuyDigital, onReadDigital 
     const isAvailable = (book.available_copies > 0 || (book.copies && book.copies.some(c => c.status === 'available'))) && !book.is_blocked;
     const isSubscribed = user?.member?.is_subscribed;
 
-    const stdPrice = book.digital_purchase_price || book.digitalPurchasePrice || 50.0;
+    const stdPrice = Number(book.digital_purchase_price || book.digitalPurchasePrice || 50.0);
     const finalPrice = isSubscribed ? Math.round((stdPrice * 0.8) * 100) / 100 : stdPrice;
 
     return (

@@ -151,6 +151,11 @@ class DatabaseSeeder extends Seeder
                 $bData
             );
 
+            if (!empty($bData['cover_image_path'])) {
+                $book->cover_image_path = $bData['cover_image_path'];
+                $book->save();
+            }
+
             // Seed generic book copy barcodes
             for ($i = 1; $i <= $book->total_copies; $i++) {
                 $cleanIsbn = str_replace('-', '', $book->isbn);

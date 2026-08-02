@@ -35,7 +35,7 @@ export default function DarajaPayModal({ isOpen, open, onClose, type = 'fine', i
         description = `Settling overdue fine for loan copy #${item.loan_id}`;
     } else if (isDigital && item) {
         title = `E-Book Purchase: ${item.title}`;
-        const stdPrice = item.digital_purchase_price || 50.0;
+        const stdPrice = Number(item.digital_purchase_price || 50.0);
         amount = isSubscribed ? Math.round(stdPrice * 0.8 * 100) / 100 : stdPrice;
         description = isSubscribed ? '20% Pro Subscriber Discount Applied' : 'Standard Digital Purchase';
     } else {
