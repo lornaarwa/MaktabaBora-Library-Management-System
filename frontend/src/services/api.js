@@ -14,8 +14,7 @@ const apiClient = axios.create({
 const frontendTerminalLogBuffer = [
     `[${new Date().toISOString().slice(11, 19)}] [vite] v5.4.15 dev server running at http://localhost:5173/`,
     `[${new Date().toISOString().slice(11, 19)}] [vite] ready in 340 ms`,
-    `[${new Date().toISOString().slice(11, 19)}] [vite] hmr update /src/pages/AdminDashboard.jsx`,
-    `[${new Date().toISOString().slice(11, 19)}] [REACT ROUTER] Auth Context initialized [USER: admin@library.org]`,
+    `[${new Date().toISOString().slice(11, 19)}] [REACT ROUTER] Auth Context initialized`,
 ];
 
 export const appendFrontendTerminalLog = (logMessage) => {
@@ -70,6 +69,7 @@ apiClient.interceptors.response.use(
 export const api = {
     // Auth
     register: (data) => apiClient.post('/auth/register', data),
+    registerMembershipStk: (data) => apiClient.post('/auth/register-membership-stk', data),
     login: (data) => apiClient.post('/auth/login', data),
     refreshToken: () => apiClient.post('/auth/refresh'),
     logout: () => apiClient.post('/auth/logout'),
@@ -87,6 +87,7 @@ export const api = {
     // Digital Book Store
     getMyDigitalLibrary: () => apiClient.get('/digital-books/my-library'),
     purchaseDigitalBook: (id, data) => apiClient.post(`/digital-books/${id}/purchase`, data),
+    checkoutCart: (data) => apiClient.post('/digital-books/checkout-cart', data),
     readDigitalBook: (id) => apiClient.get(`/digital-books/${id}/read`),
 
     // Loans & Reservations

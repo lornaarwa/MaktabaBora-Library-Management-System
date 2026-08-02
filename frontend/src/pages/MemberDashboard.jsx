@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Clock, ShieldCheck, Sparkles, ShoppingBag, Loader2, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { BookOpen, Clock, ShieldCheck, ShieldAlert, Sparkles, ShoppingBag, Loader2, User, UserPlus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import DarajaPayModal from '../components/DarajaPayModal';
@@ -67,6 +68,34 @@ export default function MemberDashboard() {
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+            {/* Inactive Membership Restriction Banner */}
+            {!isSubscribed && (
+                <div className="rounded-2xl border border-amber-300 bg-amber-50/90 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-card">
+                    <div className="flex items-start gap-3.5">
+                        <div className="p-2.5 rounded-xl bg-amber-100 text-amber-800 border border-amber-300 flex-shrink-0">
+                            <ShieldAlert className="w-5 h-5" />
+                        </div>
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-sm font-extrabold text-amber-950">Active Membership Required</h2>
+                                <span className="rounded-md bg-amber-200 px-2 py-0.5 font-mono text-[10px] font-bold uppercase text-amber-900">
+                                    Restricted Status
+                                </span>
+                            </div>
+                            <p className="text-xs text-amber-900 leading-relaxed max-w-2xl">
+                                Only users with an active membership can borrow books, reserve titles, and access member services. Please register or activate your membership to unlock full member features.
+                            </p>
+                        </div>
+                    </div>
+                    <Link
+                        to="/membership"
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-bark-700 px-5 py-2.5 text-xs font-bold text-cream-light shadow-card transition hover:bg-bark-900 flex-shrink-0"
+                    >
+                        <UserPlus className="w-4 h-4" /> Register Membership
+                    </Link>
+                </div>
+            )}
             
             {/* User Greeting & Member Banner */}
             <div className="rounded-2xl border border-bark-100 bg-cream-light/60 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-card">
@@ -80,7 +109,7 @@ export default function MemberDashboard() {
                         )}
                     </div>
                     <p className="text-xs font-mono text-bark-500">
-                        Card #: <span className="text-bark-900 font-bold">{user?.member?.member_number || 'MEM-2026-0418'}</span> | Borrow Limit: {user?.member?.borrow_limit || 5} Items
+                        Card #: <span className="text-bark-900 font-bold">{user?.member?.member_number || 'N/A'}</span> | Borrow Limit: {user?.member?.borrow_limit || 5} Items
                     </p>
                 </div>
 

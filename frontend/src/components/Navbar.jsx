@@ -1,11 +1,13 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, User, Shield, BookMarked, LogOut, Search, Bot } from 'lucide-react';
+import { useLibrary } from '../context/LibraryContext';
+import { BookOpen, User, Shield, BookMarked, LogOut, Search, Bot, ShoppingCart } from 'lucide-react';
 import { Button } from './ui/Button';
 
 export default function Navbar({ onOpenAiChat }) {
-    const { user, logout, switchRole } = useAuth();
+    const { user, logout } = useAuth();
+    const { cartCount } = useLibrary();
     const location = useLocation();
 
     return (
@@ -28,9 +30,9 @@ export default function Navbar({ onOpenAiChat }) {
                 {/* Navigation Links */}
                 <nav className="hidden items-center gap-1 rounded-xl border border-bark-100 bg-cream-light/60 p-1 md:flex">
                     <Link
-                        to="/"
+                        to="/catalog"
                         className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
-                            location.pathname === '/' ? 'bg-paper font-bold text-bark-900 shadow-sm' : 'text-bark-500 hover:bg-paper/50 hover:text-bark-900'
+                            location.pathname === '/catalog' ? 'bg-paper font-bold text-bark-900 shadow-sm' : 'text-bark-500 hover:bg-paper/50 hover:text-bark-900'
                         }`}
                     >
                         <Search className="h-3.5 w-3.5" /> Catalog
@@ -72,9 +74,18 @@ export default function Navbar({ onOpenAiChat }) {
 
                 {/* Controls & User Account */}
                 <div className="flex items-center gap-3">
+                    <Link to="/cart" className="relative p-2 rounded-lg border border-bark-100 hover:bg-cream transition text-bark-700">
+                        <ShoppingCart className="h-4 w-4" />
+                        {cartCount > 0 && (
+                            <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-bark-700 font-mono text-[9px] font-bold text-cream-light shadow-sm">
+                                {cartCount}
+                            </span>
+                        )}
+                    </Link>
+
                     <Button variant="ghost" onClick={onOpenAiChat}>
                         <Bot className="h-4 w-4 text-bark-700" />
-                        <span>AI Assistant</span>
+                        <span className="hidden sm:inline">AI Assistant</span>
                     </Button>
 
                     {user ? (

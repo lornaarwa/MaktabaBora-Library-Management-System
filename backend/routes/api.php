@@ -21,6 +21,7 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
 
     // Auth Routes
     Route::post('/auth/register', [AuthController::class, 'register']);
+    Route::post('/auth/register-membership-stk', [AuthController::class, 'registerMembershipStk']);
     Route::post('/auth/login', [AuthController::class, 'login']);
 
     // Public Catalog & Search
@@ -48,6 +49,7 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
 
             // Digital Book Store & Reading
             Route::get('/digital-books/my-library', [\App\Http\Controllers\DigitalRentalController::class, 'myLibrary']);
+            Route::post('/digital-books/checkout-cart', [\App\Http\Controllers\DigitalRentalController::class, 'checkoutCart']);
             Route::post('/digital-books/{id}/purchase', [\App\Http\Controllers\DigitalRentalController::class, 'purchase']);
             Route::get('/digital-books/{id}/read', [\App\Http\Controllers\DigitalRentalController::class, 'read'])
                 ->middleware(['ensure.digital_access']);
