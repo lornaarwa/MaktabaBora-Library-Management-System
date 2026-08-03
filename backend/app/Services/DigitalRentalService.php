@@ -44,14 +44,26 @@ class DigitalRentalService implements DigitalRentalServiceInterface
         ]);
     }
 
-    public function activatePerkSubscription(User $user, Member $member, string $planType = 'pro_perks_monthly', float $amount = 500.00, ?string $transactionRef = null): Subscription
+    public function activatePerkSubscription(User $user, Member $member, string $planType = 'standard', float $amount = 1500.00, ?string $transactionRef = null): Subscription
     {
-        $expiresAt = now()->addDays(30);
+        $tier = strtolower($planType);
+        if (str_contains($tier, 'student')) {
+            $tierName = 'student';
+            $borrowLimit = 3;
+        } elseif (str_contains($tier, 'scholar')) {
+            $tierName = 'scholar';
+            $borrowLimit = 15;
+        } else {
+            $tierName = 'standard';
+            $borrowLimit = 7;
+        }
+
+        $expiresAt = now()->addYear();
 
         $subscription = Subscription::create([
             'member_id' => $member->id,
             'user_id' => $user->id,
-            'plan_type' => $planType,
+            'plan_type' => ucfirst($tierName) . ' Membership Pass',
             'discount_percentage' => 20.00,
             'amount_paid' => $amount,
             'payment_status' => 'paid',
@@ -61,6 +73,8 @@ class DigitalRentalService implements DigitalRentalServiceInterface
         ]);
 
         $member->update([
+            'membership_tier' => $tierName,
+            'borrow_limit' => $borrowLimit,
             'is_subscribed' => true,
             'subscription_expires_at' => $expiresAt,
         ]);
