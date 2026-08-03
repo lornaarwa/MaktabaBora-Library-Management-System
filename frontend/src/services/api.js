@@ -75,6 +75,7 @@ export const api = {
     logout: () => apiClient.post('/auth/logout'),
     getMe: () => apiClient.get('/auth/me'),
     updateProfile: (data) => apiClient.put('/auth/profile', data),
+    changeFirstLoginPassword: (data) => apiClient.post('/auth/change-first-login-password', data),
 
     // Catalog & Books
     searchCatalog: (query = '', genre = '') => apiClient.get(`/catalog/search?q=${encodeURIComponent(query)}&genre=${encodeURIComponent(genre)}`),

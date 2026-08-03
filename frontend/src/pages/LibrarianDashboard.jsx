@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { 
     QrCode, BookCheck, ShieldAlert, CheckCircle2, Users, BarChart3, AlertCircle, Loader2, BookOpen,
     Plus, Edit2, Trash2, Search, X, Layers, Table, CreditCard, ChevronLeft, ChevronRight, Menu, Activity, Shield,
@@ -7,6 +8,14 @@ import {
 import { api } from '../services/api';
 
 export default function LibrarianDashboard() {
+    const { user, setUser } = useAuth();
+
+    // First-Time Password Change State
+    const [pwdForm, setPwdForm] = useState({ new_password: '', new_password_confirmation: '' });
+    const [pwdSubmitting, setPwdSubmitting] = useState(false);
+    const [pwdError, setPwdError] = useState(null);
+    const mustChangePassword = Boolean(user?.must_change_password);
+
     // Sidebar Tab State: 'overview' | 'add_books' | 'book_copies' | 'returns' | 'subscriptions'
     const [activeTab, setActiveTab] = useState('overview');
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -55,6 +64,37 @@ export default function LibrarianDashboard() {
             fetchRefundRequests();
         } catch (err) {
             setErrorMsg(err.message || 'Failed to reject refund request.');
+        }
+    };
+
+    const handleFirstTimePasswordChange = async (e) => {
+        e.preventDefault();
+        setPwdSubmitting(true);
+        setPwdError(null);
+
+        if (pwdForm.new_password !== pwdForm.new_password_confirmation) {
+            setPwdError('Passwords do not match. Please verify your entries.');
+            setPwdSubmitting(false);
+            return;
+        }
+
+        try {
+            const res = await api.changeFirstLoginPassword({
+                new_password: pwdForm.new_password,
+                new_password_confirmation: pwdForm.new_password_confirmation,
+            });
+            const updatedUser = res.user || res.data?.user;
+            if (updatedUser) {
+                setUser(updatedUser);
+                localStorage.setItem('smartlib_user', JSON.stringify(updatedUser));
+            } else {
+                setUser({ ...user, must_change_password: false });
+            }
+            setSuccessMsg('Your staff password has been set! Full access granted.');
+        } catch (err) {
+            setPwdError(err.message || 'Failed to update password.');
+        } finally {
+            setPwdSubmitting(false);
         }
     };
 
@@ -313,6 +353,67 @@ export default function LibrarianDashboard() {
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            
+            {/* First-Time Password Reset Mandatory Modal */}
+            {mustChangePassword && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-bark-900/80 backdrop-blur-md p-4">
+                    <div className="w-full max-w-md rounded-3xl border border-tan-dark/40 bg-paper p-6 sm:p-8 space-y-6 shadow-lift animate-in fade-in zoom-in-95 duration-200">
+                        <div className="text-center space-y-2">
+                            <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-tan/20 text-tan-dark shadow-sm">
+                                <ShieldAlert className="w-7 h-7 text-tan-dark" />
+                            </div>
+                            <h2 className="text-xl font-extrabold text-bark-900">First-Time Staff Login</h2>
+                            <p className="text-xs text-bark-500">
+                                An administrator initialized your librarian account with a temporary password. Please set a secure password to unlock your circulation desk features.
+                            </p>
+                        </div>
+
+                        {pwdError && (
+                            <div className="p-3 rounded-xl bg-rose-100 border border-rose-300 text-rose-900 text-xs font-semibold flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 text-rose-700 flex-shrink-0" />
+                                <span>{pwdError}</span>
+                            </div>
+                        )}
+
+                        <form onSubmit={handleFirstTimePasswordChange} className="space-y-4 text-left">
+                            <div>
+                                <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">New Personal Password</label>
+                                <input
+                                    type="password"
+                                    required
+                                    minLength={6}
+                                    placeholder="At least 6 characters"
+                                    value={pwdForm.new_password}
+                                    onChange={(e) => setPwdForm({ ...pwdForm, new_password: e.target.value })}
+                                    className="w-full rounded-xl border border-bark-100 bg-cream-light/40 px-4 py-2.5 text-xs font-semibold text-bark-900 focus:ring-2 focus:ring-tan-dark"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Confirm New Password</label>
+                                <input
+                                    type="password"
+                                    required
+                                    minLength={6}
+                                    placeholder="Re-enter new password"
+                                    value={pwdForm.new_password_confirmation}
+                                    onChange={(e) => setPwdForm({ ...pwdForm, new_password_confirmation: e.target.value })}
+                                    className="w-full rounded-xl border border-bark-100 bg-cream-light/40 px-4 py-2.5 text-xs font-semibold text-bark-900 focus:ring-2 focus:ring-tan-dark"
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={pwdSubmitting}
+                                className="w-full py-3 px-4 rounded-xl bg-bark-700 hover:bg-bark-800 text-cream-light font-bold text-xs transition-all shadow-card flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                {pwdSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                                <span>Update Password & Enter Portal</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
             
             {/* Header */}
             <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 sm:p-8 flex items-center justify-between shadow-sm">

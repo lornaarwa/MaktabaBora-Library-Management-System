@@ -36,6 +36,7 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
     Route::middleware(['jwt.validation', 'ensure.account', 'check.banned'])->group(function () {
         Route::get('/auth/me', [AuthController::class, 'me']);
         Route::put('/auth/profile', [AuthController::class, 'updateProfile']);
+        Route::post('/auth/change-first-login-password', [\App\Http\Controllers\LibrarianPasswordChangeController::class, 'changePassword']);
         Route::post('/auth/refresh', [AuthController::class, 'refresh']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
 

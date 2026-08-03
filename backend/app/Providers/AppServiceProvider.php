@@ -35,6 +35,9 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(\App\Contracts\Services\RefundManagementServiceInterface::class, \App\Services\RefundManagementService::class);
         $this->app->singleton(\App\Services\RefundManagementService::class, \App\Services\RefundManagementService::class);
+
+        $this->app->singleton(\App\Contracts\Services\LibrarianAuthServiceInterface::class, \App\Services\LibrarianAuthService::class);
+        $this->app->singleton(\App\Services\LibrarianAuthService::class, \App\Services\LibrarianAuthService::class);
     }
 
     public function boot(): void

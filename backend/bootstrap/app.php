@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'ensure.librarian' => \App\Http\Middleware\EnsureIsLibrarian::class,
             'ensure.member' => \App\Http\Middleware\EnsureIsMember::class,
             'ensure.subscribed' => \App\Http\Middleware\EnsureActiveSubscription::class,
+            'ensure.password_changed' => \App\Http\Middleware\EnsurePasswordChangeNotRequired::class,
             'ensure.account' => \App\Http\Middleware\EnsureHasAccount::class,
             'validate.borrow_limit' => \App\Http\Middleware\ValidateBorrowLimit::class,
             'check.book_availability' => \App\Http\Middleware\CheckBookAvailability::class,
