@@ -177,4 +177,29 @@ class AuthController extends Controller
     {
         return response()->json(['message' => 'Logged out successfully']);
     }
+
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:20',
+            'id_number' => 'nullable|string|max:50',
+        ]);
+
+        if (isset($validated['name'])) $user->name = $validated['name'];
+        if (isset($validated['email'])) $user->email = $validated['email'];
+        if (isset($validated['phone'])) $user->phone = $validated['phone'];
+        $user->save();
+
+        if ($user->member && isset($validated['id_number'])) {
+            $user->member->update(['id_number' => $validated['id_number']]);
+        }
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user' => $user->fresh('member', 'librarian'),
+        ]);
+    }
 }
