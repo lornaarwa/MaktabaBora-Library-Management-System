@@ -425,7 +425,7 @@ export default function AdminDashboard() {
                                 <UserPlus className="w-5 h-5 text-tan-dark" /> Register New Librarian Profile
                             </h2>
                             <p className="text-xs text-bark-500 mt-1">
-                                Create a library staff account. A temporary placeholder password (<code className="font-mono text-bark-800 bg-tan/20 px-1.5 py-0.5 rounded font-bold">TempPass2026!</code>) will be auto-assigned and the staff member will be prompted to change their password on first login.
+                                Initial password: <code className="font-mono text-bark-800 bg-tan/20 px-1.5 py-0.5 rounded font-bold">TempPass2026!</code> (staff will be prompted to reset on first login).
                             </p>
                         </div>
 
@@ -447,7 +447,7 @@ export default function AdminDashboard() {
                                 <input
                                     type="email"
                                     required
-                                    placeholder="s.jenkins@smartlib.org"
+                                    placeholder="librarian@maktababora.org"
                                     value={libForm.email}
                                     onChange={(e) => setLibForm({ ...libForm, email: e.target.value })}
                                     className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2.5 text-xs text-bark-900 font-medium focus:ring-2 focus:ring-tan-dark"
@@ -455,13 +455,13 @@ export default function AdminDashboard() {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Department / Branch</label>
+                                <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Department / Specialty</label>
                                 <select
                                     value={libForm.department}
                                     onChange={(e) => setLibForm({ ...libForm, department: e.target.value })}
                                     className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2.5 text-xs text-bark-900 font-medium focus:ring-2 focus:ring-tan-dark"
                                 >
-                                    <option value="General Circulation">General Circulation</option>
+                                    <option value="Circulation & Loans">Circulation & Loans</option>
                                     <option value="Reference Desk & Research">Reference Desk & Research</option>
                                     <option value="Cataloging & Archiving">Cataloging & Archiving</option>
                                     <option value="Digital Media & E-Resources">Digital Media & E-Resources</option>
@@ -471,7 +471,7 @@ export default function AdminDashboard() {
                             <div className="rounded-xl border border-tan/30 bg-tan/10 p-4 space-y-1">
                                 <span className="text-[11px] font-bold text-tan-dark uppercase tracking-wider block">Security & Password Policy</span>
                                 <p className="text-xs text-bark-700">
-                                    The account will be initialized with temporary password <strong className="font-mono text-bark-900 font-bold">TempPass2026!</strong>. The librarian will be required to create a personal password upon logging in.
+                                    Initial password is <strong className="font-mono text-bark-900 font-bold">TempPass2026!</strong>. Mandatory reset on first login.
                                 </p>
                             </div>
 
@@ -497,7 +497,7 @@ export default function AdminDashboard() {
                                     <h2 className="text-base font-bold text-bark-900 flex items-center gap-2 font-mono">
                                         <Activity className="w-4 h-4 text-emerald-400" /> Terminal Activity & API Logs Stream
                                     </h2>
-                                    <p className="text-xs text-bark-500 mt-0.5">Real-time live logs from php artisan serve (backend) & npm run dev (frontend) processes</p>
+                                    <p className="text-xs text-bark-500 mt-0.5">Backend & frontend process logs.</p>
                                 </div>
 
                                 {/* Mini Navbar */}

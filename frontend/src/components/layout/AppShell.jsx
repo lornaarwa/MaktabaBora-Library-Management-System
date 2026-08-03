@@ -32,7 +32,6 @@ export function AppShell({ children, onOpenAiChat }) {
 
   const navigation = [
     { name: 'Catalog', href: '/catalog', icon: BookOpenIcon, allow: ['member'] },
-    { name: 'Membership Pass', href: '/membership', icon: ShieldNavIcon, allow: ['member'] },
     { name: 'My Cart', href: '/cart', icon: ShoppingCartIcon, allow: ['member'], badge: cartCount },
     { name: 'My Library', href: '/member', icon: LibraryIcon, allow: ['member'] },
     { name: 'Profile', href: '/profile', icon: UserIcon, allow: ['member', 'librarian', 'admin'] },

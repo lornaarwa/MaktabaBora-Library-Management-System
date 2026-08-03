@@ -393,7 +393,7 @@ export default function LibrarianDashboard() {
                             </div>
                             <h2 className="text-xl font-extrabold text-bark-900">First-Time Staff Login</h2>
                             <p className="text-xs text-bark-500">
-                                An administrator initialized your librarian account with a temporary password. Please set a secure password to unlock your circulation desk features.
+                                Please set a secure password to continue.
                             </p>
                         </div>
 
@@ -459,7 +459,7 @@ export default function LibrarianDashboard() {
                             LIBRARIAN PORTAL
                         </span>
                         <h1 className="text-xl sm:text-2xl font-extrabold text-bark-900 mt-1">
-                            Circulation Desk & Inventory Operations
+                            Circulation Desk
                         </h1>
                     </div>
                 </div>
@@ -627,7 +627,7 @@ export default function LibrarianDashboard() {
                                     <h3 className="text-base font-bold text-bark-900 flex items-center gap-2">
                                         <Users className="w-4 h-4 text-bark-500" /> Member Activity Directory
                                     </h3>
-                                    <p className="text-xs text-bark-500 mt-0.5">Filter, search, and manage registered library members and active borrowing privileges.</p>
+                                    <p className="text-xs text-bark-500 mt-0.5">Registered members and loan status.</p>
                                 </div>
 
                                 <span className="font-mono text-xs text-bark-500 bg-paper px-3 py-1.5 rounded-xl border border-bark-100 w-fit">
