@@ -32,6 +32,35 @@ export default function LibrarianDashboard() {
     const [reimbLoading, setReimbLoading] = useState(false);
     const [loading, setLoading] = useState(true);
 
+    // Member Directory Search & Filters State
+    const [directorySearch, setDirectorySearch] = useState('');
+    const [tierFilter, setTierFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [sortBy, setSortBy] = useState('name');
+
+    const filteredMembers = members.filter((m) => {
+        if (directorySearch) {
+            const q = directorySearch.toLowerCase();
+            const nameMatch = String(m.name || '').toLowerCase().includes(q);
+            const emailMatch = String(m.email || '').toLowerCase().includes(q);
+            const numMatch = String(m.member_number || '').toLowerCase().includes(q);
+            if (!nameMatch && !emailMatch && !numMatch) return false;
+        }
+        if (tierFilter !== 'all') {
+            if ((m.membership_tier || '').toLowerCase() !== tierFilter.toLowerCase()) return false;
+        }
+        if (statusFilter === 'banned' && !m.is_banned) return false;
+        if (statusFilter === 'active' && m.is_banned) return false;
+        if (statusFilter === 'subscribed' && !m.is_subscribed) return false;
+        return true;
+    }).sort((a, b) => {
+        if (sortBy === 'name') return String(a.name || '').localeCompare(String(b.name || ''));
+        if (sortBy === 'newest') return (b.id || 0) - (a.id || 0);
+        if (sortBy === 'loans') return (b.active_loans_count || 0) - (a.active_loans_count || 0);
+        if (sortBy === 'limit') return (b.borrow_limit || 0) - (a.borrow_limit || 0);
+        return 0;
+    });
+
     const fetchRefundRequests = async () => {
         try {
             const res = await api.getLibrarianRefundRequests();
@@ -455,233 +484,298 @@ export default function LibrarianDashboard() {
                 </div>
             )}
 
-            {/* Main Layout: Collapsible Sidebar + Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Top Horizontal Navigation Navbar */}
+            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-3 shadow-sm flex items-center gap-2 overflow-x-auto">
+                <button
+                    onClick={() => setActiveTab('overview')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                        activeTab === 'overview'
+                            ? 'bg-bark-700 text-cream-light shadow-card'
+                            : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+                    }`}
+                >
+                    <Activity className="w-4 h-4" />
+                    <span>Overview & Directory</span>
+                </button>
+
+                <button
+                    onClick={() => setActiveTab('add_books')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                        activeTab === 'add_books'
+                            ? 'bg-bark-700 text-cream-light shadow-card'
+                            : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+                    }`}
+                >
+                    <BookOpen className="w-4 h-4" />
+                    <span>Add Books / Inventory</span>
+                </button>
+
+                <button
+                    onClick={() => setActiveTab('book_copies')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                        activeTab === 'book_copies'
+                            ? 'bg-bark-700 text-cream-light shadow-card'
+                            : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+                    }`}
+                >
+                    <Layers className="w-4 h-4" />
+                    <span>Book Copies ({copies.length})</span>
+                </button>
+
+                <button
+                    onClick={() => setActiveTab('returns')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                        activeTab === 'returns'
+                            ? 'bg-bark-700 text-cream-light shadow-card'
+                            : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+                    }`}
+                >
+                    <BookCheck className="w-4 h-4" />
+                    <span>Process Returns ({activeLoans.length})</span>
+                </button>
+
+                <button
+                    onClick={() => setActiveTab('subscriptions')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                        activeTab === 'subscriptions'
+                            ? 'bg-bark-700 text-cream-light shadow-card'
+                            : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+                    }`}
+                >
+                    <CreditCard className="w-4 h-4" />
+                    <span>Subscriptions (CRUD)</span>
+                </button>
+
+                <button
+                    onClick={() => setActiveTab('reimbursements')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                        activeTab === 'reimbursements'
+                            ? 'bg-bark-700 text-cream-light shadow-card'
+                            : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+                    }`}
+                >
+                    <DollarSign className="w-4 h-4" />
+                    <span>Reimbursements</span>
+                </button>
+
+                <button
+                    onClick={() => setActiveTab('refunds')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                        activeTab === 'refunds'
+                            ? 'bg-bark-700 text-cream-light shadow-card'
+                            : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+                    }`}
+                >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Refund Applications ({refundRequests.length})</span>
+                </button>
+            </div>
+
+            {/* Main Content Area */}
+            <div className="space-y-6">
                 
-                {/* Task 3: Librarian Sidebar Navigation */}
-                <div className={`${isSidebarCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} bg-cream-light/40 border border-bark-100 rounded-2xl p-3.5 space-y-2 h-fit shadow-sm transition-all`}>
-                    <div className="flex items-center justify-between px-2 py-1">
-                        {!isSidebarCollapsed && (
-                            <h3 className="text-[10px] font-mono font-extrabold text-bark-500 uppercase tracking-wider flex items-center gap-2">
-                                <Table className="w-3.5 h-3.5 text-bark-500" /> Desk Navigation
-                            </h3>
-                        )}
-                        <button
-                            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                            className="p-1 rounded text-bark-500 hover:text-zinc-200"
-                        >
-                            {isSidebarCollapsed ? <ChevronRight className="w-4 h-4 mx-auto" /> : <ChevronLeft className="w-4 h-4" />}
-                        </button>
-                    </div>
-
-                    <div className="space-y-1">
-                        <button
-                            onClick={() => setActiveTab('overview')}
-                            className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                                activeTab === 'overview'
-                                    ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
-                                    : 'text-bark-500 hover:text-zinc-200 hover:bg-cream/60'
-                            }`}
-                            title="Circulation Overview"
-                        >
-                            <div className="flex items-center gap-2.5">
-                                <Activity className="w-4 h-4 text-bark-500" />
-                                {!isSidebarCollapsed && <span>Overview & Directory</span>}
-                            </div>
-                        </button>
-
-                        <button
-                            onClick={() => setActiveTab('add_books')}
-                            className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                                activeTab === 'add_books'
-                                    ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
-                                    : 'text-bark-500 hover:text-zinc-200 hover:bg-cream/60'
-                            }`}
-                            title="Add Books to Inventory"
-                        >
-                            <div className="flex items-center gap-2.5">
-                                <BookOpen className="w-4 h-4 text-bark-500" />
-                                {!isSidebarCollapsed && <span>Add Books / Inventory</span>}
-                            </div>
-                        </button>
-
-                        <button
-                            onClick={() => setActiveTab('book_copies')}
-                            className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                                activeTab === 'book_copies'
-                                    ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
-                                    : 'text-bark-500 hover:text-zinc-200 hover:bg-cream/60'
-                            }`}
-                            title="Book Copies"
-                        >
-                            <div className="flex items-center gap-2.5">
-                                <Layers className="w-4 h-4 text-bark-500" />
-                                {!isSidebarCollapsed && <span>Book Copies ({copies.length})</span>}
-                            </div>
-                        </button>
-
-                        <button
-                            onClick={() => setActiveTab('returns')}
-                            className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                                activeTab === 'returns'
-                                    ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
-                                    : 'text-bark-500 hover:text-zinc-200 hover:bg-cream/60'
-                            }`}
-                            title="Process Book Returns"
-                        >
-                            <div className="flex items-center gap-2.5">
-                                <BookCheck className="w-4 h-4 text-bark-500" />
-                                {!isSidebarCollapsed && <span>Process Returns ({activeLoans.length})</span>}
-                            </div>
-                        </button>
-
-                        <button
-                            onClick={() => setActiveTab('subscriptions')}
-                            className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                                activeTab === 'subscriptions'
-                                    ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
-                                    : 'text-bark-500 hover:text-zinc-200 hover:bg-cream/60'
-                            }`}
-                            title="Valid Subscriptions (CRUD)"
-                        >
-                            <div className="flex items-center gap-2.5">
-                                <CreditCard className="w-4 h-4 text-bark-500" />
-                                {!isSidebarCollapsed && <span>Subscriptions (CRUD)</span>}
-                            </div>
-                        </button>
-
-                        <button
-                            onClick={() => setActiveTab('reimbursements')}
-                            className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                                activeTab === 'reimbursements'
-                                    ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
-                                    : 'text-bark-500 hover:text-zinc-200 hover:bg-cream/60'
-                            }`}
-                            title="Reimbursement Requests"
-                        >
-                            <div className="flex items-center gap-2.5">
-                                <DollarSign className="w-4 h-4 text-bark-500" />
-                                {!isSidebarCollapsed && (
-                                    <span className="flex items-center gap-1.5">
-                                        Reimbursements
-                                        {reimbursements.filter(r => r.status === 'pending').length > 0 && (
-                                            <span className="ml-1 inline-flex items-center justify-center h-4 w-4 rounded-full bg-amber-500 text-[9px] font-bold text-white">
-                                                {reimbursements.filter(r => r.status === 'pending').length}
-                                            </span>
-                                        )}
-                                    </span>
-                                )}
-                            </div>
-                        </button>
-                    </div>
-                </div>
-
-                {/* Content Panel */}
-                <div className={`${isSidebarCollapsed ? 'lg:col-span-11' : 'lg:col-span-9'} space-y-6 transition-all`}>
-                    
-                    {/* TAB 1: Overview & Circulation Desk */}
-                    {activeTab === 'overview' && (
-                        <div className="space-y-6">
-                            {/* Metrics Overview Cards */}
-                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
-                                <div className="bg-cream-light/40 border border-bark-100 rounded-xl p-5 space-y-2">
-                                    <div className="flex justify-between items-center text-bark-500">
-                                        <span className="text-xs font-semibold text-bark-500 uppercase font-mono">Catalog Titles</span>
-                                        <div className="p-2 rounded-lg bg-paper border border-bark-100 text-bark-700">
-                                            <BarChart3 className="w-4 h-4" />
-                                        </div>
+                {/* TAB 1: Overview & Circulation Desk */}
+                {activeTab === 'overview' && (
+                    <div className="space-y-6">
+                        {/* Metrics Overview Cards */}
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-5">
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-xl p-5 space-y-2">
+                                <div className="flex justify-between items-center text-bark-500">
+                                    <span className="text-xs font-semibold text-bark-500 uppercase font-mono">Catalog Titles</span>
+                                    <div className="p-2 rounded-lg bg-paper border border-bark-100 text-bark-700">
+                                        <BarChart3 className="w-4 h-4" />
                                     </div>
-                                    <span className="text-2xl font-extrabold text-bark-900 block">{loading ? '...' : metrics.total_books}</span>
+                                </div>
+                                <span className="text-2xl font-extrabold text-bark-900 block">{loading ? '...' : metrics.total_books}</span>
+                            </div>
+
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-xl p-5 space-y-2">
+                                <div className="flex justify-between items-center text-bark-500">
+                                    <span className="text-xs font-semibold text-bark-500 uppercase font-mono">Active Loans</span>
+                                    <div className="p-2 rounded-lg bg-paper border border-bark-100 text-bark-700">
+                                        <BookCheck className="w-4 h-4" />
+                                    </div>
+                                </div>
+                                <span className="text-2xl font-extrabold text-bark-900 block">{loading ? '...' : metrics.active_loans}</span>
+                            </div>
+
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-xl p-5 space-y-2">
+                                <div className="flex justify-between items-center text-bark-500">
+                                    <span className="text-xs font-semibold text-bark-500 uppercase font-mono">Overdue Returns</span>
+                                    <div className="p-2 rounded-lg bg-paper border border-bark-100 text-bark-700">
+                                        <ShieldAlert className="w-4 h-4" />
+                                    </div>
+                                </div>
+                                <span className="text-2xl font-extrabold text-bark-900 block">{loading ? '...' : metrics.overdue_loans}</span>
+                            </div>
+
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-xl p-5 space-y-2">
+                                <div className="flex justify-between items-center text-bark-500">
+                                    <span className="text-xs font-semibold text-bark-500 uppercase font-mono">Unpaid Fines</span>
+                                    <div className="p-2 rounded-lg bg-paper border border-bark-100 text-bark-700">
+                                        <QrCode className="w-4 h-4" />
+                                    </div>
+                                </div>
+                                <span className="text-2xl font-extrabold text-bark-900 block">KES {loading ? '...' : metrics.total_unpaid_fines}</span>
+                            </div>
+                        </div>
+
+                        {/* Member Activity Directory */}
+                        <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-6 shadow-sm">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-bark-100 pb-4">
+                                <div>
+                                    <h3 className="text-base font-bold text-bark-900 flex items-center gap-2">
+                                        <Users className="w-4 h-4 text-bark-500" /> Member Activity Directory
+                                    </h3>
+                                    <p className="text-xs text-bark-500 mt-0.5">Filter, search, and manage registered library members and active borrowing privileges.</p>
                                 </div>
 
-                                <div className="bg-cream-light/40 border border-bark-100 rounded-xl p-5 space-y-2">
-                                    <div className="flex justify-between items-center text-bark-500">
-                                        <span className="text-xs font-semibold text-bark-500 uppercase font-mono">Active Loans</span>
-                                        <div className="p-2 rounded-lg bg-paper border border-bark-100 text-bark-700">
-                                            <BookCheck className="w-4 h-4" />
-                                        </div>
-                                    </div>
-                                    <span className="text-2xl font-extrabold text-bark-900 block">{loading ? '...' : metrics.active_loans}</span>
+                                <span className="font-mono text-xs text-bark-500 bg-paper px-3 py-1.5 rounded-xl border border-bark-100 w-fit">
+                                    Showing <strong className="text-bark-900">{filteredMembers.length}</strong> of {members.length} member(s)
+                                </span>
+                            </div>
+
+                            {/* Filter Controls Bar */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-paper p-3.5 rounded-xl border border-bark-100 text-xs">
+                                {/* Search */}
+                                <div className="relative">
+                                    <Search className="w-4 h-4 absolute left-3 top-3 text-bark-500" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search name, email, ID..."
+                                        value={directorySearch}
+                                        onChange={(e) => setDirectorySearch(e.target.value)}
+                                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-bark-100 bg-cream-light/40 text-bark-900 text-xs focus:ring-1 focus:ring-tan-dark"
+                                    />
                                 </div>
 
-                                <div className="bg-cream-light/40 border border-bark-100 rounded-xl p-5 space-y-2">
-                                    <div className="flex justify-between items-center text-bark-500">
-                                        <span className="text-xs font-semibold text-bark-500 uppercase font-mono">Overdue Returns</span>
-                                        <div className="p-2 rounded-lg bg-paper border border-bark-100 text-bark-700">
-                                            <ShieldAlert className="w-4 h-4" />
-                                        </div>
-                                    </div>
-                                    <span className="text-2xl font-extrabold text-bark-900 block">{loading ? '...' : metrics.overdue_loans}</span>
+                                {/* Tier Filter */}
+                                <div>
+                                    <select
+                                        value={tierFilter}
+                                        onChange={(e) => setTierFilter(e.target.value)}
+                                        className="w-full px-3 py-2 rounded-lg border border-bark-100 bg-cream-light/40 text-bark-900 text-xs capitalize font-semibold focus:ring-1 focus:ring-tan-dark"
+                                    >
+                                        <option value="all">All Membership Tiers</option>
+                                        <option value="student">Student Tier</option>
+                                        <option value="standard">Standard Tier</option>
+                                        <option value="scholar">Scholar Tier</option>
+                                        <option value="faculty">Faculty Tier</option>
+                                        <option value="general">General Tier</option>
+                                    </select>
                                 </div>
 
-                                <div className="bg-cream-light/40 border border-bark-100 rounded-xl p-5 space-y-2">
-                                    <div className="flex justify-between items-center text-bark-500">
-                                        <span className="text-xs font-semibold text-bark-500 uppercase font-mono">Unpaid Fines</span>
-                                        <div className="p-2 rounded-lg bg-paper border border-bark-100 text-bark-700">
-                                            <QrCode className="w-4 h-4" />
-                                        </div>
-                                    </div>
-                                    <span className="text-2xl font-extrabold text-bark-900 block">KES {loading ? '...' : metrics.total_unpaid_fines}</span>
+                                {/* Status Filter */}
+                                <div>
+                                    <select
+                                        value={statusFilter}
+                                        onChange={(e) => setStatusFilter(e.target.value)}
+                                        className="w-full px-3 py-2 rounded-lg border border-bark-100 bg-cream-light/40 text-bark-900 text-xs font-semibold focus:ring-1 focus:ring-tan-dark"
+                                    >
+                                        <option value="all">All Account Statuses</option>
+                                        <option value="active">Active Members Only</option>
+                                        <option value="banned">Suspended / Banned Only</option>
+                                        <option value="subscribed">Paid Subscribers Only</option>
+                                    </select>
+                                </div>
+
+                                {/* Sort By */}
+                                <div>
+                                    <select
+                                        value={sortBy}
+                                        onChange={(e) => setSortBy(e.target.value)}
+                                        className="w-full px-3 py-2 rounded-lg border border-bark-100 bg-cream-light/40 text-bark-900 text-xs font-semibold focus:ring-1 focus:ring-tan-dark"
+                                    >
+                                        <option value="name">Sort by Name (A–Z)</option>
+                                        <option value="newest">Sort by Newest Registered</option>
+                                        <option value="loans">Sort by Active Loans</option>
+                                        <option value="limit">Sort by Borrow Limit</option>
+                                    </select>
                                 </div>
                             </div>
 
-                            {/* Member Activity Directory */}
-                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
-                                <h3 className="text-base font-bold text-bark-900 flex items-center gap-2">
-                                    <Users className="w-4 h-4 text-bark-500" /> Member Activity Directory
-                                </h3>
-
-                                {loading ? (
-                                    <div className="flex items-center justify-center py-8 text-bark-500 font-mono text-xs">
-                                        <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading member directory...
-                                    </div>
-                                ) : (
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left text-xs text-bark-700 border-collapse">
-                                            <thead className="bg-paper text-bark-500 uppercase text-[10px] tracking-wider font-mono">
-                                                <tr>
-                                                    <th className="p-3 border-b border-bark-100">Member #</th>
-                                                    <th className="p-3 border-b border-bark-100">Full Name & Email</th>
-                                                    <th className="p-3 border-b border-bark-100">Tier / Limit</th>
-                                                    <th className="p-3 border-b border-bark-100 text-center">Active Loans</th>
-                                                    <th className="p-3 border-b border-bark-100 text-center">Holds</th>
-                                                    <th className="p-3 border-b border-bark-100 text-center">Digital E-Books</th>
+                            {loading ? (
+                                <div className="flex items-center justify-center py-12 text-bark-500 font-mono text-xs">
+                                    <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading member directory...
+                                </div>
+                            ) : filteredMembers.length === 0 ? (
+                                <div className="text-center py-12 bg-paper/40 rounded-xl border border-bark-100 space-y-1">
+                                    <Users className="w-8 h-8 text-bark-400 mx-auto" />
+                                    <h4 className="text-sm font-bold text-bark-900">No Members Found</h4>
+                                    <p className="text-xs text-bark-500">No member accounts match the selected search filter criteria.</p>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-xs text-bark-700 border-collapse">
+                                        <thead className="bg-paper text-bark-500 uppercase text-[10px] tracking-wider font-mono">
+                                            <tr>
+                                                <th className="p-3 border-b border-bark-100">Member #</th>
+                                                <th className="p-3 border-b border-bark-100">User Profile</th>
+                                                <th className="p-3 border-b border-bark-100">Tier / Limit</th>
+                                                <th className="p-3 border-b border-bark-100 text-center">Pass Status</th>
+                                                <th className="p-3 border-b border-bark-100 text-center">Active Loans</th>
+                                                <th className="p-3 border-b border-bark-100 text-center">Account Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-bark-100/60">
+                                            {filteredMembers.map((m) => (
+                                                <tr key={m.id} className="hover:bg-paper/60 transition-colors">
+                                                    <td className="p-3 font-mono font-bold text-bark-900">{m.member_number}</td>
+                                                    <td className="p-3">
+                                                        <div className="flex items-center gap-3">
+                                                            {m.user?.avatar_base64 ? (
+                                                                <img
+                                                                    src={m.user.avatar_base64}
+                                                                    alt={m.name}
+                                                                    className="h-8 w-8 rounded-xl object-cover border border-tan-dark shadow-sm flex-shrink-0"
+                                                                />
+                                                            ) : (
+                                                                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-bark-700 text-cream-light font-extrabold text-xs shadow-sm flex-shrink-0">
+                                                                    {m.name ? m.name.charAt(0).toUpperCase() : 'M'}
+                                                                </div>
+                                                            )}
+                                                            <div>
+                                                                <div className="font-bold text-bark-900">{m.name}</div>
+                                                                <div className="text-[11px] text-bark-500 font-mono">{m.email}</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-3">
+                                                        <span className="capitalize text-bark-900 font-bold bg-tan/10 px-2 py-0.5 rounded border border-tan/20 text-[11px] inline-block mb-0.5">
+                                                            {m.membership_tier || 'Standard'}
+                                                        </span>
+                                                        <div className="text-[10px] text-bark-500 font-mono">Max Limit: {m.borrow_limit || 7} books</div>
+                                                    </td>
+                                                    <td className="p-3 text-center font-mono">
+                                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                                            m.is_subscribed
+                                                                ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                                                : 'bg-cream text-bark-600 border border-bark-100'
+                                                        }`}>
+                                                            {m.is_subscribed ? 'Active Subscriber' : 'No Pass'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-3 text-center">
+                                                        <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-paper text-bark-900 border border-bark-100 shadow-sm">
+                                                            {m.active_loans_count || 0} active
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-3 text-center">
+                                                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase font-mono ${
+                                                            m.is_banned
+                                                                ? 'bg-rose-100 text-rose-900 border border-rose-300'
+                                                                : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                                        }`}>
+                                                            {m.is_banned ? 'Suspended' : 'Active'}
+                                                        </span>
+                                                    </td>
                                                 </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-zinc-800/60">
-                                                {members.map((m) => (
-                                                    <tr key={m.id} className="hover:bg-paper/50">
-                                                        <td className="p-3 font-mono font-bold text-zinc-200">{m.member_number}</td>
-                                                        <td className="p-3">
-                                                            <div className="font-semibold text-bark-900">{m.name}</div>
-                                                            <div className="text-[11px] text-bark-500">{m.email}</div>
-                                                        </td>
-                                                        <td className="p-3">
-                                                            <span className="capitalize text-bark-700 font-medium">{m.membership_tier}</span>
-                                                            <div className="text-[10px] text-bark-500 font-mono">Limit: {m.borrow_limit}</div>
-                                                        </td>
-                                                        <td className="p-3 text-center">
-                                                            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-cream text-zinc-200 border border-bark-100">
-                                                                {m.active_loans_count} active
-                                                            </span>
-                                                        </td>
-                                                        <td className="p-3 text-center">
-                                                            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-cream text-zinc-200 border border-bark-100">
-                                                                {m.reserved_books_count} holds
-                                                            </span>
-                                                        </td>
-                                                        <td className="p-3 text-center">
-                                                            <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-cream text-zinc-200 border border-bark-100">
-                                                                {m.digital_purchases_count} e-books
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                )}
-                            </div>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
 
                             {/* Barcode Checkout Form */}
                             <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
