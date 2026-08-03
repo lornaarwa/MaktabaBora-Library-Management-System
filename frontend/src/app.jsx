@@ -57,11 +57,18 @@ function Shell() {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
-        <Route path="/membership" element={<MembershipRegistration />} />
+        <Route
+          path="/membership"
+          element={
+            <RequireRole allow={['member']}>
+              <MembershipRegistration />
+            </RequireRole>
+          }
+        />
         <Route
           path="/catalog"
           element={
-            <RequireRole allow={['member', 'librarian', 'admin']}>
+            <RequireRole allow={['member']}>
               <PublicCatalog />
             </RequireRole>
           }
