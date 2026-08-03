@@ -1107,9 +1107,7 @@ export default function AdminDashboard() {
                             )}
                         </div>
                     )}
-
                 </div>
-            </div>
 
             {/* Task 4: Member Ban Modal with Reason Dropdown & Custom Text Area */}
             {banModal.isOpen && banModal.member && (

@@ -1635,7 +1635,6 @@ export default function LibrarianDashboard() {
 
                 </div>
             </div>
-        </div>
     );
 }
 
