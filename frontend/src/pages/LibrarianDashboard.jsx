@@ -66,7 +66,7 @@ export default function LibrarianDashboard() {
             const res = await api.getLibrarianRefundRequests();
             setRefundRequests(res.data || res || []);
         } catch (err) {
-            console.error('Failed to fetch refund requests:', err);
+            setRefundRequests([]);
         }
     };
 
@@ -191,7 +191,7 @@ export default function LibrarianDashboard() {
             } catch (_) {}
             fetchRefundRequests();
         } catch (err) {
-            console.error('Failed to load librarian data:', err);
+            setErrorMsg(err.message || 'Failed to load librarian data.');
         } finally {
             setLoading(false);
         }

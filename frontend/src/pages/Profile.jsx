@@ -97,7 +97,7 @@ export default function Profile() {
           setReimbursementStatus(reimbRes.latest_reimbursement);
         }
       } catch (err) {
-        console.error('Failed to load profile data:', err);
+        // Handled silently
       } finally {
         setLoading(false);
       }

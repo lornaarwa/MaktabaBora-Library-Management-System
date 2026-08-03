@@ -60,7 +60,7 @@ export default function AdminDashboard() {
             const res = await api.getMembershipTiers();
             setMembershipTiers(res.data || res || []);
         } catch (err) {
-            console.error('Failed to load membership tiers:', err);
+            // Handled silently
         } finally {
             setTiersLoading(false);
         }
@@ -87,7 +87,7 @@ export default function AdminDashboard() {
             const res = await api.getAdminAnalytics();
             setAnalytics(res.data || res || {});
         } catch (err) {
-            console.error('Failed to load analytics:', err);
+            // Handled silently
         } finally {
             setAnalyticsLoading(false);
         }
@@ -101,7 +101,7 @@ export default function AdminDashboard() {
             setApiLogsData(res || {});
             setFrontendLogs(getFrontendTerminalLogs());
         } catch (err) {
-            console.error('Failed to load API logs:', err);
+            // Handled silently
         } finally {
             setLogsLoading(false);
         }
@@ -121,7 +121,6 @@ export default function AdminDashboard() {
             setColumns(rawColumns);
             setRecords(res.data || []);
         } catch (err) {
-            console.error(`Failed to load data for ${tableName}:`, err);
             setError(err.message || `Failed to fetch data for ${tableName}.`);
         } finally {
             setLoading(false);

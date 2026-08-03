@@ -94,7 +94,7 @@ export default function MembershipRegistration() {
           setTiers(data.filter(t => t.active !== false));
         }
       } catch (err) {
-        console.error('Failed to load dynamic tiers:', err);
+        // Fall back to default tiers silently
       }
     };
     loadDynamicTiers();

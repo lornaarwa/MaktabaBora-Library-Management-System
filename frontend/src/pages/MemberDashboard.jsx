@@ -35,8 +35,8 @@ export default function MemberDashboard() {
                 setSubscription(subRes.data || null);
                 setDigitalLibrary(digitalRes.data || digitalRes || []);
             } catch (err) {
-                console.error('Failed to load member dashboard data:', err);
-            } flex: {
+                // Handled silently
+            } finally {
                 setLoading(false);
             }
         };

@@ -35,5 +35,26 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (\Illuminate\Database\QueryException $e, \Illuminate\Http\Request $request) {
+            \Illuminate\Support\Facades\Log::error('Database Exception: ' . $e->getMessage(), [
+                'sql' => $e->getSql(),
+                'bindings' => $e->getBindings(),
+            ]);
+
+            return response()->json([
+                'error' => 'Database Service Error',
+                'message' => 'A system database error occurred. Details have been logged securely on the server.',
+            ], 500);
+        });
+
+        $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
+            \Illuminate\Support\Facades\Log::error('Unhandled System Exception: ' . $e->getMessage());
+
+            if (!config('app.debug')) {
+                return response()->json([
+                    'error' => 'Server Error',
+                    'message' => 'An internal server error occurred.',
+                ], 500);
+            }
+        });
     })->create();

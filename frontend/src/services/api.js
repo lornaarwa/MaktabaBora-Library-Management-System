@@ -55,11 +55,24 @@ apiClient.interceptors.response.use(
         const method = (error.config?.method || 'GET').toUpperCase();
         const url = error.config?.url || '';
         const status = error.response?.status || 'ERR';
-        const errorMsg = error.response?.data?.message || error.response?.data?.error || error.message || 'An unexpected API error occurred.';
+        const rawMsg = error.response?.data?.message || error.response?.data?.error || error.message || 'An unexpected API error occurred.';
         
-        appendFrontendTerminalLog(`[CLIENT HTTP ERROR] ${status} <- ${method} ${url} (${duration}ms): ${errorMsg}`);
+        // Security sanitization: strip raw SQL queries, database credentials, host IPs, and SQLSTATE codes from client-visible error strings
+        const isDbError = typeof rawMsg === 'string' && (
+            rawMsg.includes('SQLSTATE') || 
+            rawMsg.includes('Undefined table') || 
+            rawMsg.includes('relation "') || 
+            rawMsg.includes('select *') || 
+            rawMsg.includes('pgsql')
+        );
+
+        const sanitizedMsg = isDbError 
+            ? 'A database service error occurred. Details have been logged securely.' 
+            : rawMsg;
+
+        appendFrontendTerminalLog(`[CLIENT HTTP ERROR] ${status} <- ${method} ${url} (${duration}ms): ${sanitizedMsg}`);
         
-        const customError = new Error(errorMsg);
+        const customError = new Error(sanitizedMsg);
         customError.status = error.response?.status;
         customError.data = error.response?.data;
         return Promise.reject(customError);
