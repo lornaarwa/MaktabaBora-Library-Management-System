@@ -188,11 +188,13 @@ class AuthController extends Controller
             'email' => 'sometimes|email|max:255|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|max:20',
             'id_number' => 'nullable|string|max:50',
+            'avatar_base64' => 'nullable|string',
         ]);
 
         if (isset($validated['name'])) $user->name = $validated['name'];
         if (isset($validated['email'])) $user->email = $validated['email'];
         if (isset($validated['phone'])) $user->phone = $validated['phone'];
+        if (array_key_exists('avatar_base64', $validated)) $user->avatar_base64 = $validated['avatar_base64'];
         $user->save();
 
         if ($user->member && isset($validated['id_number'])) {

@@ -155,9 +155,22 @@ export function AppShell({ children, onOpenAiChat }) {
 
           {auth.user ? (
             <div className="space-y-2 px-1">
-              <div className="min-w-0">
-                <p className="truncate text-xs font-bold text-bark-900">{auth.user.name}</p>
-                <p className="truncate font-mono text-[10px] text-bark-500 capitalize">{auth.user.role} Account</p>
+              <div className="flex items-center gap-3 min-w-0">
+                {auth.user.avatar_base64 ? (
+                  <img
+                    src={auth.user.avatar_base64}
+                    alt={auth.user.name}
+                    className="h-9 w-9 rounded-xl object-cover border border-tan-dark shadow-sm flex-shrink-0"
+                  />
+                ) : (
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-bark-700 text-cream-light font-extrabold text-xs shadow-sm flex-shrink-0">
+                    {auth.user.name ? auth.user.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-bold text-bark-900">{auth.user.name}</p>
+                  <p className="truncate font-mono text-[10px] text-bark-500 capitalize">{auth.user.role} Account</p>
+                </div>
               </div>
               <Button
                 variant="ghost"
