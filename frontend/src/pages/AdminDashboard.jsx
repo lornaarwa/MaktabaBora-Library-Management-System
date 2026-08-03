@@ -49,6 +49,37 @@ export default function AdminDashboard() {
     const [libForm, setLibForm] = useState({ name: '', email: '', password: '', department: 'General Circulation' });
     const [libSubmitting, setLibSubmitting] = useState(false);
 
+    // Membership Tiers Customization State
+    const [membershipTiers, setMembershipTiers] = useState([]);
+    const [tiersLoading, setTiersLoading] = useState(false);
+    const [savingTiers, setSavingTiers] = useState(false);
+
+    const fetchMembershipTiers = async () => {
+        setTiersLoading(true);
+        try {
+            const res = await api.getMembershipTiers();
+            setMembershipTiers(res.data || res || []);
+        } catch (err) {
+            console.error('Failed to load membership tiers:', err);
+        } finally {
+            setTiersLoading(false);
+        }
+    };
+
+    const handleSaveMembershipTiers = async () => {
+        setSavingTiers(true);
+        setError(null);
+        setSuccessMsg(null);
+        try {
+            await api.updateMembershipTiers(membershipTiers);
+            setSuccessMsg('Membership tier configurations updated successfully!');
+        } catch (err) {
+            setError(err.message || 'Failed to update membership tiers.');
+        } finally {
+            setSavingTiers(false);
+        }
+    };
+
     // Fetch Analytics on mount
     const fetchAnalytics = async () => {
         setAnalyticsLoading(true);
@@ -104,6 +135,8 @@ export default function AdminDashboard() {
     useEffect(() => {
         if (activeTab === 'logs') {
             fetchApiLogs();
+        } else if (activeTab === 'membership_tiers') {
+            fetchMembershipTiers();
         } else if (activeTab !== 'overview') {
             const targetTable = activeTab === 'users' ? 'users' : activeTab === 'members' ? 'members' : activeTab === 'librarians' ? 'librarians' : activeTab;
             fetchTableData(targetTable);
@@ -359,6 +392,22 @@ export default function AdminDashboard() {
                             <div className="flex items-center gap-2.5">
                                 <Activity className="w-4 h-4 text-bark-500" />
                                 {!isSidebarCollapsed && <span>Landing Overview</span>}
+                            </div>
+                        </button>
+
+                        {/* Membership Tiers Button */}
+                        <button
+                            onClick={() => setActiveTab('membership_tiers')}
+                            className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                                activeTab === 'membership_tiers'
+                                    ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
+                                    : 'text-bark-500 hover:text-zinc-200 hover:bg-cream/60'
+                            }`}
+                            title="Membership Tiers Customization"
+                        >
+                            <div className="flex items-center gap-2.5">
+                                <ShieldCheck className="w-4 h-4 text-bark-500" />
+                                {!isSidebarCollapsed && <span>Membership Tiers</span>}
                             </div>
                         </button>
 
@@ -703,6 +752,118 @@ export default function AdminDashboard() {
                                         </div>
                                     )}
                                 </>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Membership Tiers Customization Page View */}
+                    {activeTab === 'membership_tiers' && (
+                        <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-6 shadow-sm">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-bark-100 pb-4">
+                                <div>
+                                    <h2 className="text-lg font-extrabold text-bark-900 flex items-center gap-2">
+                                        <ShieldCheck className="w-5 h-5 text-tan-dark" /> Membership Tiers Customization
+                                    </h2>
+                                    <p className="text-xs text-bark-500 mt-0.5">Customize pricing, borrow limits, perks, and availability for library membership plans.</p>
+                                </div>
+                                <button
+                                    onClick={handleSaveMembershipTiers}
+                                    disabled={savingTiers}
+                                    className="px-4 py-2 rounded-xl bg-bark-700 hover:bg-bark-800 text-cream-light text-xs font-bold transition-all shadow-card flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    {savingTiers ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                    <span>Save Tier Configuration</span>
+                                </button>
+                            </div>
+
+                            {tiersLoading ? (
+                                <div className="flex items-center justify-center py-16 text-bark-500 text-xs font-mono">
+                                    <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading membership tiers configuration...
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {membershipTiers.map((tier, index) => (
+                                        <div key={tier.id || index} className="rounded-2xl border border-bark-100 bg-paper p-5 space-y-4 shadow-card">
+                                            <div className="flex items-center justify-between border-b border-bark-100 pb-3">
+                                                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-tan-dark bg-tan/10 border border-tan/20 px-2.5 py-0.5 rounded-lg">
+                                                    {tier.id}
+                                                </span>
+                                                <label className="flex items-center gap-2 text-xs font-semibold text-bark-700 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={tier.active !== false}
+                                                        onChange={(e) => {
+                                                            const updated = [...membershipTiers];
+                                                            updated[index].active = e.target.checked;
+                                                            setMembershipTiers(updated);
+                                                        }}
+                                                        className="rounded text-tan-dark focus:ring-tan-dark"
+                                                    />
+                                                    Active
+                                                </label>
+                                            </div>
+
+                                            <div className="space-y-3 text-xs">
+                                                <div>
+                                                    <label className="block text-[10px] font-mono uppercase text-bark-500 mb-1">Plan Name</label>
+                                                    <input
+                                                        type="text"
+                                                        value={tier.name || ''}
+                                                        onChange={(e) => {
+                                                            const updated = [...membershipTiers];
+                                                            updated[index].name = e.target.value;
+                                                            setMembershipTiers(updated);
+                                                        }}
+                                                        className="w-full rounded-xl border border-bark-100 bg-cream-light/40 px-3 py-2 text-bark-900 font-bold"
+                                                    />
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label className="block text-[10px] font-mono uppercase text-bark-500 mb-1">Price (KES)</label>
+                                                        <input
+                                                            type="number"
+                                                            value={tier.price || 0}
+                                                            onChange={(e) => {
+                                                                const updated = [...membershipTiers];
+                                                                updated[index].price = Number(e.target.value);
+                                                                setMembershipTiers(updated);
+                                                            }}
+                                                            className="w-full rounded-xl border border-bark-100 bg-cream-light/40 px-3 py-2 text-bark-900 font-mono font-bold"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-[10px] font-mono uppercase text-bark-500 mb-1">Borrow Limit</label>
+                                                        <input
+                                                            type="text"
+                                                            value={tier.borrowLimit || ''}
+                                                            onChange={(e) => {
+                                                                const updated = [...membershipTiers];
+                                                                updated[index].borrowLimit = e.target.value;
+                                                                setMembershipTiers(updated);
+                                                            }}
+                                                            className="w-full rounded-xl border border-bark-100 bg-cream-light/40 px-3 py-2 text-bark-900 font-semibold"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-[10px] font-mono uppercase text-bark-500 mb-1">Description</label>
+                                                    <textarea
+                                                        rows={2}
+                                                        value={tier.description || ''}
+                                                        onChange={(e) => {
+                                                            const updated = [...membershipTiers];
+                                                            updated[index].description = e.target.value;
+                                                            setMembershipTiers(updated);
+                                                        }}
+                                                        className="w-full rounded-xl border border-bark-100 bg-cream-light/40 px-3 py-2 text-bark-900 text-xs"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             )}
                         </div>
                     )}

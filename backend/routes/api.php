@@ -123,6 +123,10 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
             Route::get('/reimbursements', [LibrarianDashboardController::class, 'reimbursements']);
             Route::post('/reimbursements/{id}/review', [LibrarianDashboardController::class, 'reviewReimbursement']);
 
+            // Dynamic Membership Tiers Customization
+            Route::get('/membership-tiers', [\App\Http\Controllers\MembershipTierController::class, 'index']);
+            Route::put('/membership-tiers', [\App\Http\Controllers\MembershipTierController::class, 'update']);
+
             // Dynamic Table CRUD Management Routes
             Route::get('/tables', [\App\Http\Controllers\AdminCrudController::class, 'indexTables']);
             Route::get('/tables/{table}', [\App\Http\Controllers\AdminCrudController::class, 'getTableData']);

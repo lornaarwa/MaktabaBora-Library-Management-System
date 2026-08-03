@@ -142,6 +142,9 @@ export const api = {
     createAdminRecord: (table, data) => apiClient.post(`/admin/tables/${table}`, data),
     updateAdminRecord: (table, id, data) => apiClient.put(`/admin/tables/${table}/${id}`, data),
     deleteAdminRecord: (table, id) => apiClient.delete(`/admin/tables/${table}/${id}`),
+    // Membership Tiers Customization
+    getMembershipTiers: () => apiClient.get('/admin/membership-tiers'),
+    updateMembershipTiers: (tiers) => apiClient.put('/admin/membership-tiers', { tiers }),
 
     // AI Assistant
     sendAiMessage: (prompt) => apiClient.post('/ai/chat', { prompt }),

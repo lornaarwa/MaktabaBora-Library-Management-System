@@ -83,14 +83,31 @@ export default function MembershipRegistration() {
   const { user, setUser } = useAuth();
   const navigate = useNavigate();
 
+  const [tiers, setTiers] = useState(MEMBERSHIP_TIERS);
+
+  useEffect(() => {
+    const loadDynamicTiers = async () => {
+      try {
+        const res = await api.getMembershipTiers();
+        const data = res.data || res;
+        if (Array.isArray(data) && data.length > 0) {
+          setTiers(data.filter(t => t.active !== false));
+        }
+      } catch (err) {
+        console.error('Failed to load dynamic tiers:', err);
+      }
+    };
+    loadDynamicTiers();
+  }, []);
+
   const isSubscribed = Boolean(user?.member?.is_subscribed);
   const currentTierId = (user?.member?.membership_tier || '').toLowerCase();
-  const currentActiveTier = MEMBERSHIP_TIERS.find((t) => t.id === currentTierId);
+  const currentActiveTier = tiers.find((t) => t.id === currentTierId);
 
   // Available upgrade options exclude current active tier if subscribed
   const availableUpgradeTiers = isSubscribed && currentActiveTier
-    ? MEMBERSHIP_TIERS.filter((t) => t.id !== currentTierId)
-    : MEMBERSHIP_TIERS;
+    ? tiers.filter((t) => t.id !== currentTierId)
+    : tiers;
 
   const [selectedTier, setSelectedTier] = useState(() => {
     return availableUpgradeTiers[0]?.id || 'standard';
@@ -117,7 +134,7 @@ export default function MembershipRegistration() {
     }
   }, [isSubscribed, currentTierId, selectedTier, availableUpgradeTiers]);
 
-  const activePlan = MEMBERSHIP_TIERS.find((t) => t.id === selectedTier) || availableUpgradeTiers[0] || MEMBERSHIP_TIERS[1];
+  const activePlan = tiers.find((t) => t.id === selectedTier) || availableUpgradeTiers[0] || tiers[0] || MEMBERSHIP_TIERS[1];
 
   // Open STK Push Payment Modal for selected tier
   const handleSelectTierForPayment = (tierId) => {
