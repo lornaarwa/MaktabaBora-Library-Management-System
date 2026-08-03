@@ -14,7 +14,7 @@ class AiChatbotControllerTest extends TestCase
     public function test_user_can_interact_with_ai_chatbot(): void
     {
         $user = User::create(['name' => 'AI User', 'email' => 'aichat@example.com', 'password' => 'secret', 'role' => 'member']);
-        $member = Member::create(['user_id' => $user->id, 'member_number' => 'MEM-8888']);
+        $member = Member::create(['user_id' => $user->id, 'member_number' => 'MEM-8888', 'is_subscribed' => true]);
 
         $response = $this->actingAs($user)->postJson('/api/v1/ai/chat', [
             'prompt' => 'Can you recommend good software books?',

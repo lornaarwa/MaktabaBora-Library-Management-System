@@ -14,7 +14,7 @@ class Member extends Model
     protected $fillable = [
         'user_id',
         'member_number',
-        'membership_tier', // student, faculty, general
+        'membership_tier', // student, standard, scholar, faculty, general
         'is_subscribed',
         'subscription_expires_at',
         'borrow_limit',

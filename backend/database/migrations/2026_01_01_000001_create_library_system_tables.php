@@ -58,7 +58,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('member_number')->unique();
-            $table->enum('membership_tier', ['student', 'faculty', 'general'])->default('general');
+            $table->enum('membership_tier', ['student', 'standard', 'scholar', 'faculty', 'general'])->default('standard');
             $table->integer('borrow_limit')->default(3);
             $table->boolean('is_banned')->default(false);
             $table->timestamp('banned_at')->nullable();

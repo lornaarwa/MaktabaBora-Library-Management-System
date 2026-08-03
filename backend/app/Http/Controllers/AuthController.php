@@ -61,14 +61,16 @@ class AuthController extends Controller
             'amount' => 'nullable|numeric',
         ]);
 
-        $tier = $validated['membership_tier'] ?? 'standard';
-        $amount = (float) ($validated['amount'] ?? 1500.00);
-
-        $borrowLimit = 7;
-        if ($tier === 'student') {
+        $rawTier = strtolower($validated['membership_tier'] ?? 'standard');
+        if (str_contains($rawTier, 'student')) {
+            $tier = 'student';
             $borrowLimit = 3;
-        } elseif ($tier === 'scholar') {
+        } elseif (str_contains($rawTier, 'scholar') || str_contains($rawTier, 'faculty')) {
+            $tier = 'scholar';
             $borrowLimit = 15;
+        } else {
+            $tier = 'standard';
+            $borrowLimit = 7;
         }
 
         // 1. Save User to Database

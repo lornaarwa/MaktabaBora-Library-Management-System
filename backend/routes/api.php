@@ -39,15 +39,16 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
         Route::post('/auth/refresh', [AuthController::class, 'refresh']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
 
+        // Perk Subscriptions (Accessible to all authenticated users)
+        Route::post('/subscriptions/checkout', [\App\Http\Controllers\SubscriptionController::class, 'checkout']);
+        Route::get('/subscriptions/status', [\App\Http\Controllers\SubscriptionController::class, 'status']);
+
         // Member-only & Member-accessible Features
         Route::middleware(['ensure.member'])->group(function () {
             Route::get('/loans', [LoanController::class, 'index']);
             Route::get('/fines', [FineController::class, 'index']);
             Route::post('/fines/{fine}/pay-daraja', [FineController::class, 'payWithDaraja']);
 
-            // Perk Subscriptions
-            Route::post('/subscriptions/checkout', [\App\Http\Controllers\SubscriptionController::class, 'checkout']);
-            Route::get('/subscriptions/status', [\App\Http\Controllers\SubscriptionController::class, 'status']);
             Route::post('/subscriptions/cancel', [\App\Http\Controllers\SubscriptionController::class, 'cancel']);
             Route::post('/subscriptions/refund', [\App\Http\Controllers\SubscriptionController::class, 'requestRefund']);
             Route::get('/subscriptions/refund-status', [\App\Http\Controllers\SubscriptionController::class, 'refundStatus']);
