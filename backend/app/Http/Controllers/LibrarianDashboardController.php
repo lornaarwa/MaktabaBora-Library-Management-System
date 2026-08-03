@@ -238,4 +238,80 @@ class LibrarianDashboardController extends Controller
 
         return response()->json(['message' => 'Subscription record deleted/cancelled.']);
     }
+
+    private function getReimbursementsFile(): array
+    {
+        $path = storage_path('app/reimbursements.json');
+        if (!file_exists($path)) return [];
+        return json_decode(file_get_contents($path), true) ?: [];
+    }
+
+    private function saveReimbursementsFile(array $data): void
+    {
+        $path = storage_path('app/reimbursements.json');
+        if (!is_dir(dirname($path))) {
+            @mkdir(dirname($path), 0777, true);
+        }
+        file_put_contents($path, json_encode(array_values($data), JSON_PRETTY_PRINT));
+    }
+
+    public function reimbursements(): JsonResponse
+    {
+        $requests = $this->getReimbursementsFile();
+        return response()->json(['status' => 'success', 'data' => $requests]);
+    }
+
+    public function reviewReimbursement(Request $request, string $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'action' => 'required|in:approve,reject',
+            'rejection_reason' => 'nullable|string',
+        ]);
+
+        $requests = $this->getReimbursementsFile();
+        $foundIndex = -1;
+
+        foreach ($requests as $idx => $r) {
+            if ($r['id'] === $id) {
+                $foundIndex = $idx;
+                break;
+            }
+        }
+
+        if ($foundIndex === -1) {
+            return response()->json(['error' => 'Reimbursement request not found.'], 404);
+        }
+
+        $req = $requests[$foundIndex];
+
+        if ($validated['action'] === 'approve') {
+            $req['status'] = 'approved';
+            $req['rejection_reason'] = null;
+            $req['reviewed_at'] = now()->toIso8601String();
+
+            $member = Member::find($req['member_id']);
+            if ($member) {
+                $member->update([
+                    'is_subscribed' => false,
+                    'subscription_expires_at' => now(),
+                ]);
+            }
+            $user = \App\Models\User::find($req['user_id']);
+            if ($user) {
+                $user->update(['subscription_status' => 'refunded']);
+            }
+        } else {
+            $req['status'] = 'rejected';
+            $req['rejection_reason'] = $validated['rejection_reason'] ?? 'Request does not meet refund policy terms.';
+            $req['reviewed_at'] = now()->toIso8601String();
+        }
+
+        $requests[$foundIndex] = $req;
+        $this->saveReimbursementsFile($requests);
+
+        return response()->json([
+            'message' => 'Reimbursement request reviewed successfully.',
+            'data' => $req,
+        ]);
+    }
 }
