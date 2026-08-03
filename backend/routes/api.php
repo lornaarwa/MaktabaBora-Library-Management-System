@@ -102,9 +102,12 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
             Route::get('/fines', [FineController::class, 'index']);
             Route::post('/fines/{fine}/waive', [FineController::class, 'waive']);
 
-            // Reimbursement Requests Management
+            // Reimbursement / Refund Requests Management
             Route::get('/reimbursements', [LibrarianDashboardController::class, 'reimbursements']);
             Route::post('/reimbursements/{id}/review', [LibrarianDashboardController::class, 'reviewReimbursement']);
+            Route::get('/refund-requests', [LibrarianDashboardController::class, 'getRefundRequests']);
+            Route::post('/refund-requests/{id}/approve', [LibrarianDashboardController::class, 'approveRefund']);
+            Route::post('/refund-requests/{id}/reject', [LibrarianDashboardController::class, 'rejectRefund']);
         });
 
         // Admin Console Routes

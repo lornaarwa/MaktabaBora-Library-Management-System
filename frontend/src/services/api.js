@@ -126,9 +126,12 @@ export const api = {
     updateLibrarianSubscription: (id, data) => apiClient.put(`/librarian/subscriptions/${id}`, data),
     deleteLibrarianSubscription: (id) => apiClient.delete(`/librarian/subscriptions/${id}`),
 
-    // Reimbursement Requests
+    // Reimbursement & Refund Requests
     getLibrarianReimbursements: () => apiClient.get('/librarian/reimbursements'),
     reviewReimbursement: (id, data) => apiClient.post(`/librarian/reimbursements/${id}/review`, data),
+    getLibrarianRefundRequests: () => apiClient.get('/librarian/refund-requests'),
+    approveLibrarianRefund: (id) => apiClient.post(`/librarian/refund-requests/${id}/approve`),
+    rejectLibrarianRefund: (id) => apiClient.post(`/librarian/refund-requests/${id}/reject`),
     getAdminReimbursements: () => apiClient.get('/admin/reimbursements'),
     reviewAdminReimbursement: (id, data) => apiClient.post(`/admin/reimbursements/${id}/review`, data),
 

@@ -19,8 +19,44 @@ export default function LibrarianDashboard() {
     const [activeLoans, setActiveLoans] = useState([]);
     const [subscriptions, setSubscriptions] = useState([]);
     const [reimbursements, setReimbursements] = useState([]);
+    const [refundRequests, setRefundRequests] = useState([]);
     const [reimbLoading, setReimbLoading] = useState(false);
     const [loading, setLoading] = useState(true);
+
+    const fetchRefundRequests = async () => {
+        try {
+            const res = await api.getLibrarianRefundRequests();
+            setRefundRequests(res.data || res || []);
+        } catch (err) {
+            console.error('Failed to fetch refund requests:', err);
+        }
+    };
+
+    const handleApproveRefund = async (id) => {
+        if (!window.confirm(`Approve refund request #${id}? This will cancel the member's active subscription pass.`)) return;
+        setSuccessMsg(null);
+        setErrorMsg(null);
+        try {
+            await api.approveLibrarianRefund(id);
+            setSuccessMsg(`Refund request #${id} approved successfully and subscription pass deactivated.`);
+            fetchRefundRequests();
+        } catch (err) {
+            setErrorMsg(err.message || 'Failed to approve refund request.');
+        }
+    };
+
+    const handleRejectRefund = async (id) => {
+        if (!window.confirm(`Reject / Revoke refund request #${id}?`)) return;
+        setSuccessMsg(null);
+        setErrorMsg(null);
+        try {
+            await api.rejectLibrarianRefund(id);
+            setSuccessMsg(`Refund request #${id} rejected.`);
+            fetchRefundRequests();
+        } catch (err) {
+            setErrorMsg(err.message || 'Failed to reject refund request.');
+        }
+    };
 
     // Global Message/Error State
     const [successMsg, setSuccessMsg] = useState(null);
@@ -79,11 +115,12 @@ export default function LibrarianDashboard() {
             setActiveLoans(loansRes.data || loansRes || []);
             setSubscriptions(subsRes.data || subsRes || []);
 
-            // Fetch reimbursements separately (soft-fail)
+            // Fetch reimbursements and refund requests separately (soft-fail)
             try {
                 const reimbRes = await api.getLibrarianReimbursements();
                 setReimbursements(reimbRes.data || []);
             } catch (_) {}
+            fetchRefundRequests();
         } catch (err) {
             console.error('Failed to load librarian data:', err);
         } finally {
@@ -1312,6 +1349,92 @@ export default function LibrarianDashboard() {
                                     </div>
                                 )}
                             </div>
+                        </div>
+                    )}
+
+                    {/* Member Refund Applications View */}
+                    {activeTab === 'refunds' && (
+                        <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-6 shadow-sm">
+                            <div className="flex items-center justify-between border-b border-bark-100 pb-4">
+                                <div>
+                                    <h2 className="text-base font-bold text-bark-900 flex items-center gap-2">
+                                        <RefreshCw className="w-4 h-4 text-tan-dark" /> Member Refund Applications
+                                    </h2>
+                                    <p className="text-xs text-bark-500 mt-0.5">Review, accept, or revoke member membership subscription refund applications.</p>
+                                </div>
+                                <button
+                                    onClick={fetchRefundRequests}
+                                    className="px-3 py-1.5 rounded-xl border border-bark-100 bg-paper text-xs font-bold text-bark-700 hover:bg-cream-light flex items-center gap-1.5 shadow-sm"
+                                >
+                                    <RefreshCw className="w-3.5 h-3.5" /> Refresh List
+                                </button>
+                            </div>
+
+                            {refundRequests.length === 0 ? (
+                                <div className="text-center py-12 bg-paper/40 rounded-xl border border-bark-100 space-y-2">
+                                    <DollarSign className="w-8 h-8 text-bark-400 mx-auto" />
+                                    <h3 className="text-sm font-bold text-bark-900">No Pending Refund Requests</h3>
+                                    <p className="text-xs text-bark-500">Member refund applications submitted from the subscription portal will appear here.</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {refundRequests.map((rf) => (
+                                        <div key={rf.id} className="rounded-xl border border-bark-100 bg-paper p-5 space-y-3 shadow-card">
+                                            <div className="flex items-center justify-between border-b border-bark-100 pb-3">
+                                                <div>
+                                                    <span className="font-mono text-[10px] uppercase font-bold text-bark-500">Refund Request #{rf.id}</span>
+                                                    <h3 className="text-sm font-bold text-bark-900">{rf.user?.name || 'Member'}</h3>
+                                                </div>
+                                                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono uppercase ${
+                                                    rf.status === 'approved'
+                                                        ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                                        : rf.status === 'rejected'
+                                                        ? 'bg-rose-100 text-rose-900 border border-rose-300'
+                                                        : 'bg-amber-100 text-amber-900 border border-amber-300'
+                                                }`}>
+                                                    {rf.status}
+                                                </span>
+                                            </div>
+
+                                            <div className="space-y-1.5 text-xs text-bark-700 font-mono">
+                                                <div className="flex justify-between">
+                                                    <span className="text-bark-500">Email:</span>
+                                                    <span className="font-semibold text-bark-900">{rf.user?.email || 'N/A'}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-bark-500">Refund Amount:</span>
+                                                    <span className="font-extrabold text-bark-900">KES {Number(rf.amount || 0).toFixed(2)}</span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-bark-500">Payment Reference:</span>
+                                                    <span className="font-bold text-bark-900">{rf.payment_reference || 'N/A'}</span>
+                                                </div>
+                                                <div className="border-t border-bark-100/40 pt-1.5 text-[11px]">
+                                                    <span className="text-bark-500 block text-[10px] uppercase font-bold">Reason:</span>
+                                                    <p className="text-bark-800 font-sans italic">{rf.reason}</p>
+                                                </div>
+                                            </div>
+
+                                            {rf.status === 'pending' && (
+                                                <div className="flex items-center gap-2 border-t border-bark-100 pt-3">
+                                                    <button
+                                                        onClick={() => handleApproveRefund(rf.id)}
+                                                        className="flex-1 py-1.5 px-3 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs transition-colors shadow-sm flex items-center justify-center gap-1"
+                                                    >
+                                                        <CheckCircle2 className="w-3.5 h-3.5" /> Accept & Refund
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleRejectRefund(rf.id)}
+                                                        className="flex-1 py-1.5 px-3 rounded-lg bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs transition-colors shadow-sm flex items-center justify-center gap-1"
+                                                    >
+                                                        <XCircle className="w-3.5 h-3.5" /> Revoke / Reject
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
 

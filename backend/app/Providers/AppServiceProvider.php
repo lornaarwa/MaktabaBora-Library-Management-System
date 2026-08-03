@@ -32,6 +32,9 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(DigitalRentalServiceInterface::class, DigitalRentalService::class);
         $this->app->singleton(DigitalRentalService::class, DigitalRentalService::class);
+
+        $this->app->singleton(\App\Contracts\Services\RefundManagementServiceInterface::class, \App\Services\RefundManagementService::class);
+        $this->app->singleton(\App\Services\RefundManagementService::class, \App\Services\RefundManagementService::class);
     }
 
     public function boot(): void

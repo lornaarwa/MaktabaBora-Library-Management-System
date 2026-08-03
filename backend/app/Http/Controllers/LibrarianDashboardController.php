@@ -16,10 +16,45 @@ use Illuminate\Http\Request;
 class LibrarianDashboardController extends Controller
 {
     protected BorrowLimitServiceInterface $borrowLimitService;
+    protected \App\Contracts\Services\RefundManagementServiceInterface $refundService;
 
-    public function __construct(BorrowLimitServiceInterface $borrowLimitService)
-    {
+    public function __construct(
+        BorrowLimitServiceInterface $borrowLimitService,
+        \App\Contracts\Services\RefundManagementServiceInterface $refundService
+    ) {
         $this->borrowLimitService = $borrowLimitService;
+        $this->refundService = $refundService;
+    }
+
+    public function getRefundRequests(): JsonResponse
+    {
+        $refunds = $this->refundService->getAllRefundRequests();
+        return response()->json([
+            'status' => 'success',
+            'data' => $refunds,
+        ]);
+    }
+
+    public function approveRefund(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $refund = $this->refundService->approveRefund($id, $user);
+        return response()->json([
+            'status' => 'success',
+            'message' => "Refund request #{$id} approved and membership subscription revoked.",
+            'data' => $refund,
+        ]);
+    }
+
+    public function rejectRefund(Request $request, int $id): JsonResponse
+    {
+        $user = $request->user();
+        $refund = $this->refundService->rejectRefund($id, $user);
+        return response()->json([
+            'status' => 'success',
+            'message' => "Refund request #{$id} rejected.",
+            'data' => $refund,
+        ]);
     }
 
     public function metrics(): JsonResponse

@@ -11,7 +11,8 @@ class SubscriptionController extends Controller
 {
     public function __construct(
         protected DigitalRentalServiceInterface $digitalService,
-        protected DarajaPaymentServiceInterface $darajaService
+        protected DarajaPaymentServiceInterface $darajaService,
+        protected \App\Contracts\Services\RefundManagementServiceInterface $refundService
     ) {}
 
     public function checkout(Request $request): JsonResponse
@@ -132,59 +133,39 @@ class SubscriptionController extends Controller
             'reason' => 'required|string|min:5',
         ]);
 
-        $requests = $this->getReimbursementsFile();
-        $refId = 'REF-' . strtoupper(bin2hex(random_bytes(3)));
-
-        $tier = $member->membership_tier || 'standard';
+        $tier = $member->membership_tier ?: 'standard';
         $amount = 1500.00;
         if ($tier === 'student') $amount = 500.00;
-        elseif ($tier === 'scholar') $amount = 3000.00;
+        elseif ($tier === 'scholar' || $tier === 'faculty') $amount = 3000.00;
 
-        $newRecord = [
-            'id' => $refId,
-            'user_id' => $user->id,
-            'member_id' => $member->id,
-            'user_name' => $user->name,
-            'user_email' => $user->email,
-            'membership_tier' => $tier,
-            'amount' => $amount,
-            'reason' => $validated['reason'],
-            'status' => 'pending',
-            'rejection_reason' => null,
-            'created_at' => now()->toIso8601String(),
-            'reviewed_at' => null,
-        ];
-
-        // Replace any previous pending request or prepend
-        $requests = array_filter($requests, function ($r) use ($user) {
-            return !($r['user_id'] == $user->id && $r['status'] == 'pending');
-        });
-        array_unshift($requests, $newRecord);
-        $this->saveReimbursementsFile($requests);
+        $refundRecord = $this->refundService->submitRefundRequest($user, $member, $amount, $validated['reason']);
 
         return response()->json([
-            'message' => 'Reimbursement request submitted successfully and is pending review by library admins.',
-            'reimbursement' => $newRecord,
-            'refund_reference' => $refId,
-            'status' => 'pending',
-        ]);
+            'message' => 'Refund request submitted successfully and is pending review by library staff.',
+            'reimbursement' => $refundRecord,
+            'refund_reference' => $refundRecord->payment_reference,
+            'status' => $refundRecord->status,
+            'data' => $refundRecord,
+        ], 201);
     }
 
     public function refundStatus(Request $request): JsonResponse
     {
         $user = $request->user();
-        $requests = $this->getReimbursementsFile();
+        $member = $user->member;
 
-        $userRequests = array_values(array_filter($requests, function ($r) use ($user) {
-            return $r['user_id'] == $user->id;
-        }));
+        $refunds = \App\Models\RefundRequest::where('user_id', $user->id)
+            ->with(['subscription'])
+            ->latest()
+            ->get();
 
-        $latestRequest = count($userRequests) > 0 ? $userRequests[0] : null;
+        $latestRequest = $refunds->first();
 
         return response()->json([
             'status' => 'success',
             'latest_reimbursement' => $latestRequest,
-            'reimbursements' => $userRequests,
+            'reimbursements' => $refunds,
+            'data' => $refunds,
         ]);
     }
 }
