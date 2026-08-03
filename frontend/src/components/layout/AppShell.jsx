@@ -15,6 +15,7 @@ import {
   ShoppingCartIcon,
   InfoIcon,
   PhoneIcon,
+  UserIcon,
   ShieldCheckIcon as ShieldNavIcon
 } from 'lucide-react';
 import { useLibrary } from '../../context/LibraryContext';
@@ -33,6 +34,7 @@ export function AppShell({ children, onOpenAiChat }) {
     { name: 'Catalog', href: '/catalog', icon: BookOpenIcon, allow: ['member', 'librarian', 'admin'] },
     { name: 'My Cart', href: '/cart', icon: ShoppingCartIcon, allow: ['member', 'librarian', 'admin'], badge: cartCount },
     { name: 'My Library', href: '/member', icon: LibraryIcon, allow: ['member'] },
+    { name: 'Profile', href: '/profile', icon: UserIcon, allow: ['member', 'librarian', 'admin'] },
     { name: 'Librarian Dashboard', href: '/librarian', icon: QrCodeIcon, allow: ['librarian', 'admin'] },
     { name: 'Admin Dashboard', href: '/admin', icon: ShieldCheckIcon, allow: ['admin'] },
   ];
