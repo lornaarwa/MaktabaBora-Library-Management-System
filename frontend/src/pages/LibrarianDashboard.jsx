@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
     QrCode, BookCheck, ShieldAlert, CheckCircle2, Users, BarChart3, AlertCircle, Loader2, BookOpen,
-    Plus, Edit2, Trash2, Search, X, Layers, Table, CreditCard, ChevronLeft, ChevronRight, Menu, Activity, Shield
+    Plus, Edit2, Trash2, Search, X, Layers, Table, CreditCard, ChevronLeft, ChevronRight, Menu, Activity, Shield,
+    DollarSign, RefreshCw, XCircle, ChevronDown
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -17,6 +18,8 @@ export default function LibrarianDashboard() {
     const [copies, setCopies] = useState([]);
     const [activeLoans, setActiveLoans] = useState([]);
     const [subscriptions, setSubscriptions] = useState([]);
+    const [reimbursements, setReimbursements] = useState([]);
+    const [reimbLoading, setReimbLoading] = useState(false);
     const [loading, setLoading] = useState(true);
 
     // Global Message/Error State
@@ -75,6 +78,12 @@ export default function LibrarianDashboard() {
             setCopies(copiesRes.data || copiesRes || []);
             setActiveLoans(loansRes.data || loansRes || []);
             setSubscriptions(subsRes.data || subsRes || []);
+
+            // Fetch reimbursements separately (soft-fail)
+            try {
+                const reimbRes = await api.getLibrarianReimbursements();
+                setReimbursements(reimbRes.data || []);
+            } catch (_) {}
         } catch (err) {
             console.error('Failed to load librarian data:', err);
         } finally {
@@ -400,6 +409,30 @@ export default function LibrarianDashboard() {
                             <div className="flex items-center gap-2.5">
                                 <CreditCard className="w-4 h-4 text-bark-500" />
                                 {!isSidebarCollapsed && <span>Subscriptions (CRUD)</span>}
+                            </div>
+                        </button>
+
+                        <button
+                            onClick={() => setActiveTab('reimbursements')}
+                            className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                                activeTab === 'reimbursements'
+                                    ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
+                                    : 'text-bark-500 hover:text-zinc-200 hover:bg-cream/60'
+                            }`}
+                            title="Reimbursement Requests"
+                        >
+                            <div className="flex items-center gap-2.5">
+                                <DollarSign className="w-4 h-4 text-bark-500" />
+                                {!isSidebarCollapsed && (
+                                    <span className="flex items-center gap-1.5">
+                                        Reimbursements
+                                        {reimbursements.filter(r => r.status === 'pending').length > 0 && (
+                                            <span className="ml-1 inline-flex items-center justify-center h-4 w-4 rounded-full bg-amber-500 text-[9px] font-bold text-white">
+                                                {reimbursements.filter(r => r.status === 'pending').length}
+                                            </span>
+                                        )}
+                                    </span>
+                                )}
                             </div>
                         </button>
                     </div>
@@ -1188,8 +1221,191 @@ export default function LibrarianDashboard() {
                         </div>
                     )}
 
+                    {/* TAB 6: Reimbursement Requests */}
+                    {activeTab === 'reimbursements' && (
+                        <div className="space-y-6">
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-5">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h2 className="text-sm font-extrabold text-bark-900 flex items-center gap-2">
+                                            <DollarSign className="w-4 h-4 text-bark-700" /> Reimbursement Requests
+                                        </h2>
+                                        <p className="text-[11px] text-bark-500 mt-0.5">Review, approve, or reject member refund applications.</p>
+                                    </div>
+                                    <button
+                                        onClick={async () => {
+                                            setReimbLoading(true);
+                                            try {
+                                                const res = await api.getLibrarianReimbursements();
+                                                setReimbursements(res.data || []);
+                                            } catch(e) {}
+                                            setReimbLoading(false);
+                                        }}
+                                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-paper border border-bark-100 text-bark-500 hover:text-bark-900 text-xs transition"
+                                    >
+                                        <RefreshCw className={`w-3.5 h-3.5 ${reimbLoading ? 'animate-spin' : ''}`} />
+                                        Refresh
+                                    </button>
+                                </div>
+
+                                {reimbursements.length === 0 ? (
+                                    <div className="text-center py-12 text-bark-500 text-xs">
+                                        <DollarSign className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                                        No reimbursement requests submitted yet.
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {reimbursements.map((req) => (
+                                            <div key={req.id} className={`rounded-2xl border p-4 space-y-3 ${
+                                                req.status === 'approved'
+                                                    ? 'bg-emerald-950/30 border-emerald-800'
+                                                    : req.status === 'rejected'
+                                                    ? 'bg-rose-950/30 border-rose-800'
+                                                    : 'bg-amber-950/20 border-amber-700'
+                                            }`}>
+                                                <div className="flex items-start justify-between gap-3 flex-wrap">
+                                                    <div className="space-y-0.5">
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            <span className="text-xs font-bold text-bark-900">{req.user_name}</span>
+                                                            <span className="text-[10px] text-bark-500">{req.user_email}</span>
+                                                            <span className="font-mono text-[10px] text-bark-400">{req.id}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-2 text-[11px] text-bark-500">
+                                                            <span>Tier: <strong className="capitalize text-bark-700">{req.membership_tier}</strong></span>
+                                                            <span>·</span>
+                                                            <span>Amount: <strong className="text-bark-700">KES {req.amount?.toLocaleString()}</strong></span>
+                                                            <span>·</span>
+                                                            <span>{req.created_at?.slice(0, 10)}</span>
+                                                        </div>
+                                                        <p className="text-[11px] text-bark-600 italic mt-1">Reason: {req.reason}</p>
+                                                        {req.status === 'rejected' && req.rejection_reason && (
+                                                            <p className="text-[11px] text-rose-400 mt-0.5">Rejection note: {req.rejection_reason}</p>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-2 shrink-0">
+                                                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase ${
+                                                            req.status === 'approved'
+                                                                ? 'bg-emerald-900 text-emerald-300 border border-emerald-700'
+                                                                : req.status === 'rejected'
+                                                                ? 'bg-rose-900 text-rose-300 border border-rose-700'
+                                                                : 'bg-amber-900 text-amber-300 border border-amber-700'
+                                                        }`}>
+                                                            {req.status === 'approved' ? '✓ Approved' : req.status === 'rejected' ? '✗ Rejected' : '⏳ Pending'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {req.status === 'pending' && (
+                                                    <ReimbursementReviewActions
+                                                        req={req}
+                                                        onReviewed={(updated) => {
+                                                            setReimbursements(prev =>
+                                                                prev.map(r => r.id === updated.id ? updated : r)
+                                                            );
+                                                            setSuccessMsg(`Request ${updated.id} has been ${updated.status}.`);
+                                                        }}
+                                                        onError={(msg) => setErrorMsg(msg)}
+                                                    />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                 </div>
             </div>
+        </div>
+    );
+}
+
+// ─── Inline subcomponent for Approve / Reject actions ────────────────────────
+function ReimbursementReviewActions({ req, onReviewed, onError }) {
+    const [rejectionReason, setRejectionReason] = useState('');
+    const [showRejectInput, setShowRejectInput] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+
+    const handleApprove = async () => {
+        setSubmitting(true);
+        try {
+            const res = await api.reviewReimbursement(req.id, { action: 'approve' });
+            onReviewed(res.data);
+        } catch (e) {
+            onError(e.message || 'Failed to approve reimbursement.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleReject = async () => {
+        if (!rejectionReason.trim()) {
+            onError('Please provide a rejection reason.');
+            return;
+        }
+        setSubmitting(true);
+        try {
+            const res = await api.reviewReimbursement(req.id, {
+                action: 'reject',
+                rejection_reason: rejectionReason,
+            });
+            onReviewed(res.data);
+        } catch (e) {
+            onError(e.message || 'Failed to reject reimbursement.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="border-t border-bark-100/20 pt-3 space-y-2">
+            {showRejectInput ? (
+                <div className="space-y-2">
+                    <textarea
+                        value={rejectionReason}
+                        onChange={(e) => setRejectionReason(e.target.value)}
+                        placeholder="Provide a reason for rejection..."
+                        rows={2}
+                        className="w-full bg-paper border border-bark-200 rounded-xl p-2.5 text-xs text-bark-900 focus:outline-none focus:border-bark-500"
+                    />
+                    <div className="flex gap-2">
+                        <button
+                            onClick={handleReject}
+                            disabled={submitting}
+                            className="flex-1 py-2 rounded-xl bg-rose-700 hover:bg-rose-900 text-white text-xs font-bold flex items-center justify-center gap-1.5"
+                        >
+                            {submitting ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
+                            Confirm Rejection
+                        </button>
+                        <button
+                            onClick={() => setShowRejectInput(false)}
+                            className="px-3 py-2 rounded-xl border border-bark-200 text-bark-500 text-xs hover:bg-cream"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div className="flex gap-2">
+                    <button
+                        onClick={handleApprove}
+                        disabled={submitting}
+                        className="flex-1 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-900 text-white text-xs font-bold flex items-center justify-center gap-1.5"
+                    >
+                        {submitting ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                        Approve & Process Refund
+                    </button>
+                    <button
+                        onClick={() => setShowRejectInput(true)}
+                        disabled={submitting}
+                        className="flex-1 py-2 rounded-xl bg-rose-900/60 hover:bg-rose-900 text-rose-300 text-xs font-bold flex items-center justify-center gap-1.5 border border-rose-800"
+                    >
+                        <XCircle className="w-3 h-3" />
+                        Reject Request
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

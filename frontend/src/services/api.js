@@ -74,6 +74,7 @@ export const api = {
     refreshToken: () => apiClient.post('/auth/refresh'),
     logout: () => apiClient.post('/auth/logout'),
     getMe: () => apiClient.get('/auth/me'),
+    updateProfile: (data) => apiClient.put('/auth/profile', data),
 
     // Catalog & Books
     searchCatalog: (query = '', genre = '') => apiClient.get(`/catalog/search?q=${encodeURIComponent(query)}&genre=${encodeURIComponent(genre)}`),
@@ -83,6 +84,10 @@ export const api = {
     // Subscriptions
     checkoutSubscription: (data) => apiClient.post('/subscriptions/checkout', data),
     getSubscriptionStatus: () => apiClient.get('/subscriptions/status'),
+    cancelSubscription: () => apiClient.post('/subscriptions/cancel'),
+    requestRefund: (data) => apiClient.post('/subscriptions/refund', data),
+    getReimbursementStatus: () => apiClient.get('/subscriptions/refund-status'),
+    getMyFines: () => apiClient.get('/fines'),
 
     // Digital Book Store
     getMyDigitalLibrary: () => apiClient.get('/digital-books/my-library'),
@@ -120,6 +125,12 @@ export const api = {
     createLibrarianSubscription: (data) => apiClient.post('/librarian/subscriptions', data),
     updateLibrarianSubscription: (id, data) => apiClient.put(`/librarian/subscriptions/${id}`, data),
     deleteLibrarianSubscription: (id) => apiClient.delete(`/librarian/subscriptions/${id}`),
+
+    // Reimbursement Requests
+    getLibrarianReimbursements: () => apiClient.get('/librarian/reimbursements'),
+    reviewReimbursement: (id, data) => apiClient.post(`/librarian/reimbursements/${id}/review`, data),
+    getAdminReimbursements: () => apiClient.get('/admin/reimbursements'),
+    reviewAdminReimbursement: (id, data) => apiClient.post(`/admin/reimbursements/${id}/review`, data),
 
     // Admin Operations
     getAdminAnalytics: () => apiClient.get('/admin/analytics'),

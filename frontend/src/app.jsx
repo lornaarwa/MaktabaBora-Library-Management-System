@@ -20,6 +20,7 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import MembershipRegistration from './pages/MembershipRegistration';
+import Profile from './pages/Profile';
 
 function RequireRole({ allow, children }) {
   const { user, loading } = useAuth();
@@ -78,6 +79,14 @@ function Shell() {
           element={
             <RequireRole allow={['member']}>
               <MemberDashboard />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <RequireRole allow={['member', 'librarian', 'admin']}>
+              <Profile />
             </RequireRole>
           }
         />
