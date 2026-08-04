@@ -57,14 +57,7 @@ function Shell() {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
-        <Route
-          path="/membership"
-          element={
-            <RequireRole allow={['member']}>
-              <MembershipRegistration />
-            </RequireRole>
-          }
-        />
+        <Route path="/membership" element={<MembershipRegistration />} />
         <Route
           path="/catalog"
           element={
@@ -113,8 +106,8 @@ function Shell() {
             </RequireRole>
           }
         />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Login />} />
+        <Route path="/login" element={<MembershipRegistration />} />
+        <Route path="/register" element={<MembershipRegistration />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <AiChatWidget isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />

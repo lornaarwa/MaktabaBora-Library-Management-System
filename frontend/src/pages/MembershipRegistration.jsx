@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import {
@@ -80,10 +80,48 @@ const MEMBERSHIP_TIERS = [
 ];
 
 export default function MembershipRegistration() {
-  const { user, setUser } = useAuth();
+  const { user, setUser, login, register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const isAuthRoute = location.pathname === '/login' || location.pathname === '/register';
 
   const [tiers, setTiers] = useState(MEMBERSHIP_TIERS);
+
+  // Guest Auth State
+  const initialMode = (location.search.includes('mode=signin') || location.pathname === '/login') ? 'signin' : 'signup';
+  const [guestAuthMode, setGuestAuthMode] = useState(initialMode); // 'signup' | 'signin'
+  const [guestName, setGuestName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
+  const [guestPassword, setGuestPassword] = useState('');
+  const [guestAuthSubmitting, setGuestAuthSubmitting] = useState(false);
+  const [guestAuthError, setGuestAuthError] = useState(null);
+
+  const handleGuestAuthSubmit = async (e) => {
+    e.preventDefault();
+    setGuestAuthSubmitting(true);
+    setGuestAuthError(null);
+
+    try {
+      if (guestAuthMode === 'signin') {
+        const loggedUser = await login(guestEmail, guestPassword);
+        if (loggedUser.role === 'admin') navigate('/admin');
+        else if (loggedUser.role === 'librarian') navigate('/librarian');
+      } else {
+        const regUser = await register({
+          name: guestName,
+          email: guestEmail,
+          password: guestPassword,
+          role: 'member',
+        });
+        setUser(regUser);
+      }
+    } catch (err) {
+      setGuestAuthError(err.message || 'Authentication failed. Please verify your credentials.');
+    } finally {
+      setGuestAuthSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     const loadDynamicTiers = async () => {
@@ -316,15 +354,18 @@ export default function MembershipRegistration() {
       {/* ░░░ HERO HEADER ░░░ */}
       <div className="text-center max-w-2xl mx-auto space-y-4">
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-bark-700 text-cream-light text-[11px] font-bold uppercase tracking-widest shadow-sm">
-          <Crown className="w-3.5 h-3.5 text-tan" /> MaktabaBora Membership Tiers
+          {isAuthRoute ? <LogIn className="w-3.5 h-3.5 text-tan" /> : <Crown className="w-3.5 h-3.5 text-tan" />}
+          <span>{isAuthRoute ? 'MaktabaBora Account Portal' : 'MaktabaBora Membership Tiers'}</span>
         </div>
         <h1 className="text-3xl sm:text-5xl font-extrabold text-bark-900 tracking-tight leading-tight">
-          {isSubscribed ? 'Manage & Upgrade Membership' : 'Select Your Membership Tier'}
+          {isAuthRoute ? 'Sign In or Register Account' : (isSubscribed ? 'Manage & Upgrade Membership' : 'Select Your Membership Tier')}
         </h1>
         <p className="text-bark-500 text-xs sm:text-sm leading-relaxed">
-          {isSubscribed
-            ? 'View your active membership status or upgrade to a higher privilege tier via instant M-Pesa STK Push.'
-            : 'Choose a pass tailored to your reading goals. Complete instant activation via M-Pesa STK Push.'}
+          {isAuthRoute
+            ? 'Sign in to access your active library account or register a new member profile.'
+            : (isSubscribed
+              ? 'View your active membership status or upgrade to a higher privilege tier via instant M-Pesa STK Push.'
+              : 'Choose a pass tailored to your reading goals. Complete instant activation via M-Pesa STK Push.')}
         </p>
       </div>
 
@@ -358,32 +399,112 @@ export default function MembershipRegistration() {
           </div>
         </div>
       ) : (
-        <div className="rounded-2xl border border-amber-300 bg-amber-50/90 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-card">
-          <div className="flex items-start gap-3.5">
-            <div className="p-2.5 rounded-xl bg-amber-100 text-amber-800 border border-amber-300 flex-shrink-0">
-              <LogIn className="w-5 h-5" />
+        <div id="guest-auth-section" className="rounded-3xl border border-bark-100 bg-paper p-6 sm:p-8 space-y-6 shadow-lift max-w-xl mx-auto">
+          <div className="text-center space-y-2">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-bark-700 text-cream-light shadow-sm">
+              <BookOpen className="w-6 h-6" />
             </div>
-            <div className="space-y-1">
-              <h3 className="text-sm font-extrabold text-amber-950">Account Required for Membership</h3>
-              <p className="text-xs text-amber-900 leading-relaxed max-w-xl">
-                Your personal details exist from registration. Please sign in or create an account before choosing a tier.
-              </p>
-            </div>
+            <h2 className="text-xl font-extrabold text-bark-900">
+              {guestAuthMode === 'signin' ? 'Sign In to MaktabaBora' : 'Create Member Account'}
+            </h2>
+            <p className="text-xs text-bark-500">
+              {guestAuthMode === 'signin'
+                ? 'Sign in to access your loans, digital library, and membership passes.'
+                : 'Register your member credentials to activate your library pass.'}
+            </p>
           </div>
-          <div className="flex items-center gap-2.5 w-full sm:w-auto">
-            <Link
-              to="/login?mode=signin"
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl bg-bark-700 px-4 py-2.5 text-xs font-bold text-cream-light shadow-sm hover:bg-bark-900"
-            >
-              Sign In
-            </Link>
-            <Link
-              to="/login?mode=signup"
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-bark-200 bg-paper px-4 py-2.5 text-xs font-bold text-bark-900 hover:bg-cream-light"
+
+          {/* Auth Mode Toggle Tabs */}
+          <div className="flex bg-cream-light/60 p-1 rounded-xl border border-bark-100 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => { setGuestAuthMode('signup'); setGuestAuthError(null); }}
+              className={`flex-1 py-2.5 rounded-lg transition-all ${
+                guestAuthMode === 'signup'
+                  ? 'bg-bark-700 text-cream-light font-bold shadow-sm'
+                  : 'text-bark-700 hover:bg-cream-light'
+              }`}
             >
               Register Account
-            </Link>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setGuestAuthMode('signin'); setGuestAuthError(null); }}
+              className={`flex-1 py-2.5 rounded-lg transition-all ${
+                guestAuthMode === 'signin'
+                  ? 'bg-bark-700 text-cream-light font-bold shadow-sm'
+                  : 'text-bark-700 hover:bg-cream-light'
+              }`}
+            >
+              Sign In
+            </button>
           </div>
+
+          {guestAuthError && (
+            <div className="p-3.5 rounded-xl bg-cream border border-bark-100 text-rose-900 text-xs font-medium flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-700 flex-shrink-0" />
+              <span>{guestAuthError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleGuestAuthSubmit} className="space-y-4 text-left">
+            {guestAuthMode === 'signup' && (
+              <div>
+                <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Full Name</label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-bark-400 absolute left-3.5 top-3" />
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Jane Doe"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    className="w-full rounded-xl border border-bark-100 bg-cream-light/40 pl-10 pr-4 py-2.5 text-xs font-semibold text-bark-900 focus:ring-2 focus:ring-tan-dark"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Email Address</label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-bark-400 absolute left-3.5 top-3" />
+                <input
+                  type="email"
+                  required
+                  placeholder="member@maktababora.org"
+                  value={guestEmail}
+                  onChange={(e) => setGuestEmail(e.target.value)}
+                  className="w-full rounded-xl border border-bark-100 bg-cream-light/40 pl-10 pr-4 py-2.5 text-xs font-semibold text-bark-900 focus:ring-2 focus:ring-tan-dark"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Password</label>
+              <div className="relative">
+                <LogIn className="w-4 h-4 text-bark-400 absolute left-3.5 top-3" />
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  placeholder="••••••••"
+                  value={guestPassword}
+                  onChange={(e) => setGuestPassword(e.target.value)}
+                  className="w-full rounded-xl border border-bark-100 bg-cream-light/40 pl-10 pr-4 py-2.5 text-xs font-semibold text-bark-900 focus:ring-2 focus:ring-tan-dark font-mono"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={guestAuthSubmitting}
+              className="w-full py-3 px-4 rounded-xl bg-bark-700 hover:bg-bark-800 text-cream-light font-bold text-xs transition-all shadow-card flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {guestAuthSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+              <span>{guestAuthMode === 'signin' ? 'Sign In to Account' : 'Register Member Account'}</span>
+            </button>
+          </form>
         </div>
       )}
 
@@ -439,113 +560,120 @@ export default function MembershipRegistration() {
       )}
 
       {/* ░░░ MEMBERSHIP TIERS GRID (Excludes Current Active Tier) ░░░ */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between border-b border-bark-100 pb-3">
-          <h2 className="text-base font-extrabold text-bark-900 flex items-center gap-2">
-            {isSubscribed ? 'Available Tiers for Upgrade or Change' : 'Available Membership Tiers'}
-          </h2>
-          <span className="text-xs font-mono text-bark-500">
-            {isSubscribed ? `${availableUpgradeTiers.length} alternative tier(s) available` : 'Select tier to activate'}
-          </span>
-        </div>
-
-        {availableUpgradeTiers.length === 0 ? (
-          <div className="rounded-2xl border border-bark-100 bg-paper p-8 text-center space-y-2">
-            <Crown className="w-8 h-8 text-tan-dark mx-auto" />
-            <h3 className="text-sm font-bold text-bark-900">Highest Tier Active</h3>
-            <p className="text-xs text-bark-500 max-w-md mx-auto">
-              You are currently subscribed to the top tier plan. Enjoy full library research and borrowing privileges!
-            </p>
+      {!isAuthRoute && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between border-b border-bark-100 pb-3">
+            <h2 className="text-base font-extrabold text-bark-900 flex items-center gap-2">
+              {isSubscribed ? 'Available Tiers for Upgrade or Change' : 'Available Membership Tiers'}
+            </h2>
+            <span className="text-xs font-mono text-bark-500">
+              {isSubscribed ? `${availableUpgradeTiers.length} alternative tier(s) available` : 'Select tier to activate'}
+            </span>
           </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-3">
-            {availableUpgradeTiers.map((tier) => {
-              const isSelected = selectedTier === tier.id;
-              return (
-                <div
-                  key={tier.id}
-                  onClick={() => setSelectedTier(tier.id)}
-                  className={`relative flex flex-col justify-between rounded-2xl border p-6 cursor-pointer transition-all duration-200 ${
-                    isSelected
-                      ? 'border-bark-700 bg-paper shadow-lift ring-2 ring-bark-700/20'
-                      : 'border-bark-100 bg-paper/60 hover:border-bark-300 hover:bg-paper shadow-card'
-                  }`}
-                >
-                  {tier.recommended && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-tan-dark px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-widest text-paper shadow-sm">
-                      Most Popular
-                    </span>
-                  )}
 
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-extrabold text-bark-900">{tier.name}</h3>
-                      <div
-                        className={`h-4 w-4 rounded-full border flex items-center justify-center ${
-                          isSelected ? 'border-bark-700 bg-bark-700' : 'border-bark-300'
-                        }`}
-                      >
-                        {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-paper" />}
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-bark-500 leading-relaxed min-h-[36px]">
-                      {tier.description}
-                    </p>
-
-                    <div className="border-t border-b border-bark-100 py-3">
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-black text-bark-900">{tier.currency} {tier.price.toLocaleString()}</span>
-                        <span className="text-[11px] font-semibold text-bark-500">/ year</span>
-                      </div>
-                      <p className="mt-1 text-[11px] font-mono text-tan-dark font-bold">
-                        {tier.borrowLimit}
-                      </p>
-                    </div>
-
-                    <ul className="space-y-2 pt-1">
-                      {tier.perks.map((perk, i) => (
-                        <li key={i} className="flex items-start gap-2 text-xs text-bark-700">
-                          <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-olive-dark mt-0.5" />
-                          <span>{perk}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="pt-6">
-                    {user ? (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectTierForPayment(tier.id);
-                        }}
-                        className={`w-full py-3 rounded-xl font-bold text-xs shadow-card transition-all flex items-center justify-center gap-2 ${
-                          isSelected
-                            ? 'bg-bark-700 hover:bg-bark-900 text-cream-light'
-                            : 'bg-cream-light hover:bg-tan/20 text-bark-900 border border-bark-100'
-                        }`}
-                      >
-                        <Smartphone className="w-4 h-4" />
-                        <span>{isSubscribed ? 'Upgrade / Switch Tier' : `Select & Pay KES ${tier.price.toLocaleString()}`}</span>
-                      </button>
-                    ) : (
-                      <Link
-                        to="/login?mode=signin"
-                        className="w-full py-3 rounded-xl bg-bark-700 hover:bg-bark-900 text-cream-light font-bold text-xs shadow-card transition-all flex items-center justify-center gap-2"
-                      >
-                        <LogIn className="w-4 h-4" />
-                        <span>Sign In to Select Tier</span>
-                      </Link>
+          {availableUpgradeTiers.length === 0 ? (
+            <div className="rounded-2xl border border-bark-100 bg-paper p-8 text-center space-y-2">
+              <Crown className="w-8 h-8 text-tan-dark mx-auto" />
+              <h3 className="text-sm font-bold text-bark-900">Highest Tier Active</h3>
+              <p className="text-xs text-bark-500 max-w-md mx-auto">
+                You are currently subscribed to the top tier plan. Enjoy full library research and borrowing privileges!
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-3">
+              {availableUpgradeTiers.map((tier) => {
+                const isSelected = selectedTier === tier.id;
+                return (
+                  <div
+                    key={tier.id}
+                    onClick={() => setSelectedTier(tier.id)}
+                    className={`relative flex flex-col justify-between rounded-2xl border p-6 cursor-pointer transition-all duration-200 ${
+                      isSelected
+                        ? 'border-bark-700 bg-paper shadow-lift ring-2 ring-bark-700/20'
+                        : 'border-bark-100 bg-paper/60 hover:border-bark-300 hover:bg-paper shadow-card'
+                    }`}
+                  >
+                    {tier.recommended && (
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-tan-dark px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-widest text-paper shadow-sm">
+                        Most Popular
+                      </span>
                     )}
+
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-extrabold text-bark-900">{tier.name}</h3>
+                        <div
+                          className={`h-4 w-4 rounded-full border flex items-center justify-center ${
+                            isSelected ? 'border-bark-700 bg-bark-700' : 'border-bark-300'
+                          }`}
+                        >
+                          {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-paper" />}
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-bark-500 leading-relaxed min-h-[36px]">
+                        {tier.description}
+                      </p>
+
+                      <div className="border-t border-b border-bark-100 py-3">
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl font-black text-bark-900">{tier.currency} {tier.price.toLocaleString()}</span>
+                          <span className="text-[11px] font-semibold text-bark-500">/ year</span>
+                        </div>
+                        <p className="mt-1 text-[11px] font-mono text-tan-dark font-bold">
+                          {tier.borrowLimit}
+                        </p>
+                      </div>
+
+                      <ul className="space-y-2 pt-1">
+                        {tier.perks.map((perk, i) => (
+                          <li key={i} className="flex items-start gap-2 text-xs text-bark-700">
+                            <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-olive-dark mt-0.5" />
+                            <span>{perk}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="pt-6">
+                      {user ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectTierForPayment(tier.id);
+                          }}
+                          className={`w-full py-3 rounded-xl font-bold text-xs shadow-card transition-all flex items-center justify-center gap-2 ${
+                            isSelected
+                              ? 'bg-bark-700 hover:bg-bark-900 text-cream-light'
+                              : 'bg-cream-light hover:bg-tan/20 text-bark-900 border border-bark-100'
+                          }`}
+                        >
+                          <Smartphone className="w-4 h-4" />
+                          <span>{isSubscribed ? 'Upgrade / Switch Tier' : `Select & Pay KES ${tier.price.toLocaleString()}`}</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedTier(tier.id);
+                            document.getElementById('guest-auth-section')?.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                          className="w-full py-3 rounded-xl bg-bark-700 hover:bg-bark-900 text-cream-light font-bold text-xs shadow-card transition-all flex items-center justify-center gap-2"
+                        >
+                          <LogIn className="w-4 h-4" />
+                          <span>Select Tier & Sign In / Register</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ░░░ STK PUSH PAYMENT MODAL / OVERLAY ░░░ */}
       {(stage === 'mpesa_modal' || stage === 'pushing') && (
