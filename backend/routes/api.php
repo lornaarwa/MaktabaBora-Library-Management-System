@@ -36,8 +36,13 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
     Route::middleware(['jwt.validation', 'ensure.account', 'check.banned'])->group(function () {
         Route::get('/auth/me', [AuthController::class, 'me']);
         Route::put('/auth/profile', [AuthController::class, 'updateProfile']);
+        Route::post('/auth/change-first-login-password', [\App\Http\Controllers\LibrarianPasswordChangeController::class, 'changePassword']);
         Route::post('/auth/refresh', [AuthController::class, 'refresh']);
         Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+        // Perk Subscriptions (Accessible to all authenticated users)
+        Route::post('/subscriptions/checkout', [\App\Http\Controllers\SubscriptionController::class, 'checkout']);
+        Route::get('/subscriptions/status', [\App\Http\Controllers\SubscriptionController::class, 'status']);
 
         // Member-only & Member-accessible Features
         Route::middleware(['ensure.member'])->group(function () {
@@ -45,9 +50,6 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
             Route::get('/fines', [FineController::class, 'index']);
             Route::post('/fines/{fine}/pay-daraja', [FineController::class, 'payWithDaraja']);
 
-            // Perk Subscriptions
-            Route::post('/subscriptions/checkout', [\App\Http\Controllers\SubscriptionController::class, 'checkout']);
-            Route::get('/subscriptions/status', [\App\Http\Controllers\SubscriptionController::class, 'status']);
             Route::post('/subscriptions/cancel', [\App\Http\Controllers\SubscriptionController::class, 'cancel']);
             Route::post('/subscriptions/refund', [\App\Http\Controllers\SubscriptionController::class, 'requestRefund']);
             Route::get('/subscriptions/refund-status', [\App\Http\Controllers\SubscriptionController::class, 'refundStatus']);
@@ -101,9 +103,12 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
             Route::get('/fines', [FineController::class, 'index']);
             Route::post('/fines/{fine}/waive', [FineController::class, 'waive']);
 
-            // Reimbursement Requests Management
+            // Reimbursement / Refund Requests Management
             Route::get('/reimbursements', [LibrarianDashboardController::class, 'reimbursements']);
             Route::post('/reimbursements/{id}/review', [LibrarianDashboardController::class, 'reviewReimbursement']);
+            Route::get('/refund-requests', [LibrarianDashboardController::class, 'getRefundRequests']);
+            Route::post('/refund-requests/{id}/approve', [LibrarianDashboardController::class, 'approveRefund']);
+            Route::post('/refund-requests/{id}/reject', [LibrarianDashboardController::class, 'rejectRefund']);
         });
 
         // Admin Console Routes
@@ -121,6 +126,10 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
             // Reimbursements (Admin can also review)
             Route::get('/reimbursements', [LibrarianDashboardController::class, 'reimbursements']);
             Route::post('/reimbursements/{id}/review', [LibrarianDashboardController::class, 'reviewReimbursement']);
+
+            // Dynamic Membership Tiers Customization
+            Route::get('/membership-tiers', [\App\Http\Controllers\MembershipTierController::class, 'index']);
+            Route::put('/membership-tiers', [\App\Http\Controllers\MembershipTierController::class, 'update']);
 
             // Dynamic Table CRUD Management Routes
             Route::get('/tables', [\App\Http\Controllers\AdminCrudController::class, 'indexTables']);

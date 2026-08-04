@@ -153,15 +153,18 @@ class AdminAnalyticsController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
+            'password' => 'nullable|string|min:6',
             'department' => 'nullable|string|max:255',
         ]);
+
+        $password = !empty($validated['password']) ? $validated['password'] : 'TempPass2026!';
 
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
+            'password' => Hash::make($password),
             'role' => 'librarian',
+            'must_change_password' => true,
         ]);
 
         $librarian = Librarian::create([
@@ -171,7 +174,9 @@ class AdminAnalyticsController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Librarian registered successfully.',
+            'message' => 'Librarian account registered successfully with temporary password.',
+            'temporary_password' => $password,
+            'must_change_password' => true,
             'user' => $user,
             'librarian' => $librarian,
         ], 201);

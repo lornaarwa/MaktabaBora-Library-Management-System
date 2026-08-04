@@ -28,7 +28,6 @@ export default function PublicCatalog() {
                 const res = await api.searchCatalog(searchQuery, selectedGenre === 'All' ? '' : selectedGenre);
                 setBooks(res.data?.data || res.data || []);
             } catch (err) {
-                console.error('Failed to load catalog:', err);
                 setError(err.message || 'Could not fetch catalog.');
             } finally {
                 setLoading(false);

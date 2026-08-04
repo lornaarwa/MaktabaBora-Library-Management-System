@@ -50,7 +50,7 @@ class DigitalRentalService implements DigitalRentalServiceInterface
         if (str_contains($tier, 'student')) {
             $tierName = 'student';
             $borrowLimit = 3;
-        } elseif (str_contains($tier, 'scholar')) {
+        } elseif (str_contains($tier, 'scholar') || str_contains($tier, 'faculty')) {
             $tierName = 'scholar';
             $borrowLimit = 15;
         } else {
@@ -63,7 +63,7 @@ class DigitalRentalService implements DigitalRentalServiceInterface
         $subscription = Subscription::create([
             'member_id' => $member->id,
             'user_id' => $user->id,
-            'plan_type' => ucfirst($tierName) . ' Membership Pass',
+            'plan_type' => $planType,
             'discount_percentage' => 20.00,
             'amount_paid' => $amount,
             'payment_status' => 'paid',

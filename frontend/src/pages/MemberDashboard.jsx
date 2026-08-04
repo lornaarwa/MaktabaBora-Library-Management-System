@@ -35,8 +35,8 @@ export default function MemberDashboard() {
                 setSubscription(subRes.data || null);
                 setDigitalLibrary(digitalRes.data || digitalRes || []);
             } catch (err) {
-                console.error('Failed to load member dashboard data:', err);
-            } flex: {
+                // Handled silently
+            } finally {
                 setLoading(false);
             }
         };
@@ -84,7 +84,7 @@ export default function MemberDashboard() {
                                 </span>
                             </div>
                             <p className="text-xs text-amber-900 leading-relaxed max-w-2xl">
-                                Only users with an active membership can borrow books, reserve titles, and access member services. Please register or activate your membership to unlock full member features.
+                                Active membership required to borrow books and access member services.
                             </p>
                         </div>
                     </div>

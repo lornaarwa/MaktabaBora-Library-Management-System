@@ -7,8 +7,8 @@ import {
 import { api, getFrontendTerminalLogs } from '../services/api';
 
 export default function AdminDashboard() {
-    // Navigation & View State: 'overview' | 'logs' | 'users' | 'members' | 'librarians' | table_name
-    const [activeTab, setActiveTab] = useState('overview');
+    // Navigation & View State: 'membership_tiers' | 'add_librarian' | 'logs' | 'users' | 'members' | 'librarians' | table_name
+    const [activeTab, setActiveTab] = useState('membership_tiers');
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     // Analytics Landing Overview State
@@ -49,6 +49,37 @@ export default function AdminDashboard() {
     const [libForm, setLibForm] = useState({ name: '', email: '', password: '', department: 'General Circulation' });
     const [libSubmitting, setLibSubmitting] = useState(false);
 
+    // Membership Tiers Customization State
+    const [membershipTiers, setMembershipTiers] = useState([]);
+    const [tiersLoading, setTiersLoading] = useState(false);
+    const [savingTiers, setSavingTiers] = useState(false);
+
+    const fetchMembershipTiers = async () => {
+        setTiersLoading(true);
+        try {
+            const res = await api.getMembershipTiers();
+            setMembershipTiers(res.data || res || []);
+        } catch (err) {
+            // Handled silently
+        } finally {
+            setTiersLoading(false);
+        }
+    };
+
+    const handleSaveMembershipTiers = async () => {
+        setSavingTiers(true);
+        setError(null);
+        setSuccessMsg(null);
+        try {
+            await api.updateMembershipTiers(membershipTiers);
+            setSuccessMsg('Membership tier configurations updated successfully!');
+        } catch (err) {
+            setError(err.message || 'Failed to update membership tiers.');
+        } finally {
+            setSavingTiers(false);
+        }
+    };
+
     // Fetch Analytics on mount
     const fetchAnalytics = async () => {
         setAnalyticsLoading(true);
@@ -56,7 +87,7 @@ export default function AdminDashboard() {
             const res = await api.getAdminAnalytics();
             setAnalytics(res.data || res || {});
         } catch (err) {
-            console.error('Failed to load analytics:', err);
+            // Handled silently
         } finally {
             setAnalyticsLoading(false);
         }
@@ -70,7 +101,7 @@ export default function AdminDashboard() {
             setApiLogsData(res || {});
             setFrontendLogs(getFrontendTerminalLogs());
         } catch (err) {
-            console.error('Failed to load API logs:', err);
+            // Handled silently
         } finally {
             setLogsLoading(false);
         }
@@ -90,7 +121,6 @@ export default function AdminDashboard() {
             setColumns(rawColumns);
             setRecords(res.data || []);
         } catch (err) {
-            console.error(`Failed to load data for ${tableName}:`, err);
             setError(err.message || `Failed to fetch data for ${tableName}.`);
         } finally {
             setLoading(false);
@@ -104,6 +134,8 @@ export default function AdminDashboard() {
     useEffect(() => {
         if (activeTab === 'logs') {
             fetchApiLogs();
+        } else if (activeTab === 'membership_tiers') {
+            fetchMembershipTiers();
         } else if (activeTab !== 'overview') {
             const targetTable = activeTab === 'users' ? 'users' : activeTab === 'members' ? 'members' : activeTab === 'librarians' ? 'librarians' : activeTab;
             fetchTableData(targetTable);
@@ -326,168 +358,134 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* Main Layout: Collapsible Sidebar + Content */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                
-                {/* Task 2: Collapsible Mini Sidebar */}
-                <div className={`${isSidebarCollapsed ? 'lg:col-span-1' : 'lg:col-span-3'} bg-cream-light/40 border border-bark-100 rounded-2xl p-3.5 space-y-2 h-fit shadow-sm transition-all`}>
-                    <div className="flex items-center justify-between px-2 py-1">
-                        {!isSidebarCollapsed && (
-                            <h3 className="text-[10px] font-mono font-extrabold text-bark-500 uppercase tracking-wider flex items-center gap-2">
-                                <Database className="w-3.5 h-3.5 text-bark-500" /> Navigation
-                            </h3>
-                        )}
-                        <button
-                            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                            className="p-1 rounded text-bark-500 hover:text-zinc-200"
-                        >
-                            {isSidebarCollapsed ? <ChevronRight className="w-4 h-4 mx-auto" /> : <ChevronLeft className="w-4 h-4" />}
-                        </button>
-                    </div>
+            {/* Top Horizontal Navigation Navbar */}
+            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-3 shadow-sm flex items-center gap-2 overflow-x-auto">
+                <button
+                    onClick={() => setActiveTab('membership_tiers')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                        activeTab === 'membership_tiers'
+                            ? 'bg-bark-700 text-cream-light shadow-card'
+                            : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+                    }`}
+                >
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Membership Tiers</span>
+                </button>
 
-                    <div className="space-y-1">
-                        {/* Landing Overview Button */}
-                        <button
-                            onClick={() => setActiveTab('overview')}
-                            className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                                activeTab === 'overview'
-                                    ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
-                                    : 'text-bark-500 hover:text-zinc-200 hover:bg-cream/60'
-                            }`}
-                            title="Analytics Overview"
-                        >
-                            <div className="flex items-center gap-2.5">
-                                <Activity className="w-4 h-4 text-bark-500" />
-                                {!isSidebarCollapsed && <span>Landing Overview</span>}
-                            </div>
-                        </button>
+                <button
+                    onClick={() => setActiveTab('add_librarian')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                        activeTab === 'add_librarian'
+                            ? 'bg-bark-700 text-cream-light shadow-card'
+                            : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+                    }`}
+                >
+                    <UserPlus className="w-4 h-4" />
+                    <span>Create Librarian</span>
+                </button>
 
-                        {/* Logs Section Header & Button */}
-                        <div className="pt-3 pb-1">
-                            {!isSidebarCollapsed && (
-                                <h4 className="px-2 text-[9px] font-mono font-extrabold text-bark-500 uppercase tracking-wider mb-1">
-                                    SYSTEM LOGS
-                                </h4>
-                            )}
-                            <button
-                                onClick={() => setActiveTab('logs')}
-                                className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                                    activeTab === 'logs'
-                                        ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
-                                        : 'text-bark-500 hover:text-zinc-200 hover:bg-cream/60'
-                                }`}
-                                title="API Logs & Health"
-                            >
-                                <div className="flex items-center gap-2.5">
-                                    <Clock className="w-4 h-4 text-bark-500" />
-                                    {!isSidebarCollapsed && <span>API Logs & Health</span>}
-                                </div>
-                            </button>
+                <button
+                    onClick={() => setActiveTab('logs')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                        activeTab === 'logs'
+                            ? 'bg-bark-700 text-cream-light shadow-card'
+                            : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+                    }`}
+                >
+                    <Clock className="w-4 h-4" />
+                    <span>API Logs & Health</span>
+                </button>
+
+                <div className="h-5 w-px bg-bark-100 mx-1 flex-shrink-0" />
+
+                {tables.map(tName => (
+                    <button
+                        key={tName}
+                        onClick={() => setActiveTab(tName)}
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs capitalize transition-all whitespace-nowrap ${
+                            activeTab === tName
+                                ? 'bg-bark-700 text-cream-light shadow-card font-bold'
+                                : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900 font-semibold'
+                        }`}
+                    >
+                        <Table className="w-3.5 h-3.5 text-bark-500" />
+                        <span>{tName.replace('_', ' ')}</span>
+                    </button>
+                ))}
+            </div>
+
+            {/* Main Content Area */}
+            <div className="space-y-6">
+
+                {/* Create Librarian Profile Tab View */}
+                {activeTab === 'add_librarian' && (
+                    <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm max-w-2xl mx-auto">
+                        <div className="border-b border-bark-100 pb-4">
+                            <h2 className="text-lg font-extrabold text-bark-900 flex items-center gap-2">
+                                <UserPlus className="w-5 h-5 text-tan-dark" /> Register New Librarian Profile
+                            </h2>
+                            <p className="text-xs text-bark-500 mt-1">
+                                Initial password: <code className="font-mono text-bark-800 bg-tan/20 px-1.5 py-0.5 rounded font-bold">TempPass2026!</code> (staff will be prompted to reset on first login).
+                            </p>
                         </div>
 
-                        {/* Collections Section Header & Domain Tables */}
-                        <div className="pt-2 pb-1">
-                            {!isSidebarCollapsed && (
-                                <h4 className="px-2 text-[9px] font-mono font-extrabold text-bark-500 uppercase tracking-wider mb-1">
-                                    COLLECTIONS
-                                </h4>
-                            )}
-                            {tables.map(tName => (
-                                <button
-                                    key={tName}
-                                    onClick={() => setActiveTab(tName)}
-                                    className={`w-full flex items-center ${isSidebarCollapsed ? 'justify-center' : 'justify-between'} px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                                        activeTab === tName
-                                            ? 'bg-zinc-100 text-zinc-950 font-bold shadow-sm'
-                                            : 'text-bark-500 hover:text-zinc-200 hover:bg-cream/60'
-                                    }`}
-                                    title={tName.replace('_', ' ')}
+                        <form onSubmit={handleAddLibrarian} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Full Name</label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder="e.g. Sarah Jenkins"
+                                    value={libForm.name}
+                                    onChange={(e) => setLibForm({ ...libForm, name: e.target.value })}
+                                    className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2.5 text-xs text-bark-900 font-medium focus:ring-2 focus:ring-tan-dark"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Staff Email Address</label>
+                                <input
+                                    type="email"
+                                    required
+                                    placeholder="librarian@maktababora.org"
+                                    value={libForm.email}
+                                    onChange={(e) => setLibForm({ ...libForm, email: e.target.value })}
+                                    className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2.5 text-xs text-bark-900 font-medium focus:ring-2 focus:ring-tan-dark"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Department / Specialty</label>
+                                <select
+                                    value={libForm.department}
+                                    onChange={(e) => setLibForm({ ...libForm, department: e.target.value })}
+                                    className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2.5 text-xs text-bark-900 font-medium focus:ring-2 focus:ring-tan-dark"
                                 >
-                                    <div className="flex items-center gap-2.5 capitalize">
-                                        <Table className="w-4 h-4 text-bark-500" />
-                                        {!isSidebarCollapsed && <span>{tName.replace('_', ' ')}</span>}
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
+                                    <option value="Circulation & Loans">Circulation & Loans</option>
+                                    <option value="Reference Desk & Research">Reference Desk & Research</option>
+                                    <option value="Cataloging & Archiving">Cataloging & Archiving</option>
+                                    <option value="Digital Media & E-Resources">Digital Media & E-Resources</option>
+                                </select>
+                            </div>
+
+                            <div className="rounded-xl border border-tan/30 bg-tan/10 p-4 space-y-1">
+                                <span className="text-[11px] font-bold text-tan-dark uppercase tracking-wider block">Security & Password Policy</span>
+                                <p className="text-xs text-bark-700">
+                                    Initial password is <strong className="font-mono text-bark-900 font-bold">TempPass2026!</strong>. Mandatory reset on first login.
+                                </p>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={libSubmitting}
+                                className="w-full py-3 px-4 rounded-xl bg-bark-700 hover:bg-bark-800 text-cream-light font-bold text-xs transition-all shadow-card flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                {libSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                                <span>Register Staff Account</span>
+                            </button>
+                        </form>
                     </div>
-                </div>
-
-                {/* Content Panel */}
-                <div className={`${isSidebarCollapsed ? 'lg:col-span-11' : 'lg:col-span-9'} space-y-6 transition-all`}>
-                    
-                    {/* Task 1: Admin Landing Page Overview */}
-                    {activeTab === 'overview' && (
-                        <div className="space-y-6">
-                            
-                            {/* Counter Card */}
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                                <div className="bg-cream-light/40 border border-bark-100 rounded-xl p-5 space-y-2">
-                                    <div className="flex justify-between items-center text-bark-500">
-                                        <span className="text-xs font-mono font-semibold uppercase">Registered Members</span>
-                                        <Users className="w-4 h-4 text-bark-500" />
-                                    </div>
-                                    <span className="text-3xl font-extrabold text-bark-900 block">
-                                        {analyticsLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : (analytics?.registered_members_count ?? 0)}
-                                    </span>
-                                    <span className="text-[10px] text-bark-500 font-mono">Active member profiles</span>
-                                </div>
-                            </div>
-
-                            {/* Charts Grid */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                
-                                {/* Graph 1: Logged In Users Over Time */}
-                                <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
-                                    <div className="flex items-center justify-between">
-                                        <h3 className="text-sm font-bold text-bark-900 flex items-center gap-2 font-mono">
-                                            <TrendingUp className="w-4 h-4 text-bark-500" /> Logged In Users Over Time
-                                        </h3>
-                                    </div>
-
-                                    {analyticsLoading ? (
-                                        <div className="flex items-center justify-center h-44 text-bark-500 font-mono text-xs">
-                                            <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading timeline data...
-                                        </div>
-                                    ) : (
-                                        renderSvgChart(analytics?.logins_over_time, "Daily User Login Sessions")
-                                    )}
-                                </div>
-
-                                {/* Graph 2: Books Activity Over Time with Toggle */}
-                                <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
-                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                                        <h3 className="text-sm font-bold text-bark-900 flex items-center gap-2 font-mono">
-                                            <Activity className="w-4 h-4 text-bark-500" /> Book Activity Over Time
-                                        </h3>
-
-                                        {/* Toggle Switch */}
-                                        <div className="flex bg-paper p-1 rounded-lg border border-bark-100 text-[10px] font-mono font-bold">
-                                            {['loaned', 'reserved', 'bought'].map((type) => (
-                                                <button
-                                                    key={type}
-                                                    onClick={() => setActivityGraphType(type)}
-                                                    className={`px-2.5 py-1 rounded capitalize transition-all ${
-                                                        activityGraphType === type ? 'bg-zinc-100 text-zinc-950 shadow-sm' : 'text-bark-500 hover:text-zinc-200'
-                                                    }`}
-                                                >
-                                                    {type}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {analyticsLoading ? (
-                                        <div className="flex items-center justify-center h-44 text-bark-500 font-mono text-xs">
-                                            <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading activity data...
-                                        </div>
-                                    ) : (
-                                        renderSvgChart(getActivityGraphData(), `Daily ${activityGraphType.toUpperCase()} Book Activity`)
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                )}
 
                     {/* Task 2: API Logs & Terminal Activity Page */}
                     {activeTab === 'logs' && (
@@ -499,7 +497,7 @@ export default function AdminDashboard() {
                                     <h2 className="text-base font-bold text-bark-900 flex items-center gap-2 font-mono">
                                         <Activity className="w-4 h-4 text-emerald-400" /> Terminal Activity & API Logs Stream
                                     </h2>
-                                    <p className="text-xs text-bark-500 mt-0.5">Real-time live logs from php artisan serve (backend) & npm run dev (frontend) processes</p>
+                                    <p className="text-xs text-bark-500 mt-0.5">Backend & frontend process logs.</p>
                                 </div>
 
                                 {/* Mini Navbar */}
@@ -703,6 +701,118 @@ export default function AdminDashboard() {
                                         </div>
                                     )}
                                 </>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Membership Tiers Customization Page View */}
+                    {activeTab === 'membership_tiers' && (
+                        <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-6 shadow-sm">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-bark-100 pb-4">
+                                <div>
+                                    <h2 className="text-lg font-extrabold text-bark-900 flex items-center gap-2">
+                                        <ShieldCheck className="w-5 h-5 text-tan-dark" /> Membership Tiers Customization
+                                    </h2>
+                                    <p className="text-xs text-bark-500 mt-0.5">Customize pricing, borrow limits, perks, and availability for library membership plans.</p>
+                                </div>
+                                <button
+                                    onClick={handleSaveMembershipTiers}
+                                    disabled={savingTiers}
+                                    className="px-4 py-2 rounded-xl bg-bark-700 hover:bg-bark-800 text-cream-light text-xs font-bold transition-all shadow-card flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    {savingTiers ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                    <span>Save Tier Configuration</span>
+                                </button>
+                            </div>
+
+                            {tiersLoading ? (
+                                <div className="flex items-center justify-center py-16 text-bark-500 text-xs font-mono">
+                                    <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading membership tiers configuration...
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {membershipTiers.map((tier, index) => (
+                                        <div key={tier.id || index} className="rounded-2xl border border-bark-100 bg-paper p-5 space-y-4 shadow-card">
+                                            <div className="flex items-center justify-between border-b border-bark-100 pb-3">
+                                                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-tan-dark bg-tan/10 border border-tan/20 px-2.5 py-0.5 rounded-lg">
+                                                    {tier.id}
+                                                </span>
+                                                <label className="flex items-center gap-2 text-xs font-semibold text-bark-700 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={tier.active !== false}
+                                                        onChange={(e) => {
+                                                            const updated = [...membershipTiers];
+                                                            updated[index].active = e.target.checked;
+                                                            setMembershipTiers(updated);
+                                                        }}
+                                                        className="rounded text-tan-dark focus:ring-tan-dark"
+                                                    />
+                                                    Active
+                                                </label>
+                                            </div>
+
+                                            <div className="space-y-3 text-xs">
+                                                <div>
+                                                    <label className="block text-[10px] font-mono uppercase text-bark-500 mb-1">Plan Name</label>
+                                                    <input
+                                                        type="text"
+                                                        value={tier.name || ''}
+                                                        onChange={(e) => {
+                                                            const updated = [...membershipTiers];
+                                                            updated[index].name = e.target.value;
+                                                            setMembershipTiers(updated);
+                                                        }}
+                                                        className="w-full rounded-xl border border-bark-100 bg-cream-light/40 px-3 py-2 text-bark-900 font-bold"
+                                                    />
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <label className="block text-[10px] font-mono uppercase text-bark-500 mb-1">Price (KES)</label>
+                                                        <input
+                                                            type="number"
+                                                            value={tier.price || 0}
+                                                            onChange={(e) => {
+                                                                const updated = [...membershipTiers];
+                                                                updated[index].price = Number(e.target.value);
+                                                                setMembershipTiers(updated);
+                                                            }}
+                                                            className="w-full rounded-xl border border-bark-100 bg-cream-light/40 px-3 py-2 text-bark-900 font-mono font-bold"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-[10px] font-mono uppercase text-bark-500 mb-1">Borrow Limit</label>
+                                                        <input
+                                                            type="text"
+                                                            value={tier.borrowLimit || ''}
+                                                            onChange={(e) => {
+                                                                const updated = [...membershipTiers];
+                                                                updated[index].borrowLimit = e.target.value;
+                                                                setMembershipTiers(updated);
+                                                            }}
+                                                            className="w-full rounded-xl border border-bark-100 bg-cream-light/40 px-3 py-2 text-bark-900 font-semibold"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-[10px] font-mono uppercase text-bark-500 mb-1">Description</label>
+                                                    <textarea
+                                                        rows={2}
+                                                        value={tier.description || ''}
+                                                        onChange={(e) => {
+                                                            const updated = [...membershipTiers];
+                                                            updated[index].description = e.target.value;
+                                                            setMembershipTiers(updated);
+                                                        }}
+                                                        className="w-full rounded-xl border border-bark-100 bg-cream-light/40 px-3 py-2 text-bark-900 text-xs"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             )}
                         </div>
                     )}
@@ -996,9 +1106,7 @@ export default function AdminDashboard() {
                             )}
                         </div>
                     )}
-
                 </div>
-            </div>
 
             {/* Task 4: Member Ban Modal with Reason Dropdown & Custom Text Area */}
             {banModal.isOpen && banModal.member && (

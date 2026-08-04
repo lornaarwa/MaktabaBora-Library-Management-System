@@ -18,7 +18,7 @@ class FineControllerTest extends TestCase
     public function test_member_can_initiate_daraja_fine_payment(): void
     {
         $user = User::create(['name' => 'Fine User', 'email' => 'finepay@example.com', 'password' => 'secret', 'role' => 'member']);
-        $member = Member::create(['user_id' => $user->id, 'member_number' => 'MEM-6001']);
+        $member = Member::create(['user_id' => $user->id, 'member_number' => 'MEM-6001', 'is_subscribed' => true]);
         $book = Book::create(['title' => 'Book', 'author' => 'Author', 'isbn' => '9786001600160', 'genre' => 'Genre']);
         $copy = BookCopy::create(['book_id' => $book->id, 'barcode' => 'BC-6001', 'status' => 'checked_out']);
         $loan = Loan::create(['member_id' => $member->id, 'book_copy_id' => $copy->id, 'loan_date' => now(), 'due_date' => now(), 'status' => 'overdue']);

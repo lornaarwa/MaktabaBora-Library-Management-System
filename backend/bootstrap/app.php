@@ -16,6 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'ensure.admin' => \App\Http\Middleware\EnsureIsAdmin::class,
             'ensure.librarian' => \App\Http\Middleware\EnsureIsLibrarian::class,
             'ensure.member' => \App\Http\Middleware\EnsureIsMember::class,
+            'ensure.subscribed' => \App\Http\Middleware\EnsureActiveSubscription::class,
+            'ensure.password_changed' => \App\Http\Middleware\EnsurePasswordChangeNotRequired::class,
             'ensure.account' => \App\Http\Middleware\EnsureHasAccount::class,
             'validate.borrow_limit' => \App\Http\Middleware\ValidateBorrowLimit::class,
             'check.book_availability' => \App\Http\Middleware\CheckBookAvailability::class,
@@ -33,5 +35,26 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (\Illuminate\Database\QueryException $e, \Illuminate\Http\Request $request) {
+            \Illuminate\Support\Facades\Log::error('Database Exception: ' . $e->getMessage(), [
+                'sql' => $e->getSql(),
+                'bindings' => $e->getBindings(),
+            ]);
+
+            return response()->json([
+                'error' => 'Database Service Error',
+                'message' => 'A system database error occurred. Details have been logged securely on the server.',
+            ], 500);
+        });
+
+        $exceptions->render(function (\Throwable $e, \Illuminate\Http\Request $request) {
+            \Illuminate\Support\Facades\Log::error('Unhandled System Exception: ' . $e->getMessage());
+
+            if (!config('app.debug')) {
+                return response()->json([
+                    'error' => 'Server Error',
+                    'message' => 'An internal server error occurred.',
+                ], 500);
+            }
+        });
     })->create();

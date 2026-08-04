@@ -55,11 +55,24 @@ apiClient.interceptors.response.use(
         const method = (error.config?.method || 'GET').toUpperCase();
         const url = error.config?.url || '';
         const status = error.response?.status || 'ERR';
-        const errorMsg = error.response?.data?.message || error.response?.data?.error || error.message || 'An unexpected API error occurred.';
+        const rawMsg = error.response?.data?.message || error.response?.data?.error || error.message || 'An unexpected API error occurred.';
         
-        appendFrontendTerminalLog(`[CLIENT HTTP ERROR] ${status} <- ${method} ${url} (${duration}ms): ${errorMsg}`);
+        // Security sanitization: strip raw SQL queries, database credentials, host IPs, and SQLSTATE codes from client-visible error strings
+        const isDbError = typeof rawMsg === 'string' && (
+            rawMsg.includes('SQLSTATE') || 
+            rawMsg.includes('Undefined table') || 
+            rawMsg.includes('relation "') || 
+            rawMsg.includes('select *') || 
+            rawMsg.includes('pgsql')
+        );
+
+        const sanitizedMsg = isDbError 
+            ? 'A database service error occurred. Details have been logged securely.' 
+            : rawMsg;
+
+        appendFrontendTerminalLog(`[CLIENT HTTP ERROR] ${status} <- ${method} ${url} (${duration}ms): ${sanitizedMsg}`);
         
-        const customError = new Error(errorMsg);
+        const customError = new Error(sanitizedMsg);
         customError.status = error.response?.status;
         customError.data = error.response?.data;
         return Promise.reject(customError);
@@ -75,6 +88,7 @@ export const api = {
     logout: () => apiClient.post('/auth/logout'),
     getMe: () => apiClient.get('/auth/me'),
     updateProfile: (data) => apiClient.put('/auth/profile', data),
+    changeFirstLoginPassword: (data) => apiClient.post('/auth/change-first-login-password', data),
 
     // Catalog & Books
     searchCatalog: (query = '', genre = '') => apiClient.get(`/catalog/search?q=${encodeURIComponent(query)}&genre=${encodeURIComponent(genre)}`),
@@ -126,9 +140,12 @@ export const api = {
     updateLibrarianSubscription: (id, data) => apiClient.put(`/librarian/subscriptions/${id}`, data),
     deleteLibrarianSubscription: (id) => apiClient.delete(`/librarian/subscriptions/${id}`),
 
-    // Reimbursement Requests
+    // Reimbursement & Refund Requests
     getLibrarianReimbursements: () => apiClient.get('/librarian/reimbursements'),
     reviewReimbursement: (id, data) => apiClient.post(`/librarian/reimbursements/${id}/review`, data),
+    getLibrarianRefundRequests: () => apiClient.get('/librarian/refund-requests'),
+    approveLibrarianRefund: (id) => apiClient.post(`/librarian/refund-requests/${id}/approve`),
+    rejectLibrarianRefund: (id) => apiClient.post(`/librarian/refund-requests/${id}/reject`),
     getAdminReimbursements: () => apiClient.get('/admin/reimbursements'),
     reviewAdminReimbursement: (id, data) => apiClient.post(`/admin/reimbursements/${id}/review`, data),
 
@@ -142,6 +159,9 @@ export const api = {
     createAdminRecord: (table, data) => apiClient.post(`/admin/tables/${table}`, data),
     updateAdminRecord: (table, id, data) => apiClient.put(`/admin/tables/${table}/${id}`, data),
     deleteAdminRecord: (table, id) => apiClient.delete(`/admin/tables/${table}/${id}`),
+    // Membership Tiers Customization
+    getMembershipTiers: () => apiClient.get('/admin/membership-tiers'),
+    updateMembershipTiers: (tiers) => apiClient.put('/admin/membership-tiers', { tiers }),
 
     // AI Assistant
     sendAiMessage: (prompt) => apiClient.post('/ai/chat', { prompt }),

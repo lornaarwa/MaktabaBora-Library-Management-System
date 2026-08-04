@@ -97,7 +97,7 @@ export default function Profile() {
           setReimbursementStatus(reimbRes.latest_reimbursement);
         }
       } catch (err) {
-        console.error('Failed to load profile data:', err);
+        // Handled silently
       } finally {
         setLoading(false);
       }
@@ -125,6 +125,32 @@ export default function Profile() {
     const due = new Date(dueDateStr);
     const today = new Date();
     return Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  };
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Image file size exceeds 2MB limit. Please choose a smaller image.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64String = reader.result;
+      try {
+        const res = await api.updateProfile({ avatar_base64: base64String });
+        const updatedUser = res.user || res.data?.user;
+        if (updatedUser) {
+          setUser(updatedUser);
+          localStorage.setItem('smartlib_user', JSON.stringify(updatedUser));
+        }
+      } catch (err) {
+        alert(err.message || 'Failed to upload profile picture.');
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   // Handle Edit Profile submission
@@ -290,8 +316,27 @@ export default function Profile() {
         <div className="md:col-span-2 rounded-3xl border border-bark-100 bg-paper p-6 sm:p-8 shadow-card space-y-6">
           <div className="flex items-center justify-between border-b border-bark-100 pb-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-bark-700 text-cream-light font-extrabold text-xl shadow-md">
-                {user?.name ? user.name.charAt(0).toUpperCase() : 'M'}
+              <div className="relative group">
+                {user?.avatar_base64 ? (
+                  <img
+                    src={user.avatar_base64}
+                    alt={user.name}
+                    className="h-16 w-16 rounded-2xl object-cover border-2 border-tan-dark shadow-md"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-bark-700 text-cream-light font-extrabold text-xl shadow-md border-2 border-bark-600">
+                    {user?.name ? user.name.charAt(0).toUpperCase() : 'M'}
+                  </div>
+                )}
+                <label className="absolute -bottom-1 -right-1 bg-tan-dark hover:bg-bark-800 text-white p-1.5 rounded-full cursor-pointer shadow-md transition-transform hover:scale-110" title="Upload Profile Picture">
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                  />
+                </label>
               </div>
               <div>
                 <h2 className="text-lg font-extrabold text-bark-900">{user?.name}</h2>

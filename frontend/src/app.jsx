@@ -61,7 +61,7 @@ function Shell() {
         <Route
           path="/catalog"
           element={
-            <RequireRole allow={['member', 'librarian', 'admin']}>
+            <RequireRole allow={['member']}>
               <PublicCatalog />
             </RequireRole>
           }
@@ -106,8 +106,8 @@ function Shell() {
             </RequireRole>
           }
         />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Login />} />
+        <Route path="/login" element={<MembershipRegistration />} />
+        <Route path="/register" element={<MembershipRegistration />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <AiChatWidget isOpen={isAiOpen} onClose={() => setIsAiOpen(false)} />
