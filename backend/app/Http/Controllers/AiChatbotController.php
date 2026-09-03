@@ -65,6 +65,7 @@ class AiChatbotController extends Controller
             'session_id' => $session->id,
             'message' => $result['message'],
             'tokens_used' => $result['tokens_used'],
+            'books' => $result['books'] ?? [],
         ]);
     }
 }
