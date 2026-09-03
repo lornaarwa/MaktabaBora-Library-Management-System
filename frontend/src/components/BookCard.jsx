@@ -1,4 +1,6 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Bookmark, CheckCircle2, XCircle, ShieldAlert, ShoppingBag, BookOpen, ShoppingCart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLibrary } from '../context/LibraryContext';
@@ -6,7 +8,7 @@ import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
 import { BookCover } from './ui/BookCover';
 
-export default function BookCard({ book, onReserve, onBuyDigital, onReadDigital }) {
+export default function BookCard({ book, onReserve, onBuyDigital, onReadDigital, index = 0, memberActions = true }) {
     const { user } = useAuth();
     const { addToCart } = useLibrary();
     const isAvailable = (book.available_copies > 0 || (book.copies && book.copies.some(c => c.status === 'available'))) && !book.is_blocked;
@@ -16,8 +18,15 @@ export default function BookCard({ book, onReserve, onBuyDigital, onReadDigital 
     const finalPrice = isSubscribed ? Math.round((stdPrice * 0.8) * 100) / 100 : stdPrice;
 
     return (
-        <div className="group relative flex flex-col justify-between rounded-xl border border-bark-100 bg-paper p-4 shadow-card transition hover:shadow-lift">
-            
+        <motion.article
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-40px' }}
+            transition={{ duration: 0.32, delay: Math.min(index * 0.04, 0.3), ease: 'easeOut' }}
+            whileHover={{ y: -4 }}
+            className="group relative flex flex-col justify-between rounded-xl border border-bark-100 bg-paper p-4 shadow-card transition-shadow hover:shadow-lift"
+        >
+
             {/* Exclusive Subscriber Badge */}
             {book.is_exclusive && (
                 <div className="absolute top-3 left-3 z-10">
@@ -26,8 +35,13 @@ export default function BookCard({ book, onReserve, onBuyDigital, onReadDigital 
             )}
 
             <div>
-                {/* Cover Banner */}
-                <div className="relative mb-3 aspect-[3/4] w-full overflow-hidden rounded-lg">
+                {/* Cover Banner (links to book details) */}
+                <Link
+                    to={`/books/${book.id}`}
+                    state={{ book }}
+                    aria-label={`View details for ${book.title}`}
+                    className="relative mb-3 block aspect-[3/4] w-full overflow-hidden rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-tan-dark/60"
+                >
                     <BookCover book={book} className="h-full w-full" />
 
                     {/* Stock Status Badge */}
@@ -46,7 +60,7 @@ export default function BookCard({ book, onReserve, onBuyDigital, onReadDigital 
                             </Badge>
                         )}
                     </div>
-                </div>
+                </Link>
 
                 {/* Info */}
                 <div className="space-y-1">
@@ -55,11 +69,17 @@ export default function BookCard({ book, onReserve, onBuyDigital, onReadDigital 
                         <span>ISBN: {book.isbn}</span>
                     </div>
 
-                    <h3 className="text-sm font-bold leading-snug text-bark-900 line-clamp-1">
-                        {book.title}
-                    </h3>
+                    <Link
+                        to={`/books/${book.id}`}
+                        state={{ book }}
+                        className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-tan-dark/60 rounded"
+                    >
+                        <h3 className="text-sm font-bold leading-snug text-bark-900 line-clamp-1 transition-colors group-hover:text-bark-600">
+                            {book.title}
+                        </h3>
+                    </Link>
                     <p className="text-xs text-bark-500">By {book.author}</p>
-                    
+
                     {/* Digital Purchase Pricing */}
                     <div className="mt-2.5 flex items-center justify-between rounded-lg border border-bark-100 bg-cream-light/40 p-2 text-xs">
                         <div>
@@ -80,51 +100,59 @@ export default function BookCard({ book, onReserve, onBuyDigital, onReadDigital 
                 </div>
             </div>
 
-            {/* Actions */}
+            {/* Actions — reserved for members; staff see the catalogue in browse-only mode */}
             <div className="mt-3 flex flex-col gap-1.5 border-t border-bark-100 pt-2.5">
-                <div className="grid grid-cols-2 gap-1.5">
-                    <Button
-                        variant="secondary"
-                        onClick={() => addToCart(book)}
-                        className="py-1.5 text-xs justify-center"
-                        title="Add item to shopping cart"
-                    >
-                        <ShoppingCart size={14} />
-                        <span>Add Cart</span>
-                    </Button>
+                {memberActions ? (
+                    <>
+                        <div className="grid grid-cols-2 gap-1.5">
+                            <Button
+                                variant="secondary"
+                                onClick={() => addToCart(book)}
+                                className="py-1.5 text-xs justify-center"
+                                title="Add item to shopping cart"
+                            >
+                                <ShoppingCart size={14} />
+                                <span>Add Cart</span>
+                            </Button>
 
-                    <Button
-                        variant="primary"
-                        onClick={() => onBuyDigital(book)}
-                        className="py-1.5 text-xs justify-center"
-                    >
-                        <ShoppingBag size={14} />
-                        <span>Buy Now</span>
-                    </Button>
-                </div>
+                            <Button
+                                variant="primary"
+                                onClick={() => onBuyDigital(book)}
+                                className="py-1.5 text-xs justify-center"
+                            >
+                                <ShoppingBag size={14} />
+                                <span>Buy Now</span>
+                            </Button>
+                        </div>
 
-                <div className="grid grid-cols-2 gap-1.5">
-                    <Button
-                        variant="ghost"
-                        onClick={() => onReadDigital(book)}
-                        title="Read E-Book Stream"
-                        className="py-1.5 text-xs border border-bark-100 justify-center"
-                    >
-                        <BookOpen size={14} />
-                        <span>Read</span>
-                    </Button>
+                        <div className="grid grid-cols-2 gap-1.5">
+                            <Button
+                                variant="ghost"
+                                onClick={() => onReadDigital(book)}
+                                title="Read E-Book Stream"
+                                className="py-1.5 text-xs border border-bark-100 justify-center"
+                            >
+                                <BookOpen size={14} />
+                                <span>Read</span>
+                            </Button>
 
-                    <Button
-                        variant="ghost"
-                        onClick={() => onReserve(book)}
-                        disabled={book.is_blocked}
-                        className="py-1.5 text-xs border border-bark-100 justify-center"
-                    >
-                        <Bookmark size={14} className="text-bark-500" />
-                        <span>{isAvailable ? 'Reserve' : 'Queue'}</span>
-                    </Button>
-                </div>
+                            <Button
+                                variant="ghost"
+                                onClick={() => onReserve(book)}
+                                disabled={book.is_blocked}
+                                className="py-1.5 text-xs border border-bark-100 justify-center"
+                            >
+                                <Bookmark size={14} className="text-bark-500" />
+                                <span>{isAvailable ? 'Reserve' : 'Queue'}</span>
+                            </Button>
+                        </div>
+                    </>
+                ) : (
+                    <p className="py-1 text-[10px] font-mono uppercase tracking-wider text-bark-400">
+                        Reservations, cart &amp; e-books are member actions.
+                    </p>
+                )}
             </div>
-        </div>
+        </motion.article>
     );
 }
