@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Contracts\Services\CurrencyConverterServiceInterface;
+use App\Services\CurrencyConverterService;
+
 use App\Contracts\Services\BookAvailabilityServiceInterface;
 use App\Contracts\Services\BorrowLimitServiceInterface;
 use App\Contracts\Services\DigitalRentalServiceInterface;
@@ -38,6 +41,9 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(\App\Contracts\Services\LibrarianAuthServiceInterface::class, \App\Services\LibrarianAuthService::class);
         $this->app->singleton(\App\Services\LibrarianAuthService::class, \App\Services\LibrarianAuthService::class);
+
+        $this->app->singleton(CurrencyConverterServiceInterface::class, CurrencyConverterService::class);
+        $this->app->singleton(CurrencyConverterService::class, CurrencyConverterService::class);
     }
 
     public function boot(): void
