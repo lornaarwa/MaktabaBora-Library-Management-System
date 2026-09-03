@@ -5,17 +5,23 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-bark-50: #f6f1ec;
-  --color-bark-100: #e7dcd2;
-  --color-bark-300: #b99b86;
-  --color-bark-500: #8a6853;
-  --color-bark-700: #64493a;
-  --color-bark-900: #3a2b22;
-  --color-bark: #64493a;
+  /* MaktabaBora brand — deep forest green ramp (bark) */
+  --color-bark-50: #f3f6f0;
+  --color-bark-100: #e2e8db;
+  --color-bark-200: #c5d1c1;
+  --color-bark-300: #9fb3a0;
+  --color-bark-400: #75907a;
+  --color-bark-500: #52705a;
+  --color-bark-600: #33593f;
+  --color-bark-700: #1f4d2e;
+  --color-bark-800: #163a23;
+  --color-bark-900: #0e2a19;
+  --color-bark: #1f4d2e;
 
-  --color-tan: #c9a57c;
-  --color-tan-light: #dcbf9d;
-  --color-tan-dark: #ad8659;
+  /* MaktabaBora brand — gold accent ramp (tan) */
+  --color-tan: #c9a227;
+  --color-tan-light: #e6cd7f;
+  --color-tan-dark: #8a6d12;
 
   --color-olive: #c7cc80;
   --color-olive-light: #dbdfa8;
@@ -28,21 +34,24 @@
   --color-sage-dark: #7f9072;
 
   --color-paper: #fbf7f1;
-  --color-ink: #3a2b22;
+  --color-ink: #0e2a19;
 
-  --shadow-card: 0 1px 2px rgba(58, 43, 34, 0.06), 0 8px 24px -12px rgba(58, 43, 34, 0.18);
-  --shadow-lift: 0 12px 32px -10px rgba(58, 43, 34, 0.28);
+  --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --shadow-card: 0 1px 2px rgba(14, 42, 25, 0.06), 0 8px 24px -12px rgba(14, 42, 25, 0.18);
+  --shadow-lift: 0 12px 32px -10px rgba(14, 42, 25, 0.28);
 }
 
 :root {
-  /* Palette tokens sampled from the brand swatch */
-  --mb-bark: #64493a;
-  --mb-tan: #c9a57c;
+  /* Brand tokens (deep green + gold) */
+  --mb-bark: #1f4d2e;
+  --mb-tan: #c9a227;
   --mb-olive: #c7cc80;
   --mb-cream: #dec8b0;
   --mb-sage: #a9b79e;
   --mb-paper: #fbf7f1;
-  --mb-ink: #3a2b22;
+  --mb-ink: #0e2a19;
 }
 
 html,
@@ -55,7 +64,7 @@ body,
 body {
   background-color: var(--mb-paper) !important;
   color: var(--mb-ink) !important;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -74,15 +83,15 @@ body {
 }
 
 .mb-scroll::-webkit-scrollbar-thumb {
-  background: rgba(100, 73, 58, 0.25);
+  background: rgba(31, 77, 46, 0.25);
   border-radius: 999px;
 }
 
 .mb-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 73, 58, 0.45);
+  background: rgba(31, 77, 46, 0.45);
 }
 
 .mb-grain {
-  background-image: radial-gradient(rgba(100, 73, 58, 0.07) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(31, 77, 46, 0.06) 1px, transparent 1px);
   background-size: 18px 18px;
 }
