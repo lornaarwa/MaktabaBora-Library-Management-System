@@ -8,12 +8,17 @@ import SubscriptionPassModal from '../components/SubscriptionPassModal';
 import DigitalReaderModal from '../components/DigitalReaderModal';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
+import { StatCard } from '../components/ui/StatCard';
+import { StatCardSkeleton, Skeleton } from '../components/ui/Skeleton';
+import BookMiniCard from '../components/BookMiniCard';
 
 export default function MemberDashboard() {
     const { user } = useAuth();
     const [loans, setLoans] = useState([]);
     const [digitalLibrary, setDigitalLibrary] = useState([]);
     const [subscription, setSubscription] = useState(null);
+    const [recommended, setRecommended] = useState([]);
+    const [recommendedLoading, setRecommendedLoading] = useState(true);
     const [loading, setLoading] = useState(true);
 
     // Modals
@@ -25,15 +30,18 @@ export default function MemberDashboard() {
         const fetchDashboardData = async () => {
             setLoading(true);
             try {
-                const [loansRes, subRes, digitalRes] = await Promise.all([
+                const [loansRes, subRes, digitalRes, recsRes] = await Promise.all([
                     api.getLoans().catch(() => ({ data: [] })),
                     api.getSubscriptionStatus().catch(() => ({ data: null })),
                     api.getMyDigitalLibrary().catch(() => ({ data: [] })),
+                    api.getRecommendations().catch(() => ({ data: [] })),
                 ]);
 
                 setLoans(loansRes.data || loansRes || []);
                 setSubscription(subRes.data || null);
                 setDigitalLibrary(digitalRes.data || digitalRes || []);
+                setRecommended(recsRes.data || recsRes || []);
+                setRecommendedLoading(false);
             } catch (err) {
                 // Handled silently
             } finally {
@@ -122,45 +130,73 @@ export default function MemberDashboard() {
 
             {/* Stat Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                <div className="rounded-xl border border-bark-100 bg-paper p-5 space-y-2 shadow-card">
-                    <div className="flex justify-between items-center text-bark-500">
-                        <span className="text-xs font-semibold uppercase tracking-wider font-mono">Active Loans</span>
-                        <div className="p-2 rounded-lg bg-cream-light/60 border border-bark-100 text-bark-700">
-                            <BookOpen className="w-4 h-4" />
-                        </div>
-                    </div>
-                    <span className="text-2xl font-extrabold text-bark-900 block">
-                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : loans.filter(l => l.status === 'active').length}
-                    </span>
-                    <span className="text-[10px] text-bark-500 font-mono">Physical books currently on loan</span>
-                </div>
-
-                <div className="rounded-xl border border-bark-100 bg-paper p-5 space-y-2 shadow-card">
-                    <div className="flex justify-between items-center text-bark-500">
-                        <span className="text-xs font-semibold uppercase tracking-wider font-mono">Digital Entitlements</span>
-                        <div className="p-2 rounded-lg bg-cream-light/60 border border-bark-100 text-bark-700">
-                            <ShoppingBag className="w-4 h-4" />
-                        </div>
-                    </div>
-                    <span className="text-2xl font-extrabold text-bark-900 block">
-                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : digitalLibrary.length}
-                    </span>
-                    <span className="text-[10px] text-bark-500 font-mono">Purchased lifetime e-books</span>
-                </div>
-
-                <div className="rounded-xl border border-bark-100 bg-paper p-5 space-y-2 shadow-card">
-                    <div className="flex justify-between items-center text-bark-500">
-                        <span className="text-xs font-semibold uppercase tracking-wider font-mono">Overdue Items</span>
-                        <div className="p-2 rounded-lg bg-cream-light/60 border border-bark-100 text-bark-700">
-                            <Clock className="w-4 h-4" />
-                        </div>
-                    </div>
-                    <span className="text-2xl font-extrabold text-bark-900 block">
-                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : loans.filter(l => l.status === 'overdue').length}
-                    </span>
-                    <span className="text-[10px] text-bark-500 font-mono">Loans past return due date</span>
-                </div>
+                {loading ? (
+                    <>
+                        <StatCardSkeleton />
+                        <StatCardSkeleton />
+                        <StatCardSkeleton />
+                    </>
+                ) : (
+                    <>
+                        <StatCard
+                            label="Active Loans"
+                            value={loans.filter(l => l.status === 'active').length}
+                            icon={BookOpen}
+                            hint="Physical books currently on loan"
+                            delay={0}
+                        />
+                        <StatCard
+                            label="Digital Entitlements"
+                            value={digitalLibrary.length}
+                            icon={ShoppingBag}
+                            hint="Purchased lifetime e-books"
+                            delay={0.07}
+                        />
+                        <StatCard
+                            label="Overdue Items"
+                            value={loans.filter(l => l.status === 'overdue').length}
+                            icon={Clock}
+                            hint="Loans past return due date"
+                            delay={0.14}
+                        />
+                    </>
+                )}
             </div>
+
+            {/* Recommended For You (content-based) */}
+            {(recommendedLoading || recommended.length > 0) && (
+                <div className="rounded-2xl border border-bark-100 bg-paper p-6 space-y-4 shadow-card">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-base font-bold text-bark-900 flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-tan-dark" /> Recommended For You
+                        </h3>
+                        <Link
+                            to="/catalog"
+                            className="text-xs font-semibold text-bark-500 transition hover:text-bark-900"
+                        >
+                            Browse catalog →
+                        </Link>
+                    </div>
+
+                    {recommendedLoading ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {Array.from({ length: 3 }).map((_, i) => (
+                                <Skeleton key={i} className="h-16 w-full rounded-xl" />
+                            ))}
+                        </div>
+                    ) : recommended.length === 0 ? (
+                        <p className="text-xs text-bark-500 py-4 text-center">
+                            No recommendations yet — borrow a book or explore the catalog to get started.
+                        </p>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                            {recommended.map((book) => (
+                                <BookMiniCard key={book.id} book={book} />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Borrowed Physical Items Table / Cards */}
             <div className="rounded-2xl border border-bark-100 bg-paper p-6 space-y-4 shadow-card">
