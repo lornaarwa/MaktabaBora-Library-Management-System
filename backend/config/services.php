@@ -35,4 +35,25 @@ return [
         ],
     ],
 
+    // Grounded AI Librarian — OpenAI configuration.
+    // Leave OPENAI_API_KEY empty to run in offline mode (grounded SQL retrieval + member context,
+    // no external calls). Set it in .env to enable live GPT responses over the retrieved facts.
+    'openai' => [
+        'api_key' => env('OPENAI_API_KEY'),
+        'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
+        'embedding_model' => env('OPENAI_EMBEDDING_MODEL', 'text-embedding-3-small'),
+        'embedding_batch_size' => (int) env('OPENAI_EMBEDDING_BATCH_SIZE', 64),
+        'max_tokens' => (int) env('OPENAI_MAX_TOKENS', 500),
+    ],
+
+    // Currency conversion for displaying foreign retail prices as an *estimated* KES amount.
+    // Uses the free no-key endpoint https://open.er-api.com/v6/latest (daily-updated rates,
+    // ~1,500 requests/month) fetched once per day and cached server-side.
+    'currency' => [
+        'url' => env('EXCHANGE_RATE_API_URL', 'https://open.er-api.com/v6/latest'),
+        'base' => env('EXCHANGE_RATE_BASE', 'USD'),
+        'cache_ttl_seconds' => (int) env('EXCHANGE_RATE_CACHE_TTL', 86400),
+        'timeout' => (int) env('EXCHANGE_RATE_TIMEOUT', 8),
+    ],
+
 ];
