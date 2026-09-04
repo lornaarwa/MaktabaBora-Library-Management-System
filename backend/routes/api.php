@@ -65,10 +65,15 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
             Route::post('/reservations', [ReservationController::class, 'store'])
                 ->middleware(['check.book_availability', 'check.reservation_availability']);
 
-            // AI Assistant Chatbot Endpoint
+            // Personalized content-based recommendations (grounded in member history)
+            Route::get('/recommendations', [\App\Http\Controllers\BookRecommendationController::class, 'forMember']);
+
+        });            // Similar books (content-based TF-IDF cosine) — available to all authenticated roles
+            Route::get('/books/{book}/similar', [\App\Http\Controllers\BookRecommendationController::class, 'similar']);
+
+            // AI Assistant Chatbot (all authenticated roles — the widget is shown to members, librarians and admins)
             Route::post('/ai/chat', [AiChatbotController::class, 'chat'])
                 ->middleware(['chatbot.cost_limiter']);
-        });
 
         // Librarian Portal Routes
         Route::middleware(['ensure.librarian'])->prefix('librarian')->group(function () {

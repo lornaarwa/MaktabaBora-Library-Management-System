@@ -143,7 +143,7 @@ export default function LibrarianDashboard() {
     const [bookForm, setBookForm] = useState({
         isbn: '', title: '', author: '', publisher: '', genre: 'Software',
         description: '', cover_image_path: '', file_path: '', publication_year: 2026,
-        digital_purchase_price: 50.00, initial_copies: 1
+        digital_purchase_price: 50.00, foreign_price: '', foreign_currency: 'USD', initial_copies: 1
     });
     const [bookSubmitting, setBookSubmitting] = useState(false);
     const [editingBook, setEditingBook] = useState(null);
@@ -259,7 +259,7 @@ export default function LibrarianDashboard() {
             setBookForm({
                 isbn: '', title: '', author: '', publisher: '', genre: 'Software',
                 description: '', cover_image_path: '', file_path: '', publication_year: 2026,
-                digital_purchase_price: 50.00, initial_copies: 1
+                digital_purchase_price: 50.00, foreign_price: '', foreign_currency: 'USD', initial_copies: 1
             });
             fetchAllData();
         } catch (err) {
@@ -922,6 +922,35 @@ export default function LibrarianDashboard() {
                                         />
                                     </div>
 
+                                    <div>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">
+                                            Foreign Retail Price <span className="text-bark-400 font-normal">(optional)</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            value={bookForm.foreign_price}
+                                            onChange={(e) => setBookForm({ ...bookForm, foreign_price: e.target.value })}
+                                            placeholder="e.g. 29.99 — US$ price from Google Books"
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
+                                        />
+                                        <p className="mt-1 text-[10px] text-bark-400">Displayed with an estimated KSh conversion — never the Kenyan retail price.</p>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Foreign Currency</label>
+                                        <select
+                                            value={bookForm.foreign_currency}
+                                            onChange={(e) => setBookForm({ ...bookForm, foreign_currency: e.target.value })}
+                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100"
+                                        >
+                                            <option value="USD">USD — US Dollar</option>
+                                            <option value="GBP">GBP — British Pound</option>
+                                            <option value="EUR">EUR — Euro</option>
+                                        </select>
+                                    </div>
+
                                     <div className="sm:col-span-2">
                                         <label className="block text-xs font-semibold text-bark-700 mb-1">Cover Image URL</label>
                                         <input
@@ -1025,6 +1054,8 @@ export default function LibrarianDashboard() {
                                                                     file_path: b.file_path || '',
                                                                     publication_year: b.publication_year || 2026,
                                                                     digital_purchase_price: b.digital_purchase_price || 50.00,
+                                                                    foreign_price: b.foreign_price || '',
+                                                                    foreign_currency: b.foreign_currency || 'USD',
                                                                     initial_copies: b.total_copies || 1
                                                                 });
                                                             }}

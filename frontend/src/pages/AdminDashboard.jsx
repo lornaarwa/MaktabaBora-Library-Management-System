@@ -34,6 +34,15 @@ export default function AdminDashboard() {
     const [error, setError] = useState(null);
     const [successMsg, setSuccessMsg] = useState(null);
 
+    // ---- Add New Book (catalogue entry) state ----
+    const [addBookForm, setAddBookForm] = useState({
+        isbn: '', title: '', author: '', publisher: '', genre: 'General',
+        description: '', cover_image_path: '', publication_year: new Date().getFullYear(),
+        digital_purchase_price: 50.00, foreign_price: '', foreign_currency: 'USD', initial_copies: 1,
+    });
+    const [addBookSubmitting, setAddBookSubmitting] = useState(false);
+    const [addBookMsg, setAddBookMsg] = useState(null); // { type: 'success' | 'error', text }
+
     // Modal State for General CRUD
     const [modal, setModal] = useState({ type: null, record: null });
     const [formData, setFormData] = useState({});
@@ -136,11 +145,38 @@ export default function AdminDashboard() {
             fetchApiLogs();
         } else if (activeTab === 'membership_tiers') {
             fetchMembershipTiers();
-        } else if (activeTab !== 'overview') {
+        } else if (activeTab !== 'overview' && activeTab !== 'add_librarian' && activeTab !== 'add_book') {
             const targetTable = activeTab === 'users' ? 'users' : activeTab === 'members' ? 'members' : activeTab === 'librarians' ? 'librarians' : activeTab;
             fetchTableData(targetTable);
         }
     }, [activeTab]);
+
+    // ---- Add New Book (catalogue) handler ----
+    const handleAddBook = async (e) => {
+        e.preventDefault();
+        setAddBookMsg(null);
+        setAddBookSubmitting(true);
+        try {
+            const created = await api.createBook({
+                ...addBookForm,
+                digital_purchase_price: parseFloat(addBookForm.digital_purchase_price) || 50.00,
+                foreign_price: addBookForm.foreign_price ? parseFloat(addBookForm.foreign_price) : null,
+                initial_copies: parseInt(addBookForm.initial_copies, 10) || 1,
+                publication_year: parseInt(addBookForm.publication_year, 10) || null,
+            });
+            setSuccessMsg(`Book "${addBookForm.title}" added to the catalogue.`);
+            setAddBookMsg({ type: 'success', text: `"${created?.data?.book?.title || addBookForm.title}" is now live in the catalogue with ${parseInt(addBookForm.initial_copies, 10) || 1} copy/copies.` });
+            setAddBookForm({
+                isbn: '', title: '', author: '', publisher: '', genre: 'General',
+                description: '', cover_image_path: '', publication_year: new Date().getFullYear(),
+                digital_purchase_price: 50.00, foreign_price: '', foreign_currency: 'USD', initial_copies: 1,
+            });
+        } catch (err) {
+            setAddBookMsg({ type: 'error', text: err.message || 'Failed to add the book. Please check the details and try again.' });
+        } finally {
+            setAddBookSubmitting(false);
+        }
+    };
 
     // Handle General CRUD Form Field Change
     const handleFieldChange = (col, val) => {
@@ -385,6 +421,18 @@ export default function AdminDashboard() {
                 </button>
 
                 <button
+                    onClick={() => setActiveTab('add_book')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                        activeTab === 'add_book'
+                            ? 'bg-bark-700 text-cream-light shadow-card'
+                            : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+                    }`}
+                >
+                    <BookOpen className="w-4 h-4" />
+                    <span>Add New Book</span>
+                </button>
+
+                <button
                     onClick={() => setActiveTab('logs')}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                         activeTab === 'logs'
@@ -488,7 +536,202 @@ export default function AdminDashboard() {
                 )}
 
                     {/* Task 2: API Logs & Terminal Activity Page */}
-                    {activeTab === 'logs' && (
+                                    {/* Add New Book (Catalogue) Tab View */}
+                {activeTab === 'add_book' && (
+                    <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm max-w-3xl mx-auto">
+                        <div className="border-b border-bark-100 pb-4">
+                            <h2 className="text-lg font-extrabold text-bark-900 flex items-center gap-2">
+                                <BookOpen className="w-5 h-5 text-tan-dark" /> Add a New Book to the Catalogue
+                            </h2>
+                            <p className="text-xs text-bark-500 mt-1">
+                                Creates a catalogue entry with physical copies and the digital e-book record. ISBN must be unique.
+                            </p>
+                        </div>
+
+                        {addBookMsg && (
+                            <div
+                                role="status"
+                                className={`rounded-xl p-3 text-xs flex items-start gap-2 border ${
+                                    addBookMsg.type === 'success'
+                                        ? 'bg-tan/10 border-tan/40 text-bark-900'
+                                        : 'bg-cream border-[#a8452f]/30 text-[#8c3620]'
+                                }`}
+                            >
+                                {addBookMsg.type === 'success'
+                                    ? <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+                                    : <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />}
+                                <span>{addBookMsg.text}</span>
+                            </div>
+                        )}
+
+                        <form onSubmit={handleAddBook} className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">ISBN Number *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="e.g. 978-0132350884"
+                                        value={addBookForm.isbn}
+                                        onChange={(e) => setAddBookForm({ ...addBookForm, isbn: e.target.value })}
+                                        className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2.5 text-xs text-bark-900 font-medium focus:ring-2 focus:ring-tan-dark"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Initial Copies *</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        required
+                                        value={addBookForm.initial_copies}
+                                        onChange={(e) => setAddBookForm({ ...addBookForm, initial_copies: e.target.value })}
+                                        className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2.5 text-xs text-bark-900 font-medium focus:ring-2 focus:ring-tan-dark"
+                                    />
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                    <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Book Title *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="e.g. Clean Code"
+                                        value={addBookForm.title}
+                                        onChange={(e) => setAddBookForm({ ...addBookForm, title: e.target.value })}
+                                        className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2.5 text-xs text-bark-900 font-medium focus:ring-2 focus:ring-tan-dark"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Author *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="e.g. Robert C. Martin"
+                                        value={addBookForm.author}
+                                        onChange={(e) => setAddBookForm({ ...addBookForm, author: e.target.value })}
+                                        className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2.5 text-xs text-bark-900 font-medium focus:ring-2 focus:ring-tan-dark"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Publisher</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. Prentice Hall"
+                                        value={addBookForm.publisher}
+                                        onChange={(e) => setAddBookForm({ ...addBookForm, publisher: e.target.value })}
+                                        className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2.5 text-xs text-bark-900 font-medium focus:ring-2 focus:ring-tan-dark"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Genre / Category *</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="e.g. Software, Fiction, History"
+                                        value={addBookForm.genre}
+                                        onChange={(e) => setAddBookForm({ ...addBookForm, genre: e.target.value })}
+                                        className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2.5 text-xs text-bark-900 font-medium focus:ring-2 focus:ring-tan-dark"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Publication Year</label>
+                                    <input
+                                        type="number"
+                                        min="1000"
+                                        max="2100"
+                                        value={addBookForm.publication_year}
+                                        onChange={(e) => setAddBookForm({ ...addBookForm, publication_year: e.target.value })}
+                                        className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2.5 text-xs text-bark-900 font-medium focus:ring-2 focus:ring-tan-dark"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Digital Purchase Price (KES)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={addBookForm.digital_purchase_price}
+                                        onChange={(e) => setAddBookForm({ ...addBookForm, digital_purchase_price: e.target.value })}
+                                        className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2.5 text-xs text-bark-900 font-medium focus:ring-2 focus:ring-tan-dark"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Foreign Retail Price (optional)</label>
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="e.g. 29.99"
+                                        value={addBookForm.foreign_price}
+                                        onChange={(e) => setAddBookForm({ ...addBookForm, foreign_price: e.target.value })}
+                                        className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2.5 text-xs text-bark-900 font-medium focus:ring-2 focus:ring-tan-dark"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Foreign Currency</label>
+                                    <select
+                                        value={addBookForm.foreign_currency}
+                                        onChange={(e) => setAddBookForm({ ...addBookForm, foreign_currency: e.target.value })}
+                                        className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2.5 text-xs text-bark-900 font-medium focus:ring-2 focus:ring-tan-dark"
+                                    >
+                                        <option value="USD">USD — US Dollar</option>
+                                        <option value="GBP">GBP — British Pound</option>
+                                        <option value="EUR">EUR — Euro</option>
+                                    </select>
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                    <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Cover Image URL</label>
+                                    <input
+                                        type="text"
+                                        placeholder="https://images.unsplash.com/photo-..."
+                                        value={addBookForm.cover_image_path}
+                                        onChange={(e) => setAddBookForm({ ...addBookForm, cover_image_path: e.target.value })}
+                                        className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2.5 text-xs text-bark-900 font-medium focus:ring-2 focus:ring-tan-dark"
+                                    />
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                    <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">Description</label>
+                                    <textarea
+                                        rows="3"
+                                        placeholder="Brief overview of the book's content..."
+                                        value={addBookForm.description}
+                                        onChange={(e) => setAddBookForm({ ...addBookForm, description: e.target.value })}
+                                        className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2.5 text-xs text-bark-900 font-medium focus:ring-2 focus:ring-tan-dark"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-3 justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => setActiveTab('books')}
+                                    className="px-4 py-2.5 rounded-xl border border-bark-100 bg-paper text-bark-700 font-bold text-xs transition hover:bg-cream-light/60"
+                                >
+                                    View Books Table
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={addBookSubmitting}
+                                    className="px-6 py-2.5 rounded-xl bg-bark-700 hover:bg-bark-800 text-cream-light font-bold text-xs transition-all shadow-card flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    {addBookSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <BookOpen className="w-4 h-4" />}
+                                    <span>Add Book to Catalogue</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                )}
+
+                {activeTab === 'logs' && (
                         <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-6 shadow-sm">
                             
                             {/* Header & Mini Navbar */}

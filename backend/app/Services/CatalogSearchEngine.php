@@ -9,15 +9,20 @@ use Illuminate\Database\Eloquent\Builder;
 
 class CatalogSearchEngine implements CatalogSearchEngineInterface
 {
+    /**
+     * Hybrid search: keyword recall (SQL LIKE) + semantic ranking (TF-IDF cosine)
+     * via CatalogRetrievalService. Response shape is unchanged.
+     */
     public function search(array $params, int $perPage = 15): LengthAwarePaginator
     {
-        return $this->buildQuery($params)->paginate($perPage);
+        return app(CatalogRetrievalService::class)->search($params, $perPage);
     }
 
     public function searchByQuery(string $query, int $perPage = 15): LengthAwarePaginator
     {
         return $this->search(['q' => $query], $perPage);
     }
+
 
     public function buildQuery(array $params): Builder
     {

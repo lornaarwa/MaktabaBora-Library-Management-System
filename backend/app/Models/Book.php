@@ -25,12 +25,15 @@ class Book extends Model
         'is_blocked',
         'is_exclusive',
         'digital_purchase_price',
+        'foreign_price',
+        'foreign_currency',
     ];
 
     protected $casts = [
         'is_blocked' => 'boolean',
         'is_exclusive' => 'boolean',
         'digital_purchase_price' => 'float',
+        'foreign_price' => 'float',
         'publication_year' => 'integer',
         'total_copies' => 'integer',
         'available_copies' => 'integer',

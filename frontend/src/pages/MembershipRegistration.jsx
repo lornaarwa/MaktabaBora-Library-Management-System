@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import { motion } from 'framer-motion';
+import { Brand } from '../components/ui/Brand';
 import {
   CreditCard,
   CheckCircle2,
@@ -102,11 +104,18 @@ export default function MembershipRegistration() {
     setGuestAuthSubmitting(true);
     setGuestAuthError(null);
 
+    // Guests arriving from a homepage book card carry a ?next= destination;
+    // after authenticating we send them straight to that book.
+    const rawNext = new URLSearchParams(location.search).get('next');
+    const next = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : null;
+
     try {
       if (guestAuthMode === 'signin') {
         const loggedUser = await login(guestEmail, guestPassword);
-        if (loggedUser.role === 'admin') navigate('/admin');
+        if (next) navigate(next);
+        else if (loggedUser.role === 'admin') navigate('/admin');
         else if (loggedUser.role === 'librarian') navigate('/librarian');
+        else navigate('/member');
       } else {
         const regUser = await register({
           name: guestName,
@@ -115,6 +124,7 @@ export default function MembershipRegistration() {
           role: 'member',
         });
         setUser(regUser);
+        if (next) navigate(next);
       }
     } catch (err) {
       setGuestAuthError(err.message || 'Authentication failed. Please verify your credentials.');
@@ -352,11 +362,17 @@ export default function MembershipRegistration() {
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8 space-y-10">
       
       {/* ░░░ HERO HEADER ░░░ */}
-      <div className="text-center max-w-2xl mx-auto space-y-4">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+        className="text-center max-w-2xl mx-auto space-y-4"
+      >
         <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-bark-700 text-cream-light text-[11px] font-bold uppercase tracking-widest shadow-sm">
           {isAuthRoute ? <LogIn className="w-3.5 h-3.5 text-tan" /> : <Crown className="w-3.5 h-3.5 text-tan" />}
           <span>{isAuthRoute ? 'MaktabaBora Account Portal' : 'MaktabaBora Membership Tiers'}</span>
         </div>
+        <Brand variant="icon" className="mx-auto h-24 w-24 sm:h-28 sm:w-28 rounded-2xl border border-bark-100 bg-paper shadow-card" />
         <h1 className="text-3xl sm:text-5xl font-extrabold text-bark-900 tracking-tight leading-tight">
           {isAuthRoute ? 'Sign In or Register Account' : (isSubscribed ? 'Manage & Upgrade Membership' : 'Select Your Membership Tier')}
         </h1>
@@ -367,7 +383,7 @@ export default function MembershipRegistration() {
               ? 'View your active membership status or upgrade to a higher privilege tier via instant M-Pesa STK Push.'
               : 'Choose a pass tailored to your reading goals. Complete instant activation via M-Pesa STK Push.')}
         </p>
-      </div>
+      </motion.div>
 
       {/* ░░░ LOGGED-IN MEMBER ACCOUNT BADGE ░░░ */}
       {user ? (
@@ -401,9 +417,7 @@ export default function MembershipRegistration() {
       ) : (
         <div id="guest-auth-section" className="rounded-3xl border border-bark-100 bg-paper p-6 sm:p-8 space-y-6 shadow-lift max-w-xl mx-auto">
           <div className="text-center space-y-2">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-bark-700 text-cream-light shadow-sm">
-              <BookOpen className="w-6 h-6" />
-            </div>
+            <Brand variant="mark" className="mx-auto h-14 w-14 rounded-2xl" />
             <h2 className="text-xl font-extrabold text-bark-900">
               {guestAuthMode === 'signin' ? 'Sign In to MaktabaBora' : 'Create Member Account'}
             </h2>

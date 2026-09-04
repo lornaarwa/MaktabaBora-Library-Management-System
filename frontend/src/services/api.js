@@ -94,6 +94,8 @@ export const api = {
     searchCatalog: (query = '', genre = '') => apiClient.get(`/catalog/search?q=${encodeURIComponent(query)}&genre=${encodeURIComponent(genre)}`),
     getBooks: () => apiClient.get('/books'),
     getBookDetails: (id) => apiClient.get(`/books/${id}`),
+    getSimilarBooks: (id) => apiClient.get(`/books/${id}/similar`),
+    getRecommendations: () => apiClient.get('/recommendations'),
 
     // Subscriptions
     checkoutSubscription: (data) => apiClient.post('/subscriptions/checkout', data),

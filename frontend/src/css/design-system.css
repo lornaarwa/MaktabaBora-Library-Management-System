@@ -1,23 +1,23 @@
-/* Smart Library Design System - Warm Literary & Paper Theme */
+/* MaktabaBora Design System - Deep Green & Gold Library Theme */
 :root {
-  --primary: #64493a;
-  --primary-dark: #3a2b22;
-  --primary-light: #8a6853;
-  --primary-lightest: #e7dcd2;
+  --primary: #1f4d2e;
+  --primary-dark: #0e2a19;
+  --primary-light: #52705a;
+  --primary-lightest: #e2e8db;
 
-  --tan: #c9a57c;
+  --tan: #c9a227;
   --olive: #c7cc80;
   --cream: #dec8b0;
   --sage: #a9b79e;
   --paper: #fbf7f1;
-  --ink: #3a2b22;
+  --ink: #0e2a19;
 
   --success: #c7cc80;
-  --warning: #c9a57c;
+  --warning: #c9a227;
   --error: #a8452f;
   --info: #a9b79e;
 
-  --font-primary: 'Inter', system-ui, sans-serif;
+  --font-primary: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 
@@ -48,14 +48,14 @@ body {
 
 .button-primary:hover:not(:disabled) {
   background: var(--primary-dark);
-  box-shadow: 0 8px 24px -12px rgba(58, 43, 34, 0.28);
+  box-shadow: 0 8px 24px -12px rgba(14, 42, 25, 0.28);
 }
 
 .button-secondary {
   background: transparent;
   padding: 10px 20px;
   border-radius: 8px;
-  border: 1px solid #e7dcd2;
+  border: 1px solid #e2e8db;
   color: var(--ink);
   font-size: 14px;
   font-weight: 600;
@@ -69,7 +69,7 @@ body {
 
 .input-field {
   padding: 10px 14px;
-  border: 1px solid #e7dcd2;
+  border: 1px solid #e2e8db;
   border-radius: 8px;
   font-size: 14px;
   background: var(--paper);
