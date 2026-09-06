@@ -14,6 +14,7 @@ import {
   UserPlusIcon,
   ShoppingCartIcon,
   InfoIcon,
+  PhoneIcon,
   UserIcon,
   ShieldCheckIcon as ShieldNavIcon,
   SunIcon,
