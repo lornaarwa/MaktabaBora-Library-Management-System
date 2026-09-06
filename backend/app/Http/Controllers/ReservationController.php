@@ -19,19 +19,23 @@ class ReservationController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $member = $request->user()->member;
+        $user = $request->user();
+        $member = $user->member ?? \App\Models\Member::where('user_id', $user->id)->first() ?? \App\Models\Member::where('email', $user->email)->first();
 
-        if (!$member) {
+        if (!$member && $user->role !== 'admin') {
             return response()->json([
                 'status' => 'success',
                 'data' => [],
             ]);
         }
 
-        $reservations = Reservation::where('member_id', $member->id)
-            ->with(['book'])
-            ->latest()
-            ->get();
+        $query = Reservation::with(['book']);
+
+        if ($member) {
+            $query->where('member_id', $member->id);
+        }
+
+        $reservations = $query->latest()->get();
 
         return response()->json([
             'status' => 'success',
@@ -54,5 +58,25 @@ class ReservationController extends Controller
             'message' => 'Book reservation queue hold placed successfully',
             'reservation' => $reservation->load('book'),
         ], 201);
+    }
+
+    public function destroy(Request $request, Reservation $reservation): JsonResponse
+    {
+        $user = $request->user();
+        $member = $user->member ?? \App\Models\Member::where('user_id', $user->id)->first();
+
+        if ($user->role !== 'admin' && (!$member || $reservation->member_id !== $member->id)) {
+            return response()->json([
+                'error' => 'Unauthorized',
+                'message' => 'You do not have permission to cancel this reservation.',
+            ], 403);
+        }
+
+        $this->reservationService->cancelReservation($reservation);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Book reservation hold cancelled successfully.',
+        ]);
     }
 }

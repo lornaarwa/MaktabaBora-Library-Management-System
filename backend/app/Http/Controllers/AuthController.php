@@ -38,6 +38,7 @@ class AuthController extends Controller
             'member_number' => 'MEM-' . strtoupper(bin2hex(random_bytes(3))),
             'membership_tier' => 'general',
             'borrow_limit' => 3,
+            'is_subscribed' => true,
         ]);
 
         $token = $this->authSessionService->generateToken($user);

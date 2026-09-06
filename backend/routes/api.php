@@ -66,6 +66,7 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
             Route::get('/reservations', [ReservationController::class, 'index']);
             Route::post('/reservations', [ReservationController::class, 'store'])
                 ->middleware(['check.book_availability', 'check.reservation_availability']);
+            Route::delete('/reservations/{reservation}', [ReservationController::class, 'destroy']);
 
             // Personalized content-based recommendations (grounded in member history)
             Route::get('/recommendations', [\App\Http\Controllers\BookRecommendationController::class, 'forMember']);

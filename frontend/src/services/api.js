@@ -115,6 +115,7 @@ export const api = {
     getLoans: () => apiClient.get('/loans'),
     reserveBook: (bookId) => apiClient.post('/reservations', { book_id: bookId }),
     getMyReservations: () => apiClient.get('/reservations'),
+    cancelReservation: (id) => apiClient.delete(`/reservations/${id}`),
     payFineDaraja: (fineId, data) => apiClient.post(`/fines/${fineId}/pay-daraja`, data),
 
     // Librarian Operations

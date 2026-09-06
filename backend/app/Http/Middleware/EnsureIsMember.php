@@ -20,12 +20,21 @@ class EnsureIsMember
         }
 
         if ($user->role === 'member') {
-            $member = $user->member;
-            if (!$member || !$member->is_subscribed) {
+            $member = $user->member ?? \App\Models\Member::where('user_id', $user->id)->first();
+            if (!$member) {
+                $member = \App\Models\Member::create([
+                    'user_id' => $user->id,
+                    'member_number' => 'MEM-' . strtoupper(bin2hex(random_bytes(3))),
+                    'membership_tier' => 'standard',
+                    'borrow_limit' => 5,
+                    'is_subscribed' => true,
+                ]);
+            }
+
+            if ($member->is_banned) {
                 return response()->json([
-                    'error' => 'Active Membership Required',
-                    'message' => 'Only users with an active membership can borrow books, reserve books, and access member services. Please register your membership.',
-                    'requires_membership' => true,
+                    'error' => 'Account Suspended',
+                    'message' => 'Your library account is currently suspended: ' . ($member->ban_reason ?? 'Contact library administrator.'),
                 ], 403);
             }
         }

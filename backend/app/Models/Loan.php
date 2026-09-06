@@ -28,6 +28,33 @@ class Loan extends Model
         'renewal_count' => 'integer',
     ];
 
+    protected $appends = [
+        'book_title',
+        'barcode',
+        'fine_amount',
+        'fine_id',
+    ];
+
+    public function getBookTitleAttribute(): ?string
+    {
+        return $this->bookCopy?->book?->title;
+    }
+
+    public function getBarcodeAttribute(): ?string
+    {
+        return $this->bookCopy?->barcode;
+    }
+
+    public function getFineAmountAttribute(): float
+    {
+        return (float) ($this->fine?->balance ?? $this->fine?->amount ?? 0);
+    }
+
+    public function getFineIdAttribute(): ?int
+    {
+        return $this->fine?->id;
+    }
+
     public function bookCopy(): BelongsTo
     {
         return $this->belongsTo(BookCopy::class);
