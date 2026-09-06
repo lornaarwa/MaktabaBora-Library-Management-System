@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './css/index.css';
+import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LibraryProvider, useLibrary } from './context/LibraryContext';
 import { AppShell } from './components/layout/AppShell';
@@ -127,13 +128,15 @@ function Shell() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <LibraryProvider>
-        <BrowserRouter>
-          <Shell />
-        </BrowserRouter>
-      </LibraryProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <LibraryProvider>
+          <BrowserRouter>
+            <Shell />
+          </BrowserRouter>
+        </LibraryProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
