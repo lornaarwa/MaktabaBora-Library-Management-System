@@ -8,7 +8,7 @@ Track implementation progress across phases and subphases with strict accountabi
 - **Phase 1: Digital Access & Reader Flow Fix** — 🟢 **COMPLETED** (Commits `1f5fccb`, `7053eeb`)
 - **Phase 2: Open Library Integration & Seeding** — 🟢 **COMPLETED** (Commits `6f95a48`, `7bf815d`)
 - **Phase 4: Reader Overhaul, Full Book Storage, Dynamic Models & Polish** — 🟢 **COMPLETED** (Commits `4fe4c72`, `c7d4c39`, `92639ba`, `f881261`, `3d31497`)
-- **Phase 5: Scroll Mode Distinctive Sheets, Top Chapter Nav & 20-Book Multi-Genre Expansion** — 🟢 **COMPLETED** (Commits `8fd9a8b`, `87d22bc`)
+- **Phase 5: Scroll Mode Distinctive Sheets, Top Chapter Nav & 20-Book Multi-Genre Expansion** — 🟢 **COMPLETED** (Commits `8fd9a8b`, `87d22bc`, `6f2b40c`)
 
 ---
 
@@ -264,4 +264,21 @@ Track implementation progress across phases and subphases with strict accountabi
     git add backend/app/Console/Commands/SeedExpandedLibraryBooksCommand.php
     git commit -m "feat(catalog): seed 20 new books across 14 genres with copies and multi-chapter reading material"
     ```
+
+- [x] **Sub-phase 5.3: Gemini Model Upgrade & 404 Auto-Migration**
+  - **Goal**: Resolve Gemini API 404 error (`models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent`) caused by Google retiring the legacy 1.5 flash model.
+  - **Key Changes**:
+    - In `AiLibrarianManagerService.php`:
+      - Upgraded default model from `gemini-1.5-flash` to active stable `gemini-2.5-flash` (and fallback models `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.0-flash`).
+      - Added model string sanitization (strips duplicate `models/` prefixes).
+      - Added auto-migration in `getSettings()` to convert any legacy `gemini-1.5-flash` configurations to `gemini-2.5-flash`.
+      - Added automatic 404 error recovery in `callGemini()`: if a model returns 404, it immediately retries with `gemini-2.5-flash` and persists the working model to settings.
+      - Added SSL verification bypass in `fetchAvailableModels()` for reliable Windows cURL discovery.
+    - Updated `AdminDashboard.jsx` default state and `storage/app/ai_settings.json` to default to `gemini-2.5-flash`.
+  - **Commit Hook 16**: `6f2b40c`
+    ```bash
+    git add backend/app/Services/AiLibrarianManagerService.php frontend/src/pages/AdminDashboard.jsx backend/storage/app/ai_settings.json
+    git commit -m "fix(ai): upgrade Gemini default model to gemini-2.5-flash and add auto-migration with 404 fallback"
+    ```
+
 
