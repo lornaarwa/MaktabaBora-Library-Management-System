@@ -85,7 +85,7 @@ export default function PublicCatalog() {
         }
         try {
             await api.reserveBook(book.id);
-            alert(`Hold reservation placed successfully for "${book.title}"!`);
+            alert(`Hold reservation placed successfully for "${book.title}"! You can track your physical collection status in My Library.`);
         } catch (err) {
             alert(err.message || 'Could not place reservation.');
         }
@@ -226,7 +226,6 @@ export default function PublicCatalog() {
                             book={book}
                             index={index}
                             memberActions={user?.role === 'member'}
-                            onReadDigital={handleReadDigital}
                             onBuyDigital={(b) => setDarajaModal({ isOpen: true, type: 'digital', item: b })}
                             onReserve={handleReserve}
                         />

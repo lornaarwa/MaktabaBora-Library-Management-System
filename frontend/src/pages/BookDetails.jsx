@@ -112,7 +112,7 @@ export default function BookDetails() {
     setReserving(true);
     try {
       await api.reserveBook(target.id);
-      alert(`Hold reservation placed successfully for "${target.title}"!`);
+      alert(`Hold reservation placed successfully for "${target.title}"! You can track your physical collection status in My Library.`);
     } catch (err) {
       alert(err.message || 'Could not place reservation.');
     } finally {
@@ -374,7 +374,7 @@ export default function BookDetails() {
                   <ShoppingCart className="h-4 w-4" /> Add to Cart
                 </Button>
                 <Button variant="primary" onClick={() => setDarajaModal({ isOpen: true, type: 'digital', item: book })}>
-                  <ShoppingBag className="h-4 w-4" /> Buy Now
+                  <ShoppingBag className="h-4 w-4" /> Buy E-Book
                 </Button>
               </div>
             </div>
@@ -387,20 +387,18 @@ export default function BookDetails() {
                   : 'Join Pro Perks for 20% off every digital title.'}
               </p>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" onClick={() => handleReadDigital(book)} className="border border-bark-100">
-                  <BookOpen className="h-4 w-4" /> Read Sample / Stream
-                </Button>
                 <Button
                   variant="outline"
                   onClick={() => handleReserve(book)}
                   disabled={book.is_blocked || reserving}
+                  className="font-medium"
                 >
                   {reserving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Bookmark className="h-4 w-4" />
                   )}
-                  {isAvailable ? 'Reserve Copy' : 'Join Hold Queue'}
+                  {isAvailable ? 'Reserve for Physical Collection' : 'Queue for Physical Collection'}
                 </Button>
               </div>
             </div>
