@@ -57,8 +57,8 @@ PROMPT;
                 'gemini' => [
                     'name' => 'Google Gemini',
                     'api_key' => env('GEMINI_API_KEY', ''),
-                    'model' => 'gemini-1.5-flash',
-                    'available_models' => ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'],
+                    'model' => 'gemini-2.5-flash',
+                    'available_models' => ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'],
                 ],
                 'openai' => [
                     'name' => 'OpenAI',
@@ -107,7 +107,17 @@ PROMPT;
 
         // Merge defaults to handle missing keys gracefully
         $defaults = $this->getDefaultSettings();
-        return array_replace_recursive($defaults, $decoded);
+        $merged = array_replace_recursive($defaults, $decoded);
+
+        // Auto-migrate retired gemini models in active configuration
+        if (isset($merged['providers']['gemini']['model']) && 
+            ($merged['providers']['gemini']['model'] === 'gemini-1.5-flash' || $merged['providers']['gemini']['model'] === 'gemini-1.5-pro')) {
+            $merged['providers']['gemini']['model'] = 'gemini-2.5-flash';
+            $merged['providers']['gemini']['available_models'] = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'];
+            $this->saveSettings($merged);
+        }
+
+        return $merged;
     }
 
     /**
@@ -286,7 +296,7 @@ PROMPT;
 
         if (empty(trim($key))) {
             $currentModels = $providerConfig['available_models'] ?? match ($provider) {
-                'gemini' => ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'],
+                'gemini' => ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'],
                 'openai' => ['gpt-4o', 'gpt-4o-mini', 'o1-mini', 'o3-mini', 'gpt-3.5-turbo'],
                 'anthropic' => ['claude-3-7-sonnet-20250219', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229'],
                 default => ['default'],
@@ -302,9 +312,11 @@ PROMPT;
             $models = [];
             switch ($provider) {
                 case 'gemini':
-                    $res = Http::timeout(10)->get("https://generativelanguage.googleapis.com/v1beta/models", [
-                        'key' => $key,
-                    ]);
+                    $res = Http::withOptions(['verify' => false, 'version' => 1.1])
+                        ->timeout(15)
+                        ->get("https://generativelanguage.googleapis.com/v1beta/models", [
+                            'key' => $key,
+                        ]);
                     if ($res->successful()) {
                         $items = $res->json('models') ?? [];
                         foreach ($items as $item) {
@@ -322,7 +334,10 @@ PROMPT;
                     break;
 
                 case 'openai':
-                    $res = Http::withToken($key)->timeout(10)->get('https://api.openai.com/v1/models');
+                    $res = Http::withOptions(['verify' => false, 'version' => 1.1])
+                        ->withToken($key)
+                        ->timeout(15)
+                        ->get('https://api.openai.com/v1/models');
                     if ($res->successful()) {
                         $items = $res->json('data') ?? [];
                         foreach ($items as $item) {
@@ -338,10 +353,13 @@ PROMPT;
                     break;
 
                 case 'anthropic':
-                    $res = Http::withHeaders([
-                        'x-api-key' => $key,
-                        'anthropic-version' => '2023-06-01',
-                    ])->timeout(10)->get('https://api.anthropic.com/v1/models');
+                    $res = Http::withOptions(['verify' => false, 'version' => 1.1])
+                        ->withHeaders([
+                            'x-api-key' => $key,
+                            'anthropic-version' => '2023-06-01',
+                        ])
+                        ->timeout(15)
+                        ->get('https://api.anthropic.com/v1/models');
 
                     if ($res->successful()) {
                         $items = $res->json('data') ?? [];
@@ -461,7 +479,13 @@ PROMPT;
      */
     protected function callGemini(string $userPrompt, string $systemPrompt, string $apiKey, string $model): array
     {
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
+        $cleanModel = preg_replace('#^models/#', '', trim($model));
+        if (empty($cleanModel) || $cleanModel === 'gemini-1.5-flash' || $cleanModel === 'gemini-1.5-pro') {
+            // Auto-upgrade retired 1.5 versions to current stable 2.5 flash
+            $cleanModel = 'gemini-2.5-flash';
+        }
+
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$cleanModel}:generateContent?key={$apiKey}";
 
         $payload = [
             'contents' => [
@@ -484,6 +508,23 @@ PROMPT;
             ->post($url, $payload);
 
         if (!$response->successful()) {
+            // If 404 indicating model is retired or not found, auto-fallback to gemini-2.5-flash
+            if ($response->status() === 404 && $cleanModel !== 'gemini-2.5-flash') {
+                Log::info("Gemini model '{$cleanModel}' returned 404, automatically falling back to gemini-2.5-flash");
+                $fallbackResult = $this->callGemini($userPrompt, $systemPrompt, $apiKey, 'gemini-2.5-flash');
+                if ($fallbackResult['success'] ?? false) {
+                    // Save the working model into settings
+                    try {
+                        $settings = $this->getSettings();
+                        $settings['providers']['gemini']['model'] = 'gemini-2.5-flash';
+                        $this->saveSettings($settings);
+                    } catch (\Throwable $e) {
+                        // ignore
+                    }
+                    return $fallbackResult;
+                }
+            }
+
             $err = $response->json('error.message') ?? $response->body();
             return [
                 'success' => false,
@@ -501,7 +542,7 @@ PROMPT;
             'text' => $text,
             'tokens' => $tokens,
             'provider' => 'gemini',
-            'model' => $model,
+            'model' => $cleanModel,
         ];
     }
 

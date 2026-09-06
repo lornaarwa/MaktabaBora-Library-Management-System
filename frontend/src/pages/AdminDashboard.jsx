@@ -94,7 +94,7 @@ export default function AdminDashboard() {
     const [aiSettings, setAiSettings] = useState({
         active_provider: 'gemini',
         providers: {
-            gemini: { name: 'Google Gemini', model: 'gemini-1.5-flash', available_models: ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'], has_key: false, masked_key: '' },
+            gemini: { name: 'Google Gemini', model: 'gemini-2.5-flash', available_models: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'], has_key: false, masked_key: '' },
             openai: { name: 'OpenAI', model: 'gpt-4o-mini', available_models: ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo'], has_key: false, masked_key: '' },
             anthropic: { name: 'Anthropic Claude', model: 'claude-3-5-sonnet-20241022', available_models: ['claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307'], has_key: false, masked_key: '' },
             offline: { name: 'Offline Grounded Engine', model: 'deterministic-catalog-engine', available_models: ['deterministic-catalog-engine'], has_key: true, masked_key: '' },
