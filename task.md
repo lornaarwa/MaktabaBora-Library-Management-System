@@ -8,6 +8,7 @@ Track implementation progress across phases and subphases with strict accountabi
 - **Phase 1: Digital Access & Reader Flow Fix** — 🟢 **COMPLETED** (Commits `1f5fccb`, `7053eeb`)
 - **Phase 2: Open Library Integration & Seeding** — 🟢 **COMPLETED** (Commits `6f95a48`, `7bf815d`)
 - **Phase 4: Reader Overhaul, Full Book Storage, Dynamic Models & Polish** — 🟢 **COMPLETED** (Commits `4fe4c72`, `c7d4c39`, `92639ba`, `f881261`, `3d31497`)
+- **Phase 5: Scroll Mode Distinctive Sheets, Top Chapter Nav & 20-Book Multi-Genre Expansion** — 🟢 **COMPLETED** (Commits `8fd9a8b`, `87d22bc`)
 
 ---
 
@@ -214,3 +215,53 @@ Track implementation progress across phases and subphases with strict accountabi
     git add backend/app/Console/Commands/SeedFullBookContentCommand.php frontend/src/components/DigitalReaderModal.jsx
     git commit -m "feat(reader): seed unabridged books from Gutenberg and implement true page-by-page reader pagination"
     ```
+
+---
+
+## Phase 5: Scroll Mode Distinctive Sheets, Top Chapter Nav & 20-Book Multi-Genre Expansion
+- [x] **Sub-phase 5.1: Reader Scroll Mode Distinctive Sheets & Top Chapter Navigation**
+  - **Goal**: In continuous scroll mode, render each page as an individual physical paper sheet/card with individual headers, footers, and dynamic scroll tracking so users know their exact page, and add direct chapter navigation to the top reader ribbon.
+  - **Key Changes**:
+    - In `DigitalReaderModal.jsx`:
+      - **Top-Bar Chapter Navigation**: Added `handlePrevChapter` and `handleNextChapter` alongside a custom styled Chapter `<select>` dropdown in the top control ribbon right next to Flip/Scroll, Contents, and Search.
+      - **Distinctive Page Cards in Scroll Mode**: Instead of a continuous text blob, mapped each page into an individual physical sheet (`.reader-page-card`) with rounded borders, theme-aware elevation/shadows, top header (`{title} · Ch. X · Page Y of Z`), and bottom footer (`— Page Y of Z —` with global book page counter).
+      - **Dynamic Scroll Observer**: Added an `IntersectionObserver` observing `.reader-page-card` elements to update `currentPageInChapter` and the top progress bar in real-time as the user scrolls through the page sheets.
+  - **Commit Hook 14**: `8fd9a8b`
+    ```bash
+    git add frontend/src/components/DigitalReaderModal.jsx
+    git commit -m "feat(reader): add top-bar chapter navigation and distinctive page sheets in scroll mode"
+    ```
+
+- [x] **Sub-phase 5.2: 20-Book Multi-Genre Catalog Seeding**
+  - **Goal**: Seed 20 additional high-quality books across 14 distinct genres with physical copies, barcodes, rack locations, and readable multi-chapter structured content.
+  - **Key Changes**:
+    - Created `backend/app/Console/Commands/SeedExpandedLibraryBooksCommand.php` (`php artisan books:seed-expanded-library --force`).
+    - Added 20 diverse books across 14 genres:
+      - *Frankenstein* (Science Fiction / Gothic)
+      - *The Adventures of Sherlock Holmes* (Mystery / Detective)
+      - *Treasure Island* (Adventure)
+      - *Dracula* (Horror / Gothic)
+      - *The Picture of Dorian Gray* (Classic / Philosophy)
+      - *The Republic* by Plato (Philosophy)
+      - *Meditations* by Marcus Aurelius (Philosophy / Stoicism)
+      - *The Art of War* by Sun Tzu (History / Military Strategy)
+      - *The Time Machine* by H.G. Wells (Science Fiction)
+      - *The Strange Case of Dr. Jekyll and Mr. Hyde* (Mystery / Thriller)
+      - *Sense and Sensibility* by Jane Austen (Romance / Classic)
+      - *The Metamorphosis* by Franz Kafka (Psychological Fiction)
+      - *The Autobiography of Benjamin Franklin* (Biography)
+      - *The Wealth of Nations* by Adam Smith (Economics / Business)
+      - *A Tale of Two Cities* by Charles Dickens (Historical Fiction)
+      - *The Odyssey* by Homer (Poetry / Mythology)
+      - *Artificial Intelligence: A Modern Approach* (Technology / AI)
+      - *Zero to One: Notes on Startups* (Business / Innovation)
+      - *Deep Work* by Cal Newport (Productivity / Self-Help)
+      - *A Brief History of Time* by Stephen Hawking (Astrophysics / Science)
+    - Automatically generated physical `BookCopy` records with barcodes (`BC-...`) and racks (`Rack-1` to `Rack-10`).
+    - Seeded full multi-chapter readable content into `books.file_path` for every book.
+  - **Commit Hook 15**: `87d22bc`
+    ```bash
+    git add backend/app/Console/Commands/SeedExpandedLibraryBooksCommand.php
+    git commit -m "feat(catalog): seed 20 new books across 14 genres with copies and multi-chapter reading material"
+    ```
+
