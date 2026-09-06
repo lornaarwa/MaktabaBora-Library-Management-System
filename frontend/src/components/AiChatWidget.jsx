@@ -1,28 +1,69 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, Send, X, User, Loader2, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Bot, Send, X, User, Loader2, AlertCircle, Sparkles } from 'lucide-react';
 import { api } from '../services/api';
 import { Button } from './ui/Button';
 import BookMiniCard from './BookMiniCard';
 
 const SUGGESTED_QUESTIONS = [
+    'How do I buy an e-book via M-Pesa?',
+    'Where can I see my active loans & fines?',
+    'How do I upgrade my membership plan?',
     'Recommend books about software engineering',
     'Which books are available right now?',
-    'When is my book due?',
 ];
 
+function FormattedMessageText({ text, onNavigate }) {
+    if (!text) return null;
+
+    // Parse [Label](/path) into interactive navigation buttons
+    const parts = [];
+    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+    let lastIdx = 0;
+    let match;
+
+    while ((match = linkRegex.exec(text)) !== null) {
+        if (match.index > lastIdx) {
+            parts.push(text.slice(lastIdx, match.index));
+        }
+        const label = match[1];
+        const path = match[2];
+        parts.push(
+            <button
+                key={`${path}-${match.index}`}
+                type="button"
+                onClick={() => onNavigate(path)}
+                className="inline-flex items-center text-primary-600 hover:text-primary-800 underline font-semibold transition px-1 py-0.5 rounded hover:bg-primary-50 text-xs"
+            >
+                {label}
+            </button>
+        );
+        lastIdx = linkRegex.lastIndex;
+    }
+
+    if (lastIdx < text.length) {
+        parts.push(text.slice(lastIdx));
+    }
+
+    return <div className="whitespace-pre-line m-0">{parts}</div>;
+}
+
 export default function AiChatWidget({ isOpen, onClose }) {
+    const navigate = useNavigate();
     const [messages, setMessages] = useState([
         {
             id: 1,
             sender: 'ai',
-            text: 'Hello! I am the MaktabaBora AI Librarian. I search the live catalog and your account to answer questions like "Find me a beginner book about habits" or "When is my book due?"',
+            text: 'Hello! I am your SmartLib AI Librarian. I can search our catalog, recommend books, check your due dates, and guide you through the platform (like purchasing digital e-books or upgrading your pass). How can I assist you?',
             tokens: 0,
             books: [],
+            provider: 'SmartLib AI',
         },
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [quotaError, setQuotaError] = useState(null);
+    const [currentProvider, setCurrentProvider] = useState('SmartLib AI');
     const chatEndRef = useRef(null);
 
     useEffect(() => {
@@ -32,6 +73,15 @@ export default function AiChatWidget({ isOpen, onClose }) {
     }, [messages, isOpen]);
 
     if (!isOpen) return null;
+
+    const handleNavigate = (path) => {
+        if (path.startsWith('/')) {
+            navigate(path);
+            onClose();
+        } else {
+            window.open(path, '_blank');
+        }
+    };
 
     const handleSend = async (e) => {
         e.preventDefault();
@@ -49,10 +99,13 @@ export default function AiChatWidget({ isOpen, onClose }) {
             const aiMsgText = res.message || res.response || 'I searched the catalog but could not compose an answer. Please try again.';
             const tokens = res.tokens_used || 0;
             const books = Array.isArray(res.books) ? res.books : [];
+            const provider = res.provider || 'SmartLib AI';
+
+            setCurrentProvider(provider);
 
             setMessages((prev) => [
                 ...prev,
-                { id: Date.now() + 1, sender: 'ai', text: aiMsgText, tokens, books },
+                { id: Date.now() + 1, sender: 'ai', text: aiMsgText, tokens, books, provider },
             ]);
         } catch (err) {
             if (err.status === 429) {
@@ -77,8 +130,13 @@ export default function AiChatWidget({ isOpen, onClose }) {
                         <Bot size={16} />
                     </div>
                     <div>
-                        <h3 className="text-xs font-bold text-bark-900 m-0">AI Librarian</h3>
-                        <p className="font-mono text-[10px] text-bark-500 m-0">Grounded in the live catalog</p>
+                        <div className="flex items-center gap-1.5">
+                            <h3 className="text-xs font-bold text-bark-900 m-0">AI Librarian</h3>
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full bg-primary-50 text-[9px] font-medium text-primary-700 border border-primary-200">
+                                <Sparkles size={9} /> {currentProvider}
+                            </span>
+                        </div>
+                        <p className="font-mono text-[10px] text-bark-500 m-0">Live catalog & navigation guide</p>
                     </div>
                 </div>
                 <button onClick={onClose} className="p-1 rounded-lg text-bark-500 hover:text-bark-900 hover:bg-cream" title="Close" aria-label="Close AI assistant">
@@ -114,7 +172,7 @@ export default function AiChatWidget({ isOpen, onClose }) {
                                     msg.sender === 'user'
                                         ? 'bg-bark-700 text-cream-light'
                                         : 'bg-paper border border-bark-100 text-bark-900'
-                                }`}
+                                    }`}
                             >
                                 {msg.sender === 'user' ? <User size={12} /> : <Bot size={12} />}
                             </div>
@@ -126,7 +184,7 @@ export default function AiChatWidget({ isOpen, onClose }) {
                                         : 'bg-paper border border-bark-100 text-bark-900 rounded-tl-none'
                                 }`}
                             >
-                                <p className="whitespace-pre-line m-0">{msg.text}</p>
+                                <FormattedMessageText text={msg.text} onNavigate={handleNavigate} />
                                 {msg.tokens > 0 && (
                                     <span className={`block mt-1 font-mono text-[9px] ${msg.sender === 'user' ? 'text-cream/80' : 'text-bark-500'}`}>
                                         Used: {msg.tokens} tokens

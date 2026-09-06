@@ -96,7 +96,7 @@ class OpenAiRecommendationService implements OpenAiRecommendationServiceInterfac
     }
 
     /**
-     * Decide the answer: LLM phrasing when a key exists, grounded fallback otherwise.
+     * Decide the answer: LLM phrasing via AiLibrarianManagerService when an active provider/key exists, grounded fallback otherwise.
      *
      * @param  \Illuminate\Database\Eloquent\Collection<int, Book>  $retrieved
      * @return array{0: string, 1: int}  [text, tokens]
@@ -104,41 +104,33 @@ class OpenAiRecommendationService implements OpenAiRecommendationServiceInterfac
     protected function answer(string $userPrompt, $retrieved, string $memberContext): array
     {
         $catalogText = $this->formatCatalog($retrieved);
-        $systemPrompt = $this->systemPrompt($catalogText, $memberContext);
 
-        if ($this->apiKey !== '') {
-            try {
-                $response = Http::withHeaders([
-                    'Authorization' => 'Bearer '.$this->apiKey,
-                    'Content-Type' => 'application/json',
-                ])->post('https://api.openai.com/v1/chat/completions', [
-                    'model' => $this->model,
-                    'messages' => [
-                        ['role' => 'system', 'content' => $systemPrompt],
-                        ['role' => 'user', 'content' => $userPrompt],
-                    ],
-                    'max_tokens' => $this->maxTokens,
-                    'temperature' => 0.4,
-                ]);
+        try {
+            /** @var AiLibrarianManagerService $aiManager */
+            $aiManager = app(AiLibrarianManagerService::class);
+            $settings = $aiManager->getSettings();
+            $activeProvider = $settings['active_provider'] ?? 'gemini';
+            $providerConfig = $settings['providers'][$activeProvider] ?? null;
+            $activeKey = trim((string) ($providerConfig['api_key'] ?? ''));
 
-                $json = $response->json();
-
-                if (isset($json['choices'][0]['message']['content'])) {
+            if ($activeProvider !== 'offline' && $activeKey !== '') {
+                $response = $aiManager->generateLibrarianResponse($userPrompt, $catalogText, $memberContext);
+                if (!empty($response['text']) && ($response['provider'] ?? '') !== 'offline-fallback') {
                     return [
-                        $json['choices'][0]['message']['content'],
-                        (int) ($json['usage']['total_tokens'] ?? 150),
+                        $response['text'],
+                        (int) ($response['tokens'] ?? 150),
                     ];
                 }
-            } catch (\Throwable $e) {
-                Log::error('OpenAI Recommendation Call Failed', ['error' => $e->getMessage()]);
             }
+        } catch (\Throwable $e) {
+            Log::warning('Multi-provider AI call failed in OpenAiRecommendationService', ['error' => $e->getMessage()]);
         }
 
         return $this->groundedFallback($userPrompt, $retrieved, $memberContext);
     }
 
     /**
-     * Offline, truthful answer composed strictly from retrieved facts and member context.
+     * Offline, truthful answer composed strictly from retrieved facts, navigation rules, and member context.
      *
      * @param  \Illuminate\Database\Eloquent\Collection<int, Book>  $retrieved
      * @return array{0: string, 1: int}
@@ -148,6 +140,7 @@ class OpenAiRecommendationService implements OpenAiRecommendationServiceInterfac
         $normalized = strtolower($userPrompt);
         $mentionsAccount = (bool) preg_match('/due|return|overdue|fine|loan|renew|penalty/i', $normalized);
         $mentionsAvailability = (bool) preg_match('/available|in stock|on shelf|ready to borrow|copy\b|copies\b/i', $normalized);
+        $mentionsNavigation = (bool) preg_match('/navigate|where|how to|find|page|cart|checkout|mpesa|m-pesa|membership|tier|subscribe/i', $normalized);
 
         // Account questions take priority when the member has active context.
         if ($mentionsAccount && $memberContext !== '') {
@@ -160,6 +153,14 @@ class OpenAiRecommendationService implements OpenAiRecommendationServiceInterfac
         // Availability questions answer directly from the live catalog.
         if ($mentionsAvailability) {
             return $this->availabilityAnswer();
+        }
+
+        // Navigation questions guide users to specific pages.
+        if ($mentionsNavigation) {
+            return [
+                $this->navigationAnswer($userPrompt),
+                50,
+            ];
         }
 
         if ($retrieved->isEmpty()) {
@@ -187,6 +188,30 @@ class OpenAiRecommendationService implements OpenAiRecommendationServiceInterfac
     {
         return "Here's what I found on your MaktabaBora account:\n\n{$memberContext}\n\n"
             . 'Need anything else — a title recommendation, availability check, or help with a reservation?';
+    }
+
+    protected function navigationAnswer(string $userPrompt): string
+    {
+        $lower = strtolower($userPrompt);
+
+        if (str_contains($lower, 'cart') || str_contains($lower, 'buy') || str_contains($lower, 'checkout') || str_contains($lower, 'mpesa') || str_contains($lower, 'm-pesa')) {
+            return "You can buy digital e-books and checkout via M-Pesa at **[Shopping Cart](/cart)**.\n\n"
+                . "1. Browse our collection on **[Book Catalog](/catalog)**\n"
+                . "2. Add your favorite e-books to the cart\n"
+                . "3. Enter your M-Pesa phone number and authorize payment\n"
+                . "4. Instantly read online on your **[Member Dashboard](/member)**!";
+        }
+
+        if (str_contains($lower, 'tier') || str_contains($lower, 'membership') || str_contains($lower, 'upgrade') || str_contains($lower, 'subscribe')) {
+            return "Compare membership plans and upgrade privileges at **[Membership Plans](/membership)**. "
+                . "Choose between Student Pass, Standard Reader, and Scholar tiers.";
+        }
+
+        if (str_contains($lower, 'loan') || str_contains($lower, 'fine') || str_contains($lower, 'reader') || str_contains($lower, 'member')) {
+            return "You can track your active loans, renew books, pay overdue fines via M-Pesa, and access your digital shelf on your **[Member Dashboard](/member)**.";
+        }
+
+        return "Explore our website:\n- **[Book Catalog](/catalog)** — Search and borrow\n- **[Shopping Cart](/cart)** — Checkout digital books\n- **[Member Dashboard](/member)** — Manage loans, fines & reader\n- **[Membership Plans](/membership)** — Tiers & upgrades";
     }
 
     /**

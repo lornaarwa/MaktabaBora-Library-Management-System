@@ -61,11 +61,20 @@ class AiChatbotController extends Controller
             'ip_address' => $request->ip(),
         ]);
 
+        $providerName = 'SmartLib AI';
+        try {
+            $settings = app(\App\Services\AiLibrarianManagerService::class)->getSettings();
+            $providerName = $settings['providers'][$settings['active_provider'] ?? 'gemini']['name'] ?? 'AI Librarian';
+        } catch (\Throwable $e) {
+            // fallback gracefully
+        }
+
         return response()->json([
             'session_id' => $session->id,
             'message' => $result['message'],
             'tokens_used' => $result['tokens_used'],
             'books' => $result['books'] ?? [],
+            'provider' => $providerName,
         ]);
     }
 }
