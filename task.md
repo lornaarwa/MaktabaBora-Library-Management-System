@@ -313,7 +313,7 @@ Track implementation progress across phases and subphases with strict accountabi
     git commit -m "feat(ui): declutter screens and remove technical ai jargon across admin, member, and reader"
     ```
 
-- [ ] **Sub-phase 6.2: Global Dark Mode Architecture & Persistent Theme Toggle**
+- [x] **Sub-phase 6.2: Global Dark Mode Architecture & Persistent Theme Toggle**
   - **Goal**: Implement complete, persistent dark mode across the entire application, desktop sidebar, mobile header, cards, modals, and online reader.
   - **Key Changes**:
     - Create `frontend/src/context/ThemeContext.jsx` with `theme` state (`'light'` / `'dark'`), toggle helper, `localStorage` persistence (`smartlib_theme`), and `document.documentElement.classList` toggling.

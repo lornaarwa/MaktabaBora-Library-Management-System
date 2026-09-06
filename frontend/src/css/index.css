@@ -95,3 +95,109 @@ body {
   background-image: radial-gradient(rgba(31, 77, 46, 0.06) 1px, transparent 1px);
   background-size: 18px 18px;
 }
+
+/* ==========================================================================
+   Global Dark Mode System
+   ========================================================================== */
+html.dark {
+  --mb-paper: #0b0f19;
+  --mb-ink: #f8fafc;
+  --mb-bark: #2d6a4f;
+  --mb-tan: #e5b93b;
+  --mb-cream: #1e293b;
+  --mb-cream-light: #162032;
+  --color-paper: #0b0f19;
+  --color-ink: #f8fafc;
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #0b0f19 !important;
+  color: #f8fafc !important;
+}
+
+html.dark ::selection {
+  background-color: #2d6a4f;
+  color: #f8fafc;
+}
+
+/* Base surface overrides in dark mode */
+html.dark .bg-paper {
+  background-color: #0b0f19 !important;
+}
+html.dark .bg-paper\/90 {
+  background-color: rgba(11, 15, 25, 0.9) !important;
+}
+html.dark .bg-paper\/95 {
+  background-color: rgba(11, 15, 25, 0.95) !important;
+}
+html.dark .bg-paper\/80 {
+  background-color: rgba(11, 15, 25, 0.8) !important;
+}
+html.dark .bg-paper\/60 {
+  background-color: rgba(11, 15, 25, 0.6) !important;
+}
+html.dark .bg-paper\/50 {
+  background-color: rgba(11, 15, 25, 0.5) !important;
+}
+
+html.dark .bg-cream-light\/40 {
+  background-color: rgba(22, 32, 50, 0.5) !important;
+}
+html.dark .bg-cream-light\/60 {
+  background-color: rgba(22, 32, 50, 0.7) !important;
+}
+html.dark .bg-cream-light\/30 {
+  background-color: rgba(22, 32, 50, 0.35) !important;
+}
+html.dark .bg-cream {
+  background-color: #1e293b !important;
+}
+
+/* Typography contrast in dark mode */
+html.dark .text-bark-900 {
+  color: #f8fafc !important;
+}
+html.dark .text-bark-800 {
+  color: #e2e8f0 !important;
+}
+html.dark .text-bark-700 {
+  color: #cbd5e1 !important;
+}
+html.dark .text-bark-600 {
+  color: #94a3b8 !important;
+}
+html.dark .text-bark-500 {
+  color: #64748b !important;
+}
+
+/* Borders in dark mode */
+html.dark .border-bark-100 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+html.dark .border-bark-200 {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+html.dark .divide-bark-100 > * + * {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Grain texture in dark mode */
+html.dark .mb-grain {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px) !important;
+}
+
+/* Scrollbars in dark mode */
+html.dark .mb-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18) !important;
+}
+html.dark .mb-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.32) !important;
+}
+
+/* Form controls in dark mode */
+html.dark input,
+html.dark select,
+html.dark textarea {
+  color-scheme: dark;
+}

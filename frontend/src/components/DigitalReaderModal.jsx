@@ -6,15 +6,17 @@ import {
     Columns, AlignJustify
 } from 'lucide-react';
 import { Modal } from './ui/Modal';
+import { useTheme } from '../context/ThemeContext';
 
 export default function DigitalReaderModal({ isOpen, open, onClose, bookData, book }) {
     const activeBook = bookData || book;
+    const { isDark } = useTheme();
     
     // Reader configuration state
     const scrollContainerRef = useRef(null);
     const [fontSize, setFontSize] = useState(16);
     const [fontFamily, setFontFamily] = useState('serif'); // 'serif' | 'sans'
-    const [theme, setTheme] = useState('sepia'); // 'day' | 'sepia' | 'night'
+    const [theme, setTheme] = useState(() => (isDark ? 'night' : 'sepia')); // 'day' | 'sepia' | 'night'
     const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
     const [currentPageInChapter, setCurrentPageInChapter] = useState(0);
     const [readingLayout, setReadingLayout] = useState('paginated'); // 'paginated' | 'scroll'
@@ -22,6 +24,12 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
     const [searchQuery, setSearchQuery] = useState('');
     const [showToc, setShowToc] = useState(false);
     const [blobPdfUrl, setBlobPdfUrl] = useState(null);
+
+    useEffect(() => {
+        if (isDark && theme === 'day') {
+            setTheme('night');
+        }
+    }, [isDark]);
 
     const isOpenState = open !== undefined ? open : isOpen;
 

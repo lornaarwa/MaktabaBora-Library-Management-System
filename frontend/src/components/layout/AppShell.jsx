@@ -14,12 +14,14 @@ import {
   UserPlusIcon,
   ShoppingCartIcon,
   InfoIcon,
-  PhoneIcon,
   UserIcon,
-  ShieldCheckIcon as ShieldNavIcon
+  ShieldCheckIcon as ShieldNavIcon,
+  SunIcon,
+  MoonIcon
 } from 'lucide-react';
 import { useLibrary } from '../../context/LibraryContext';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { Button } from '../ui/Button';
 import { Brand } from '../ui/Brand';
 
@@ -31,6 +33,7 @@ const navLinkIdle = 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900';
 export function AppShell({ children, onOpenAiChat }) {
   const { role, cartCount } = useLibrary();
   const auth = useAuth() || {};
+  const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -61,10 +64,21 @@ export function AppShell({ children, onOpenAiChat }) {
       {/* Desktop Sidebar */}
       <aside className="hidden w-64 flex-col border-r border-bark-100 bg-paper/90 p-5 md:flex justify-between sticky top-0 h-screen">
         <div className="space-y-6">
-          {/* Brand Logo */}
-          <Link to="/" className="group flex items-center rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-tan-dark/60" aria-label="MaktabaBora home">
-            <Brand />
-          </Link>
+          {/* Brand Logo & Theme Switcher */}
+          <div className="flex items-center justify-between">
+            <Link to="/" className="group flex items-center rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-tan-dark/60" aria-label="MaktabaBora home">
+              <Brand />
+            </Link>
+            <button
+              onClick={toggleTheme}
+              type="button"
+              className="p-2 rounded-xl border border-bark-100 bg-cream-light/40 hover:bg-cream text-bark-700 hover:text-bark-900 transition shadow-sm"
+              title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              aria-label="Toggle dark mode"
+            >
+              {isDark ? <SunIcon className="h-4 w-4 text-amber-400" /> : <MoonIcon className="h-4 w-4 text-bark-700" />}
+            </button>
+          </div>
 
           {/* Role-scoped Navigation Items */}
           <nav className="space-y-1.5" aria-label="Primary navigation">
@@ -177,14 +191,25 @@ export function AppShell({ children, onOpenAiChat }) {
               Maktaba<span className="text-tan-dark">Bora</span>
             </span>
           </Link>
-          <button
-            onClick={() => setMobileMenuOpen((open) => !open)}
-            aria-expanded={mobileMenuOpen}
-            aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-            className="rounded-lg border border-bark-100 p-2 text-bark-700 transition hover:bg-cream-light/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-tan-dark/60"
-          >
-            {mobileMenuOpen ? <XIcon className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              type="button"
+              className="p-2 rounded-lg border border-bark-100 bg-cream-light/40 hover:bg-cream text-bark-700 hover:text-bark-900 transition shadow-sm"
+              title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              aria-label="Toggle dark mode"
+            >
+              {isDark ? <SunIcon className="h-4 w-4 text-amber-400" /> : <MoonIcon className="h-4 w-4 text-bark-700" />}
+            </button>
+            <button
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              aria-expanded={mobileMenuOpen}
+              aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              className="rounded-lg border border-bark-100 p-2 text-bark-700 transition hover:bg-cream-light/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-tan-dark/60"
+            >
+              {mobileMenuOpen ? <XIcon className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
+            </button>
+          </div>
         </header>
 
         {/* Mobile Menu Dropdown */}
