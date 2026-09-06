@@ -7,7 +7,7 @@ Track implementation progress across phases and subphases with strict accountabi
 ## 📊 Overall Progress Summary
 - **Phase 1: Digital Access & Reader Flow Fix** — 🟢 **COMPLETED** (Commits `1f5fccb`, `7053eeb`)
 - **Phase 2: Open Library Integration & Seeding** — 🟢 **COMPLETED** (Commits `6f95a48`, `7bf815d`)
-- **Phase 4: Reader Overhaul, Full Book Storage, Dynamic Models & Polish** — 🟢 **COMPLETED** (Commits `4fe4c72`, `c7d4c39`, `92639ba`, `f881261`)
+- **Phase 4: Reader Overhaul, Full Book Storage, Dynamic Models & Polish** — 🟢 **COMPLETED** (Commits `4fe4c72`, `c7d4c39`, `92639ba`, `f881261`, `3d31497`)
 
 ---
 
@@ -186,8 +186,31 @@ Track implementation progress across phases and subphases with strict accountabi
     - Full PHPUnit test suite: **109 passed (305 assertions)** in 5.90s.
     - Production Vite build: Passed with 0 errors.
     - Created comprehensive `walkthrough.md`.
-  - **Commit Hook 12**:
+  - **Commit Hook 12**: `f881261`
     ```bash
     git add backend/tests/ task.md
     git commit -m "test: verify dynamic models, digital reader, and complete task checklist"
+    ```
+
+- [x] **Sub-phase 4.6: Unabridged Gutenberg Book Content & True Page-by-Page Pagination**
+  - **Goal**: Resolve the "only two pages" limitation by downloading unabridged complete books from Project Gutenberg and implementing realistic e-book pagination in the reader.
+  - **Key Changes**:
+    - Enhanced `SeedFullBookContentCommand.php`:
+      - Integrated Gutenberg downloader with `withoutVerifying()` SSL bypass and disk caching in `storage/app/gutenberg_cache/`.
+      - Downloaded and seeded complete unabridged works into PostgreSQL:
+        - *Pride and Prejudice* (Gutenberg #1342): **61 complete chapters** (752 KB).
+        - *The Great Gatsby* (Gutenberg #64317): **9 complete chapters** (286 KB).
+        - *Alice's Adventures in Wonderland* (Gutenberg #11): **12 complete chapters** (154 KB).
+        - *A Christmas Carol* (Gutenberg #46): **5 complete staves** (162 KB).
+        - Expanded technical and self-help book editions to 8–10 deep chapters each (*Clean Code*, *Designing Data-Intensive Applications*, *Atomic Habits*, *The Pragmatic Programmer*).
+    - Upgraded `DigitalReaderModal.jsx`:
+      - **True Page-by-Page Pagination**: Chunks chapter text into realistic book pages (~2,200 characters / ~350 words per page).
+      - **Global Book Page Counter**: Calculates total book pages across all chapters (`Book Page {currentGlobalPage} of {totalBookPages}` e.g., `Page 1 of 180`).
+      - **Layout Switcher**: Toggle between **Flip Pages** mode (paginated page-turn view with keyboard arrows) and **Continuous Scroll** mode.
+      - **Table of Contents with Starting Page Numbers**: Shows calculated starting page for every chapter (`p. 1`, `p. 14`, `p. 28`, ...).
+      - **Keyboard Navigation**: ArrowLeft/ArrowRight, PageUp/PageDown handlers for smooth page turning.
+  - **Commit Hook 13**: `3d31497`
+    ```bash
+    git add backend/app/Console/Commands/SeedFullBookContentCommand.php frontend/src/components/DigitalReaderModal.jsx
+    git commit -m "feat(reader): seed unabridged books from Gutenberg and implement true page-by-page reader pagination"
     ```
