@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AiChatbotController;
+use App\Http\Controllers\AiSettingsController;
 use App\Http\Controllers\ApiGatewayController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookInventoryController;
@@ -139,6 +140,11 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
             // Dynamic Membership Tiers Customization
             Route::get('/membership-tiers', [\App\Http\Controllers\MembershipTierController::class, 'index']);
             Route::put('/membership-tiers', [\App\Http\Controllers\MembershipTierController::class, 'update']);
+
+            // AI Librarian & Multi-Provider Settings
+            Route::get('/ai-settings', [AiSettingsController::class, 'index']);
+            Route::put('/ai-settings', [AiSettingsController::class, 'update']);
+            Route::post('/ai-settings/test-key', [AiSettingsController::class, 'testKey']);
 
             // Dynamic Table CRUD Management Routes
             Route::get('/tables', [\App\Http\Controllers\AdminCrudController::class, 'indexTables']);
