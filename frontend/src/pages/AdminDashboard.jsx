@@ -603,7 +603,7 @@ When users ask about website navigation, account features, or how to perform act
                     }`}
                 >
                     <Bot className="w-4 h-4 text-tan-dark" />
-                    <span>AI Librarian & Providers</span>
+                    <span>Smart Assistant</span>
                 </button>
 
                 <button
@@ -1264,10 +1264,10 @@ When users ask about website navigation, account features, or how to perform act
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-bark-100 pb-4">
                                 <div>
                                     <h2 className="text-lg font-extrabold text-bark-900 flex items-center gap-2">
-                                        <Bot className="w-5 h-5 text-tan-dark" /> AI Librarian & Multi-Provider Console
+                                        <Bot className="w-5 h-5 text-tan-dark" /> Smart Assistant Configuration
                                     </h2>
                                     <p className="text-xs text-bark-500 mt-0.5">
-                                        Configure API keys, switch LLM providers (Gemini, OpenAI, Anthropic, or Offline Fallback), and customize the library navigation system prompt.
+                                        Manage assistant intelligence, provider services, and guidance instructions for catalog visitors.
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -1286,21 +1286,21 @@ When users ask about website navigation, account features, or how to perform act
                                         className="px-4 py-2 rounded-xl bg-bark-700 hover:bg-bark-800 text-cream-light text-xs font-bold transition-all shadow-card flex items-center gap-2 disabled:opacity-50"
                                     >
                                         {savingAi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                        <span>Save AI Configuration</span>
+                                        <span>Save Settings</span>
                                     </button>
                                 </div>
                             </div>
 
                             {aiLoading ? (
                                 <div className="flex items-center justify-center py-16 text-bark-500 text-xs font-mono">
-                                    <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading AI configuration...
+                                    <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading assistant configuration...
                                 </div>
                             ) : (
                                 <div className="space-y-6">
                                     {/* Provider Cards Selector */}
                                     <div>
                                         <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-2">
-                                            Select AI Provider to Configure
+                                            Select Assistant Provider
                                         </label>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                             {Object.entries(aiSettings.providers || {}).map(([pKey, pData]) => {
@@ -1486,7 +1486,7 @@ When users ask about website navigation, account features, or how to perform act
                                                 ) : (
                                                     <div className="flex items-center gap-3 p-3 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-900 text-xs">
                                                         <ShieldCheck className="w-5 h-5 text-cyan-600 flex-shrink-0" />
-                                                        <span>The offline engine executes deterministic queries locally on the catalog database. No external API key is required.</span>
+                                                        <span>The offline assistant searches the local catalog database directly. No external API key required.</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -1521,17 +1521,17 @@ When users ask about website navigation, account features, or how to perform act
                                         </div>
                                     )}
 
-                                    {/* Hyperparameters & System Prompt */}
+                                    {/* Assistant Style & Instructions */}
                                     <div className="rounded-2xl border border-bark-100 bg-paper p-5 space-y-4 shadow-card">
                                         <h3 className="text-sm font-extrabold text-bark-900 border-b border-bark-100 pb-2">
-                                            Model Hyperparameters & Behavior
+                                            Assistant Tone & Response Style
                                         </h3>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
                                                 <div className="flex items-center justify-between mb-1">
                                                     <label className="text-xs font-bold text-bark-800 uppercase tracking-wider">
-                                                        Temperature (Creativity)
+                                                        Creativity & Tone
                                                     </label>
                                                     <span className="font-mono text-xs font-bold text-tan-dark">
                                                         {aiSettings.temperature}
@@ -1546,12 +1546,12 @@ When users ask about website navigation, account features, or how to perform act
                                                     onChange={(e) => setAiSettings({ ...aiSettings, temperature: parseFloat(e.target.value) })}
                                                     className="w-full accent-tan-dark cursor-pointer"
                                                 />
-                                                <p className="text-[10px] text-bark-500 mt-1">Lower values (0.2–0.4) provide more grounded and focused answers.</p>
+                                                <p className="text-[10px] text-bark-500 mt-1">Balanced setting (0.2–0.4) keeps recommendations accurate and focused.</p>
                                             </div>
 
                                             <div>
                                                 <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">
-                                                    Max Output Tokens
+                                                    Max Response Length
                                                 </label>
                                                 <input
                                                     type="number"
@@ -1561,32 +1561,32 @@ When users ask about website navigation, account features, or how to perform act
                                                     onChange={(e) => setAiSettings({ ...aiSettings, max_tokens: parseInt(e.target.value, 10) || 800 })}
                                                     className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2 text-xs text-bark-900 font-mono focus:ring-2 focus:ring-tan-dark"
                                                 />
-                                                <p className="text-[10px] text-bark-500 mt-1">Controls the maximum response length per user query.</p>
+                                                <p className="text-[10px] text-bark-500 mt-1">Maximum length of replies to visitor queries.</p>
                                             </div>
                                         </div>
 
                                         <div className="pt-2">
                                             <div className="flex items-center justify-between mb-1.5">
                                                 <label className="text-xs font-bold text-bark-800 uppercase tracking-wider">
-                                                    AI Librarian System Prompt & Navigation Guide
+                                                    Assistant Instructions & Navigation Guide
                                                 </label>
                                                 <button
                                                     type="button"
                                                     onClick={handleResetDefaultPrompt}
                                                     className="text-[11px] text-tan-dark hover:underline font-semibold"
                                                 >
-                                                    Reset to Default Prompt
+                                                    Reset to Default Instructions
                                                 </button>
                                             </div>
                                             <textarea
                                                 rows={10}
                                                 value={aiSettings.system_prompt || ''}
                                                 onChange={(e) => setAiSettings({ ...aiSettings, system_prompt: e.target.value })}
-                                                placeholder="Enter system prompt instructions..."
+                                                placeholder="Enter assistant guidelines and navigation tips..."
                                                 className="w-full rounded-xl border border-bark-100 bg-cream-light/30 px-4 py-3 text-xs text-bark-900 font-mono focus:ring-2 focus:ring-tan-dark leading-relaxed"
                                             />
                                             <p className="text-[10px] text-bark-500 mt-1">
-                                                Tip: The system prompt instructs the assistant on website navigation routes (/catalog, /cart, /member, /membership), book recommendations, and tone.
+                                                Instructions tell the assistant how to answer book questions and help visitors navigate the library.
                                             </p>
                                         </div>
                                     </div>
@@ -1599,7 +1599,7 @@ When users ask about website navigation, account features, or how to perform act
                                             className="px-6 py-2.5 rounded-xl bg-bark-700 hover:bg-bark-800 text-cream-light text-xs font-bold transition-all shadow-card flex items-center gap-2 disabled:opacity-50"
                                         >
                                             {savingAi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                            <span>Save AI Configuration</span>
+                                            <span>Save Settings</span>
                                         </button>
                                     </div>
                                 </div>

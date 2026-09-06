@@ -600,7 +600,7 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                 <div className="flex items-center justify-between px-2 text-[11px] font-mono text-bark-500">
                     <div className="flex items-center gap-1.5 text-emerald-700 font-semibold">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>LIFETIME ACCESS · UNENCRYPTED DIGITAL STREAM</span>
+                        <span>VERIFIED LIFETIME DIGITAL ACCESS</span>
                     </div>
                     <span>
                         BOOK PAGE {currentGlobalPage} OF {totalBookPages} · CH. {currentChapterIndex + 1} (PG {currentPageInChapter + 1}/{chapterPages.length}) · {readingProgressPercent}% READ

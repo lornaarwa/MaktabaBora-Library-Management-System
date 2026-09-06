@@ -118,7 +118,7 @@ export function AppShell({ children, onOpenAiChat }) {
             className="w-full justify-start border border-bark-100 bg-cream-light/30"
           >
             <BotIcon className="h-4 w-4 text-bark-700" />
-            <span>AI Librarian</span>
+            <span>Library Assistant</span>
           </Button>
 
           {auth.user ? (
@@ -234,7 +234,7 @@ export function AppShell({ children, onOpenAiChat }) {
                   className={`${navLinkBase} w-full border border-bark-100 bg-cream-light/40 text-left`}
                 >
                   <BotIcon className="h-4 w-4 text-bark-700" />
-                  <span className="flex-1">AI Librarian</span>
+                  <span className="flex-1">Library Assistant</span>
                 </button>
               </nav>
             </motion.div>

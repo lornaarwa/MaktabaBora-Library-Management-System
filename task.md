@@ -9,6 +9,7 @@ Track implementation progress across phases and subphases with strict accountabi
 - **Phase 2: Open Library Integration & Seeding** — 🟢 **COMPLETED** (Commits `6f95a48`, `7bf815d`)
 - **Phase 4: Reader Overhaul, Full Book Storage, Dynamic Models & Polish** — 🟢 **COMPLETED** (Commits `4fe4c72`, `c7d4c39`, `92639ba`, `f881261`, `3d31497`)
 - **Phase 5: Scroll Mode Distinctive Sheets, Top Chapter Nav & 20-Book Multi-Genre Expansion** — 🟢 **COMPLETED** (Commits `8fd9a8b`, `87d22bc`, `6f2b40c`)
+- **Phase 6: UI Revamp, Global Dark Mode & Accountability Receipts** — 🟡 **IN PROGRESS**
 
 ---
 
@@ -280,5 +281,120 @@ Track implementation progress across phases and subphases with strict accountabi
     git add backend/app/Services/AiLibrarianManagerService.php frontend/src/pages/AdminDashboard.jsx backend/storage/app/ai_settings.json
     git commit -m "fix(ai): upgrade Gemini default model to gemini-2.5-flash and add auto-migration with 404 fallback"
     ```
+
+---
+
+## Phase 6: UI Revamp, Global Dark Mode & Accountability Receipts
+- [x] **Sub-phase 6.1: Declutter UI Screens & Remove Technical AI Jargon**
+  - **Goal**: Make interfaces direct, intuitive, and decluttered across Admin, Librarian, and Member dashboards, digital reader, and AI chat widget by eliminating technical engineering jargon.
+  - **Key Changes**:
+    - In `AdminDashboard.jsx`:
+      - Rename tab **"AI Librarian & Providers"** to **"Smart Assistant"**.
+      - Replace "Model Hyperparameters & Behavior" with "Assistant Response Style".
+      - Replace "Temperature (Creativity)" with "Creativity & Tone".
+      - Replace "Max Output Tokens" with "Max Response Length".
+      - Replace "System Prompt & Role Guide" with "Assistant Guidelines".
+      - Strip deterministic query technical descriptions and replace with straightforward status notices.
+    - In `DigitalReaderModal.jsx`:
+      - Replace `LIFETIME ACCESS · UNENCRYPTED DIGITAL STREAM` with `VERIFIED LIFETIME DIGITAL ACCESS`.
+    - In `AiChatWidget.jsx`:
+      - Remove `Used: {msg.tokens} tokens` badge from chat bubbles.
+      - Simplify header to "Smart Library Assistant".
+    - In `AppShell.jsx`:
+      - Clarify navigation labels and declutter header elements.
+  - **Unit Test / Build Verification**:
+    ```bash
+    cd backend && php artisan test
+    cd ../frontend && npm run build
+    ```
+  - **Commit Hook 17**:
+    ```bash
+    git add frontend/src/pages/AdminDashboard.jsx frontend/src/components/DigitalReaderModal.jsx frontend/src/components/AiChatWidget.jsx frontend/src/components/layout/AppShell.jsx task.md
+    git commit -m "feat(ui): declutter screens and remove technical ai jargon across admin, member, and reader"
+    ```
+
+- [ ] **Sub-phase 6.2: Global Dark Mode Architecture & Persistent Theme Toggle**
+  - **Goal**: Implement complete, persistent dark mode across the entire application, desktop sidebar, mobile header, cards, modals, and online reader.
+  - **Key Changes**:
+    - Create `frontend/src/context/ThemeContext.jsx` with `theme` state (`'light'` / `'dark'`), toggle helper, `localStorage` persistence (`smartlib_theme`), and `document.documentElement.classList` toggling.
+    - Wrap application with `<ThemeProvider>` in `frontend/src/App.jsx`.
+    - Add comprehensive dark mode color system in `frontend/src/css/index.css` targeting `html.dark` (dark paper surfaces `#0b0f19`, `#111827`, `#1f2937`, light ink `#f1f5f9`, subtle borders `rgba(255,255,255,0.08)`, and dark card styles).
+    - Add responsive Sun / Moon toggle button to `AppShell.jsx` (desktop sidebar and mobile header).
+    - Synchronize `DigitalReaderModal.jsx` themes with global dark mode.
+  - **Unit Test / Build Verification**:
+    ```bash
+    cd backend && php artisan test
+    cd ../frontend && npm run build
+    ```
+  - **Commit Hook 18**:
+    ```bash
+    git add frontend/src/context/ThemeContext.jsx frontend/src/App.jsx frontend/src/css/index.css frontend/src/components/layout/AppShell.jsx frontend/src/components/DigitalReaderModal.jsx task.md
+    git commit -m "feat(ui): implement persistent global dark mode across all pages, shell, and reader"
+    ```
+
+- [ ] **Sub-phase 6.3: Member Reservations API & Receipts Data Layer**
+  - **Goal**: Expose member hold reservations endpoint so users can retrieve their reservation history for official slips.
+  - **Key Changes**:
+    - In `backend/app/Http/Controllers/ReservationController.php`:
+      - Implement `index(Request $request)` returning authenticated member reservations with book relationships and queue positions.
+    - In `backend/routes/api.php`:
+      - Register `GET /api/v1/reservations` under authenticated member routes.
+    - In `frontend/src/services/api.js`:
+      - Add `getMyReservations: () => apiClient.get('/reservations')`.
+    - Create automated test in `backend/tests/Feature/Controllers/ReservationReceiptTest.php` verifying authentication, member isolation, and payload structure.
+  - **Unit Test / Build Verification**:
+    ```bash
+    cd backend && php artisan test --filter=Reservation
+    ```
+  - **Commit Hook 19**:
+    ```bash
+    git add backend/app/Http/Controllers/ReservationController.php backend/routes/api.php frontend/src/services/api.js backend/tests/Feature/Controllers/ReservationReceiptTest.php task.md
+    git commit -m "feat(reservations): implement member reservations index endpoint and receipt test"
+    ```
+
+- [ ] **Sub-phase 6.4: Official Receipts Center & Printable Slips in Profile**
+  - **Goal**: Provide a dedicated receipts & invoices center in the Profile page allowing users to view and print official receipts for E-Book purchases and hold reservations.
+  - **Key Changes**:
+    - Create `frontend/src/components/ReceiptModal.jsx`:
+      - Official library branding, header, verified badge, and receipt serial number.
+      - Transaction reference, checkout hash, timestamp, and member credentials.
+      - Item breakdown (Title, Author, Format, Price in KES/USD).
+      - Visual verification barcode graphic.
+      - Action buttons: "Print / Save PDF" (`window.print()`) with print-optimized CSS styles and "Close".
+    - Update `frontend/src/pages/Profile.jsx`:
+      - Add tab navigation: "Account & Loans" and "Receipts & Invoices".
+      - "Receipts & Invoices" tab shows:
+        - **Digital E-Book Purchases**: Date, book title, author, transaction ID, price, and "View Receipt" button.
+        - **Hold Reservation Slips**: Reservation date, book title, queue status, pickup window, and "View Slip" button.
+      - Integrated `ReceiptModal` for instant inspection and printing.
+  - **Unit Test / Build Verification**:
+    ```bash
+    cd backend && php artisan test
+    cd ../frontend && npm run build
+    ```
+  - **Commit Hook 20**:
+    ```bash
+    git add frontend/src/components/ReceiptModal.jsx frontend/src/pages/Profile.jsx task.md
+    git commit -m "feat(profile): add official receipts center with printable purchase and reservation slips"
+    ```
+
+- [ ] **Sub-phase 6.5: End-to-End Verification, Unit Tests & Walkthrough**
+  - **Goal**: Run complete test suite and production build, verify seamless theme transitions and printable receipts, and update walkthrough documentation.
+  - **Key Changes**:
+    - Execute full test suite (`php artisan test`).
+    - Execute frontend production build (`npm run build`).
+    - Verify dark mode contrast, receipt modal layout, and decluttered UI.
+    - Update `walkthrough.md` with verification details and user guidance.
+  - **Unit Test / Build Verification**:
+    ```bash
+    cd backend && php artisan test
+    cd ../frontend && npm run build
+    ```
+  - **Commit Hook 21**:
+    ```bash
+    git add task.md
+    git commit -m "docs: verify ui revamp, global dark mode, receipts, and complete task checklist"
+    ```
+
 
 

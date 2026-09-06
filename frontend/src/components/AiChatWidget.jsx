@@ -54,7 +54,7 @@ export default function AiChatWidget({ isOpen, onClose }) {
         {
             id: 1,
             sender: 'ai',
-            text: 'Hello! I am your SmartLib AI Librarian. I can search our catalog, recommend books, check your due dates, and guide you through the platform (like purchasing digital e-books or upgrading your pass). How can I assist you?',
+            text: 'Hello! I am your SmartLib Library Assistant. I can search our catalog, recommend books, check your due dates, and guide you through the platform (like purchasing digital e-books or upgrading your pass). How can I assist you?',
             tokens: 0,
             books: [],
             provider: 'SmartLib AI',
@@ -131,7 +131,7 @@ export default function AiChatWidget({ isOpen, onClose }) {
                     </div>
                     <div>
                         <div className="flex items-center gap-1.5">
-                            <h3 className="text-xs font-bold text-bark-900 m-0">AI Librarian</h3>
+                            <h3 className="text-xs font-bold text-bark-900 m-0">Library Assistant</h3>
                             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full bg-primary-50 text-[9px] font-medium text-primary-700 border border-primary-200">
                                 <Sparkles size={9} /> {currentProvider}
                             </span>
@@ -139,7 +139,7 @@ export default function AiChatWidget({ isOpen, onClose }) {
                         <p className="font-mono text-[10px] text-bark-500 m-0">Live catalog & navigation guide</p>
                     </div>
                 </div>
-                <button onClick={onClose} className="p-1 rounded-lg text-bark-500 hover:text-bark-900 hover:bg-cream" title="Close" aria-label="Close AI assistant">
+                <button onClick={onClose} className="p-1 rounded-lg text-bark-500 hover:text-bark-900 hover:bg-cream" title="Close" aria-label="Close assistant">
                     <X size={16} />
                 </button>
             </div>
@@ -185,11 +185,6 @@ export default function AiChatWidget({ isOpen, onClose }) {
                                 }`}
                             >
                                 <FormattedMessageText text={msg.text} onNavigate={handleNavigate} />
-                                {msg.tokens > 0 && (
-                                    <span className={`block mt-1 font-mono text-[9px] ${msg.sender === 'user' ? 'text-cream/80' : 'text-bark-500'}`}>
-                                        Used: {msg.tokens} tokens
-                                    </span>
-                                )}
                             </div>
                         </div>
 
@@ -228,8 +223,8 @@ export default function AiChatWidget({ isOpen, onClose }) {
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask AI librarian..."
-                    aria-label="Message the AI librarian"
+                    placeholder="Ask the library assistant..."
+                    aria-label="Message the library assistant"
                     className="flex-1 px-3 py-2 rounded-lg border border-bark-100 bg-cream-light/40 text-xs text-bark-900 placeholder:text-bark-300 focus:outline-none focus:border-bark-500 focus:ring-2 focus:ring-tan-dark/50"
                 />
                 <Button
