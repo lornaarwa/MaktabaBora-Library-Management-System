@@ -352,7 +352,7 @@ Track implementation progress across phases and subphases with strict accountabi
     git commit -m "feat(reservations): implement member reservations index endpoint and receipt test"
     ```
 
-- [ ] **Sub-phase 6.4: Official Receipts Center & Printable Slips in Profile**
+- [x] **Sub-phase 6.4: Official Receipts Center & Printable Slips in Profile**
   - **Goal**: Provide a dedicated receipts & invoices center in the Profile page allowing users to view and print official receipts for E-Book purchases and hold reservations.
   - **Key Changes**:
     - Create `frontend/src/components/ReceiptModal.jsx`:

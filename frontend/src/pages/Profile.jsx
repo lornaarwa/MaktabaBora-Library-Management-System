@@ -26,19 +26,26 @@ import {
   HelpCircle,
   Smartphone,
   ChevronRight,
-  Database
+  Database,
+  Printer,
+  Bookmark
 } from 'lucide-react';
 import DarajaPayModal from '../components/DarajaPayModal';
+import ReceiptModal from '../components/ReceiptModal';
 
 export default function Profile() {
   const { user, setUser } = useAuth();
   const navigate = useNavigate();
 
+  const [activeTab, setActiveTab] = useState('account'); // 'account' | 'receipts'
   const [loans, setLoans] = useState([]);
   const [fines, setFines] = useState([]);
+  const [ebooks, setEbooks] = useState([]);
+  const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Modals state
+  const [receiptModal, setReceiptModal] = useState({ isOpen: false, data: null, type: 'ebook' });
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
@@ -82,17 +89,23 @@ export default function Profile() {
     const fetchProfileData = async () => {
       setLoading(true);
       try {
-        const [loansRes, finesRes, reimbRes] = await Promise.all([
+        const [loansRes, finesRes, reimbRes, ebooksRes, resRes] = await Promise.all([
           api.getLoans().catch(() => ({ data: [] })),
           api.getMyFines().catch(() => ({ data: [] })),
           api.getReimbursementStatus().catch(() => null),
+          api.getMyDigitalLibrary().catch(() => ({ data: [] })),
+          api.getMyReservations().catch(() => ({ data: [] })),
         ]);
 
         const loanData = Array.isArray(loansRes) ? loansRes : loansRes.data || [];
         const fineData = Array.isArray(finesRes) ? finesRes : finesRes.data || [];
+        const ebookData = Array.isArray(ebooksRes) ? ebooksRes : ebooksRes.data || [];
+        const reservationData = Array.isArray(resRes) ? resRes : resRes.data || [];
 
         setLoans(loanData);
         setFines(fineData);
+        setEbooks(ebookData);
+        setReservations(reservationData);
         if (reimbRes?.latest_reimbursement) {
           setReimbursementStatus(reimbRes.latest_reimbursement);
         }
@@ -247,6 +260,43 @@ export default function Profile() {
           <Edit3 className="w-4 h-4" /> Edit Profile
         </button>
       </div>
+
+      {/* ░░░ NAVIGATION TABS ░░░ */}
+      <div className="flex items-center gap-2 border-b border-bark-100 pb-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab('account')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            activeTab === 'account'
+              ? 'bg-bark-700 text-cream-light shadow-card'
+              : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+          }`}
+        >
+          <User className="w-4 h-4" />
+          <span>Account & Membership</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('receipts')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            activeTab === 'receipts'
+              ? 'bg-bark-700 text-cream-light shadow-card'
+              : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          <span>Receipts & Accountability Slips</span>
+          {(ebooks.length + reservations.length) > 0 && (
+            <span className="px-1.5 py-0.2 text-[10px] font-mono rounded-full bg-tan text-bark-950 font-bold">
+              {ebooks.length + reservations.length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {activeTab === 'account' && (
+        <div className="space-y-8">
 
       {/* ░░░ REIMBURSEMENT DECISION NOTIFICATION BANNER ░░░ */}
       {reimbursementStatus && (
@@ -618,6 +668,195 @@ export default function Profile() {
           </div>
         </div>
       </div>
+    </div>
+  )}
+
+      {/* ░░░ TAB 2: OFFICIAL RECEIPTS & INVOICES CENTER ░░░ */}
+      {activeTab === 'receipts' && (
+        <div className="space-y-8 animate-in fade-in duration-200">
+          
+          {/* Header Banner */}
+          <div className="rounded-3xl border border-bark-100 bg-paper p-6 sm:p-8 shadow-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-bark-700 text-cream-light shadow-sm">
+                  <FileText className="w-5 h-5" />
+                </span>
+                <h2 className="text-xl font-extrabold text-bark-900">Official Receipts & Invoices</h2>
+              </div>
+              <p className="text-xs text-bark-600 max-w-2xl leading-relaxed">
+                Full patron accountability records for all digital e-book purchases and physical hold reservations. View, print, or save certified PDF slips for expense records and audits.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 font-mono text-xs">
+              <span className="px-3 py-1 rounded-xl bg-cream border border-bark-100 text-bark-800 font-bold">
+                {ebooks.length} E-Books
+              </span>
+              <span className="px-3 py-1 rounded-xl bg-cream border border-bark-100 text-bark-800 font-bold">
+                {reservations.length} Hold Slips
+              </span>
+            </div>
+          </div>
+
+          {/* Section 1: Digital E-Book Purchase Receipts */}
+          <div className="rounded-3xl border border-bark-100 bg-paper p-6 sm:p-8 shadow-card space-y-4">
+            <div className="flex items-center justify-between border-b border-bark-100 pb-4">
+              <div>
+                <h3 className="text-base font-extrabold text-bark-900 flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-tan-dark" /> Digital E-Book Purchases
+                </h3>
+                <p className="text-xs text-bark-500">Official receipts for lifetime digital reading streams</p>
+              </div>
+              <span className="text-xs font-mono text-bark-500 font-bold">{ebooks.length} Purchases</span>
+            </div>
+
+            {loading ? (
+              <div className="flex items-center justify-center py-12 text-bark-500 text-xs font-mono">
+                <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading purchase records...
+              </div>
+            ) : ebooks.length === 0 ? (
+              <div className="text-center py-12 text-bark-500 space-y-2">
+                <BookOpen className="w-8 h-8 mx-auto text-bark-400 opacity-60" />
+                <p className="text-xs">No digital e-book purchases found.</p>
+                <Link to="/catalog">
+                  <button className="mt-2 px-4 py-2 rounded-xl bg-bark-700 text-cream-light text-xs font-bold shadow-sm hover:bg-bark-800 transition">
+                    Explore E-Book Catalog
+                  </button>
+                </Link>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-cream-light/40 text-bark-600 uppercase text-[10px] font-mono tracking-wider">
+                    <tr>
+                      <th className="p-3.5 rounded-l-xl">Purchase Date</th>
+                      <th className="p-3.5">Book Title & Author</th>
+                      <th className="p-3.5">Format & Access</th>
+                      <th className="p-3.5">Amount (KES)</th>
+                      <th className="p-3.5 text-right rounded-r-xl">Official Receipt</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-bark-100/60">
+                    {ebooks.map((item) => {
+                      const book = item.book || item;
+                      const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString() : 'Active';
+                      const price = Number(item.purchase_price || book.digital_purchase_price || 50).toLocaleString();
+
+                      return (
+                        <tr key={item.id || book.id} className="hover:bg-cream-light/20 transition-colors">
+                          <td className="p-3.5 font-mono text-bark-600 text-xs">{dateStr}</td>
+                          <td className="p-3.5">
+                            <strong className="text-bark-900 block font-semibold">{book.title}</strong>
+                            <span className="text-bark-500 text-[11px] italic">By {book.author}</span>
+                          </td>
+                          <td className="p-3.5 font-mono">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px] font-bold">
+                              <CheckCircle2 className="w-2.5 h-2.5" /> Lifetime Stream
+                            </span>
+                          </td>
+                          <td className="p-3.5 font-mono font-bold text-bark-900">
+                            KES {price}
+                          </td>
+                          <td className="p-3.5 text-right">
+                            <button
+                              type="button"
+                              onClick={() => setReceiptModal({ isOpen: true, data: { ...item, book, member: user?.member, user }, type: 'ebook' })}
+                              className="px-3 py-1.5 rounded-xl bg-bark-700 hover:bg-bark-800 text-cream-light text-xs font-bold shadow-sm transition inline-flex items-center gap-1.5"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                              <span>View Receipt</span>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Section 2: Physical Book Hold Reservation Slips */}
+          <div className="rounded-3xl border border-bark-100 bg-paper p-6 sm:p-8 shadow-card space-y-4">
+            <div className="flex items-center justify-between border-b border-bark-100 pb-4">
+              <div>
+                <h3 className="text-base font-extrabold text-bark-900 flex items-center gap-2">
+                  <Bookmark className="w-4 h-4 text-tan-dark" /> Book Hold Reservation Slips
+                </h3>
+                <p className="text-xs text-bark-500">Official priority hold queue slips and pickup authorization</p>
+              </div>
+              <span className="text-xs font-mono text-bark-500 font-bold">{reservations.length} Reservations</span>
+            </div>
+
+            {loading ? (
+              <div className="flex items-center justify-center py-12 text-bark-500 text-xs font-mono">
+                <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading reservation slips...
+              </div>
+            ) : reservations.length === 0 ? (
+              <div className="text-center py-12 text-bark-500 space-y-2">
+                <Bookmark className="w-8 h-8 mx-auto text-bark-400 opacity-60" />
+                <p className="text-xs">No active hold reservations.</p>
+                <p className="text-[11px] text-bark-400">When all physical copies of a book are checked out, you can place a queue hold from the book details page.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-cream-light/40 text-bark-600 uppercase text-[10px] font-mono tracking-wider">
+                    <tr>
+                      <th className="p-3.5 rounded-l-xl">Reservation Date</th>
+                      <th className="p-3.5">Reserved Book</th>
+                      <th className="p-3.5">Queue Priority</th>
+                      <th className="p-3.5">Status</th>
+                      <th className="p-3.5 text-right rounded-r-xl">Official Slip</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-bark-100/60">
+                    {reservations.map((res) => {
+                      const book = res.book || {};
+                      const dateStr = res.reserved_at || res.created_at ? new Date(res.reserved_at || res.created_at).toLocaleDateString() : 'Recent';
+
+                      return (
+                        <tr key={res.id} className="hover:bg-cream-light/20 transition-colors">
+                          <td className="p-3.5 font-mono text-bark-600 text-xs">{dateStr}</td>
+                          <td className="p-3.5">
+                            <strong className="text-bark-900 block font-semibold">{book.title || 'Reserved Title'}</strong>
+                            <span className="text-bark-500 text-[11px] italic">By {book.author || 'Author'}</span>
+                          </td>
+                          <td className="p-3.5 font-mono">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-xs font-bold">
+                              Queue #{res.queue_position || 1}
+                            </span>
+                          </td>
+                          <td className="p-3.5 font-mono">
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${
+                              res.status === 'ready_for_pickup' 
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : 'bg-cream text-bark-700 border border-bark-200'
+                            }`}>
+                              {res.status || 'Pending'}
+                            </span>
+                          </td>
+                          <td className="p-3.5 text-right">
+                            <button
+                              type="button"
+                              onClick={() => setReceiptModal({ isOpen: true, data: { ...res, book, member: user?.member, user }, type: 'reservation' })}
+                              className="px-3 py-1.5 rounded-xl bg-bark-700 hover:bg-bark-800 text-cream-light text-xs font-bold shadow-sm transition inline-flex items-center gap-1.5"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                              <span>View Slip</span>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+        </div>
+      )}
 
       {/* ░░░ EDIT PROFILE MODAL ░░░ */}
       {editModalOpen && (
@@ -834,6 +1073,16 @@ export default function Profile() {
           onClose={() => setDarajaModal({ isOpen: false, fine: null })}
           fineId={darajaModal.fine?.id}
           amount={darajaModal.fine?.balance || darajaModal.fine?.amount || 100}
+        />
+      )}
+
+      {/* ░░░ OFFICIAL RECEIPT & SLIP MODAL ░░░ */}
+      {receiptModal.isOpen && (
+        <ReceiptModal
+          isOpen={receiptModal.isOpen}
+          onClose={() => setReceiptModal({ isOpen: false, data: null, type: 'ebook' })}
+          receiptData={receiptModal.data}
+          type={receiptModal.type}
         />
       )}
 
