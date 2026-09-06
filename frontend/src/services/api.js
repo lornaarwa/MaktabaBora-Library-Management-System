@@ -129,6 +129,10 @@ export const api = {
     getFines: () => apiClient.get('/librarian/fines'),
     waiveFine: (fineId) => apiClient.post(`/librarian/fines/${fineId}/waive`),
 
+    // Open Library Catalog Integration
+    searchOpenLibrary: (params = {}) => apiClient.get('/librarian/openlibrary/search', { params }),
+    importOpenLibraryBooks: (books) => apiClient.post('/librarian/openlibrary/import', { books }),
+
     // Librarian Book Copies & Subscriptions CRUD
     getLibrarianCopies: () => apiClient.get('/librarian/book-copies'),
     createLibrarianCopy: (data) => apiClient.post('/librarian/book-copies', data),

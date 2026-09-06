@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
     QrCode, BookCheck, ShieldAlert, CheckCircle2, Users, BarChart3, AlertCircle, Loader2, BookOpen,
     Plus, Edit2, Trash2, Search, X, Layers, Table, CreditCard, ChevronLeft, ChevronRight, Menu, Activity, Shield,
-    DollarSign, RefreshCw, XCircle, ChevronDown
+    DollarSign, RefreshCw, XCircle, ChevronDown, Sparkles, Globe, DownloadCloud
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -31,6 +31,14 @@ export default function LibrarianDashboard() {
     const [refundRequests, setRefundRequests] = useState([]);
     const [reimbLoading, setReimbLoading] = useState(false);
     const [loading, setLoading] = useState(true);
+
+    // Open Library Integration State
+    const [olQuery, setOlQuery] = useState('');
+    const [olSubject, setOlSubject] = useState('technology');
+    const [olResults, setOlResults] = useState([]);
+    const [olLoading, setOlLoading] = useState(false);
+    const [olImportingKeys, setOlImportingKeys] = useState([]);
+    const [olImportAllLoading, setOlImportAllLoading] = useState(false);
 
     // Member Directory Search & Filters State
     const [directorySearch, setDirectorySearch] = useState('');
@@ -200,6 +208,55 @@ export default function LibrarianDashboard() {
     useEffect(() => {
         fetchAllData();
     }, []);
+
+    // Open Library Handlers
+    const handleSearchOpenLibrary = async (subjectOverride = null) => {
+        setOlLoading(true);
+        setErrorMsg(null);
+        try {
+            const sub = subjectOverride !== null ? subjectOverride : olSubject;
+            const res = await api.searchOpenLibrary({
+                query: olQuery,
+                subject: sub,
+                limit: 12,
+            });
+            setOlResults(res.data || res || []);
+        } catch (err) {
+            setErrorMsg(err.message || 'Failed to search Open Library.');
+        } finally {
+            setOlLoading(false);
+        }
+    };
+
+    const handleImportSingleOpenLibrary = async (bookItem) => {
+        const itemKey = bookItem.openlibrary_key || bookItem.isbn || bookItem.title;
+        setOlImportingKeys((prev) => [...prev, itemKey]);
+        setErrorMsg(null);
+        try {
+            await api.importOpenLibraryBooks([bookItem]);
+            setSuccessMsg(`Successfully imported "${bookItem.title}" into library catalog!`);
+            fetchAllData();
+        } catch (err) {
+            setErrorMsg(err.message || 'Failed to import book.');
+        } finally {
+            setOlImportingKeys((prev) => prev.filter((k) => k !== itemKey));
+        }
+    };
+
+    const handleImportAllOpenLibrary = async () => {
+        if (olResults.length === 0) return;
+        setOlImportAllLoading(true);
+        setErrorMsg(null);
+        try {
+            const res = await api.importOpenLibraryBooks(olResults);
+            setSuccessMsg(`Successfully imported ${res.data?.length || olResults.length} books into catalog!`);
+            fetchAllData();
+        } catch (err) {
+            setErrorMsg(err.message || 'Failed to batch import books.');
+        } finally {
+            setOlImportAllLoading(false);
+        }
+    };
 
     // 1. Checkout Handler
     const handleCheckout = async (e) => {
@@ -508,6 +565,21 @@ export default function LibrarianDashboard() {
                 >
                     <BookOpen className="w-4 h-4" />
                     <span>Add Books / Inventory</span>
+                </button>
+
+                <button
+                    onClick={() => {
+                        setActiveTab('openlibrary');
+                        if (olResults.length === 0) handleSearchOpenLibrary('technology');
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                        activeTab === 'openlibrary'
+                            ? 'bg-bark-700 text-cream-light shadow-card'
+                            : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+                    }`}
+                >
+                    <Sparkles className="w-4 h-4 text-tan" />
+                    <span>Import Open Library</span>
                 </button>
 
                 <button
@@ -1078,6 +1150,194 @@ export default function LibrarianDashboard() {
                                         </tbody>
                                     </table>
                                 </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* TAB: Import from Open Library */}
+                    {activeTab === 'openlibrary' && (
+                        <div className="space-y-6">
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-6 shadow-sm">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-bark-100 pb-4">
+                                    <div>
+                                        <h2 className="text-base font-bold text-bark-900 flex items-center gap-2 font-mono">
+                                            <Sparkles className="w-4 h-4 text-tan" /> Import from Open Library
+                                        </h2>
+                                        <p className="text-xs text-bark-500 mt-0.5">
+                                            Discover and catalog books directly from <a href="https://openlibrary.org" target="_blank" rel="noreferrer" className="underline font-medium hover:text-bark-900">openlibrary.org</a> with covers and digital reader links.
+                                        </p>
+                                    </div>
+
+                                    {olResults.length > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={handleImportAllOpenLibrary}
+                                            disabled={olImportAllLoading}
+                                            className="px-4 py-2 rounded-xl bg-bark-700 hover:bg-bark-900 text-cream-light text-xs font-bold flex items-center gap-2 shadow-sm transition disabled:opacity-50"
+                                        >
+                                            {olImportAllLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <DownloadCloud className="w-3.5 h-3.5" />}
+                                            <span>Import All Visible ({olResults.length})</span>
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Subject Presets */}
+                                <div className="space-y-2">
+                                    <label className="block text-[11px] font-mono uppercase tracking-wider text-bark-500">
+                                        Popular Subjects (One-Click Browse)
+                                    </label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {[
+                                            'technology', 'fiction', 'science', 'history', 'philosophy',
+                                            'psychology', 'business', 'classic_literature', 'fantasy', 'mystery'
+                                        ].map((sub) => (
+                                            <button
+                                                key={sub}
+                                                type="button"
+                                                onClick={() => {
+                                                    setOlSubject(sub);
+                                                    handleSearchOpenLibrary(sub);
+                                                }}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition ${
+                                                    olSubject === sub
+                                                        ? 'bg-bark-700 text-cream-light shadow-sm'
+                                                        : 'bg-paper border border-bark-100 text-bark-700 hover:bg-cream-light/60'
+                                                }`}
+                                            >
+                                                {sub.replace('_', ' ')}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Search Bar */}
+                                <form
+                                    onSubmit={(e) => {
+                                        e.preventDefault();
+                                        handleSearchOpenLibrary();
+                                    }}
+                                    className="flex flex-col sm:flex-row gap-3 pt-2"
+                                >
+                                    <div className="relative flex-1">
+                                        <Search className="w-4 h-4 absolute left-3 top-3 text-bark-500" />
+                                        <input
+                                            type="text"
+                                            value={olQuery}
+                                            onChange={(e) => setOlQuery(e.target.value)}
+                                            placeholder="Search Open Library by keyword, title, or author (e.g., Dune, Python, Robotics)..."
+                                            className="w-full pl-9 pr-3 py-2 rounded-xl border border-bark-100 bg-paper text-bark-900 text-xs focus:ring-1 focus:ring-tan-dark"
+                                        />
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        disabled={olLoading}
+                                        className="px-5 py-2 rounded-xl bg-bark-700 hover:bg-bark-900 text-cream-light text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition disabled:opacity-50"
+                                    >
+                                        {olLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                                        <span>Search Open Library</span>
+                                    </button>
+                                </form>
+
+                                {/* Results Grid */}
+                                {olLoading ? (
+                                    <div className="py-16 text-center text-xs text-bark-500 flex flex-col items-center justify-center gap-2 font-mono">
+                                        <Loader2 className="w-6 h-6 animate-spin text-bark-700" />
+                                        <span>Querying Open Library APIs (identified 3 req/sec rate limit)...</span>
+                                    </div>
+                                ) : olResults.length === 0 ? (
+                                    <div className="py-12 text-center text-xs text-bark-500 bg-paper rounded-xl border border-bark-100 space-y-2">
+                                        <Globe className="w-8 h-8 text-bark-400 mx-auto opacity-60" />
+                                        <p className="font-semibold text-bark-700">No Open Library books to display.</p>
+                                        <p>Click any subject chip above or enter a search term to find books to import.</p>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {olResults.map((item, idx) => {
+                                            const itemKey = item.openlibrary_key || item.isbn || `${item.title}-${idx}`;
+                                            const isImporting = olImportingKeys.includes(itemKey);
+                                            const isAlreadyImported = books.some((b) => b.isbn === item.isbn || b.title.toLowerCase() === item.title.toLowerCase());
+
+                                            return (
+                                                <div
+                                                    key={itemKey}
+                                                    className="bg-paper border border-bark-100 rounded-xl p-4 flex flex-col justify-between shadow-card hover:border-bark-300 transition"
+                                                >
+                                                    <div className="flex gap-3 items-start">
+                                                        <div className="w-16 h-22 rounded-md overflow-hidden bg-cream-light/60 flex-shrink-0 border border-bark-100 shadow-sm">
+                                                            {item.cover_image_path ? (
+                                                                <img
+                                                                    src={item.cover_image_path}
+                                                                    alt={item.title}
+                                                                    className="w-full h-full object-cover"
+                                                                    loading="lazy"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center text-[10px] font-mono text-bark-400 p-1 text-center bg-cream-light/30">
+                                                                    No Cover
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="min-w-0 flex-1 space-y-1">
+                                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                                <span className="font-mono text-[9px] uppercase tracking-wider text-bark-500 bg-cream-light px-1.5 py-0.5 rounded">
+                                                                    {item.genre || 'General'}
+                                                                </span>
+                                                                {item.has_embed_reader && (
+                                                                    <span className="font-mono text-[9px] uppercase tracking-wider text-olive-dark bg-olive/20 px-1.5 py-0.5 rounded font-semibold">
+                                                                        IA E-Reader
+                                                                    </span>
+                                                                )}
+                                                            </div>
+
+                                                            <h4 className="font-bold text-sm text-bark-900 line-clamp-1" title={item.title}>
+                                                                {item.title}
+                                                            </h4>
+                                                            <p className="text-xs text-bark-500 truncate">By {item.author}</p>
+                                                            <p className="text-[10px] font-mono text-bark-400">
+                                                                Published: {item.publication_year || 'N/A'} {item.isbn ? `· ISBN: ${item.isbn}` : ''}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="pt-4 border-t border-bark-100 mt-3 flex items-center justify-between gap-2">
+                                                        <span className="font-mono text-xs font-bold text-bark-900">
+                                                            KES {Number(item.digital_purchase_price || 50).toFixed(2)}
+                                                        </span>
+
+                                                        <button
+                                                            type="button"
+                                                            disabled={isImporting || isAlreadyImported}
+                                                            onClick={() => handleImportSingleOpenLibrary(item)}
+                                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-sm ${
+                                                                isAlreadyImported
+                                                                    ? 'bg-olive/20 text-olive-dark border border-olive-dark/30 cursor-default'
+                                                                    : 'bg-bark-700 hover:bg-bark-900 text-cream-light'
+                                                            }`}
+                                                        >
+                                                            {isImporting ? (
+                                                                <>
+                                                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                                    <span>Importing...</span>
+                                                                </>
+                                                            ) : isAlreadyImported ? (
+                                                                <>
+                                                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                    <span>In Catalog</span>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Plus className="w-3.5 h-3.5" />
+                                                                    <span>Import to Library</span>
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}

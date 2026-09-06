@@ -57,6 +57,48 @@ class LibrarianDashboardController extends Controller
         ]);
     }
 
+    public function searchOpenLibrary(Request $request, \App\Services\OpenLibraryService $openLibraryService): JsonResponse
+    {
+        $query = (string) $request->input('query', '');
+        $subject = (string) $request->input('subject', '');
+        $limit = (int) $request->input('limit', 12);
+
+        if (!empty($subject)) {
+            $results = $openLibraryService->fetchBySubject($subject, $limit);
+        } else {
+            $results = $openLibraryService->search($query ?: 'classic', $limit);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $results,
+        ]);
+    }
+
+    public function importOpenLibrary(Request $request, \App\Services\OpenLibraryService $openLibraryService): JsonResponse
+    {
+        $validated = $request->validate([
+            'books' => 'required|array|min:1',
+            'books.*.title' => 'required|string',
+            'books.*.author' => 'nullable|string',
+            'books.*.genre' => 'nullable|string',
+            'books.*.isbn' => 'nullable|string',
+            'books.*.cover_image_path' => 'nullable|string',
+            'books.*.file_path' => 'nullable|string',
+            'books.*.publication_year' => 'nullable|integer',
+            'books.*.digital_purchase_price' => 'nullable|numeric',
+            'books.*.total_copies' => 'nullable|integer',
+        ]);
+
+        $result = $openLibraryService->importBooks($validated['books']);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Successfully imported {$result['imported']} book(s) into catalog.",
+            'data' => $result['books'],
+        ], 201);
+    }
+
     public function metrics(): JsonResponse
     {
         return response()->json([

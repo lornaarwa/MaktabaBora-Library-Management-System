@@ -114,6 +114,10 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
             Route::get('/refund-requests', [LibrarianDashboardController::class, 'getRefundRequests']);
             Route::post('/refund-requests/{id}/approve', [LibrarianDashboardController::class, 'approveRefund']);
             Route::post('/refund-requests/{id}/reject', [LibrarianDashboardController::class, 'rejectRefund']);
+
+            // Open Library Search & 1-Click Catalog Import
+            Route::get('/openlibrary/search', [LibrarianDashboardController::class, 'searchOpenLibrary']);
+            Route::post('/openlibrary/import', [LibrarianDashboardController::class, 'importOpenLibrary']);
         });
 
         // Admin Console Routes
