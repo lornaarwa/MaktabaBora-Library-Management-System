@@ -7,6 +7,7 @@ import DarajaPayModal from '../components/DarajaPayModal';
 import SubscriptionPassModal from '../components/SubscriptionPassModal';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useLibrary } from '../context/LibraryContext';
 import { BookCardSkeleton } from '../components/ui/Skeleton';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorState } from '../components/ui/ErrorState';
@@ -14,6 +15,7 @@ import { cn } from '../lib/utils';
 
 export default function PublicCatalog() {
     const { user } = useAuth();
+    const { pushToast } = useLibrary();
     const [books, setBooks] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedGenre, setSelectedGenre] = useState('All');
@@ -73,21 +75,21 @@ export default function PublicCatalog() {
             if (err.status === 403) {
                 setDarajaModal({ isOpen: true, type: 'digital', item: book });
             } else {
-                alert(err.message || 'Failed to stream digital book.');
+                pushToast({ title: 'Reader Error', detail: err.message || 'Failed to stream digital book.', tone: 'error' });
             }
         }
     };
 
     const handleReserve = async (book) => {
         if (!user) {
-            alert('Please log in to place hold queue reservations.');
+            pushToast({ title: 'Authentication Required', detail: 'Please log in to place hold queue reservations.', tone: 'info' });
             return;
         }
         try {
             await api.reserveBook(book.id);
-            alert(`Hold reservation placed successfully for "${book.title}"! You can track your physical collection status in My Library.`);
+            pushToast({ title: 'Reservation Placed', detail: `Hold reservation placed for "${book.title}"! You can track your physical collection status in My Library.`, tone: 'success' });
         } catch (err) {
-            alert(err.message || 'Could not place reservation.');
+            pushToast({ title: 'Reservation Failed', detail: err.message || 'Could not place reservation.', tone: 'error' });
         }
     };
 

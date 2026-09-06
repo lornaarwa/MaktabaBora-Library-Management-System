@@ -73,9 +73,12 @@ export function LibraryProvider({ children }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const pushToast = useCallback((toast) => {
+  const pushToast = useCallback((toast, explicitTone = 'info') => {
     const id = Date.now() + Math.random();
-    setToasts((prev) => [...prev, { ...toast, id }]);
+    const toastObj = typeof toast === 'string'
+      ? { title: toast, detail: null, tone: explicitTone }
+      : { tone: 'info', ...toast };
+    setToasts((prev) => [...prev, { ...toastObj, id }]);
     window.setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4200);
   }, []);
 

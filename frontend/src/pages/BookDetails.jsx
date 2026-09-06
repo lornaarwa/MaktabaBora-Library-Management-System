@@ -44,7 +44,7 @@ export default function BookDetails() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { addToCart } = useLibrary();
+  const { addToCart, pushToast } = useLibrary();
 
   const [book, setBook] = useState(location.state?.book || null);
   const [loading, setLoading] = useState(!book);
@@ -103,7 +103,7 @@ export default function BookDetails() {
       if (err.status === 403) {
         setDarajaModal({ isOpen: true, type: 'digital', item: target });
       } else {
-        alert(err.message || 'Failed to stream digital book.');
+        pushToast({ title: 'Reader Error', detail: err.message || 'Failed to stream digital book.', tone: 'error' });
       }
     }
   };
@@ -112,9 +112,9 @@ export default function BookDetails() {
     setReserving(true);
     try {
       await api.reserveBook(target.id);
-      alert(`Hold reservation placed successfully for "${target.title}"! You can track your physical collection status in My Library.`);
+      pushToast({ title: 'Reservation Placed', detail: `Hold reservation placed for "${target.title}"! You can track your physical collection status in My Library.`, tone: 'success' });
     } catch (err) {
-      alert(err.message || 'Could not place reservation.');
+      pushToast({ title: 'Reservation Failed', detail: err.message || 'Could not place reservation.', tone: 'error' });
     } finally {
       setReserving(false);
     }

@@ -157,6 +157,11 @@ export const api = {
     getAdminReimbursements: () => apiClient.get('/admin/reimbursements'),
     reviewAdminReimbursement: (id, data) => apiClient.post(`/admin/reimbursements/${id}/review`, data),
 
+    // Hold Reservations Approvals & Circulation Desk
+    getLibrarianReservations: (status) => apiClient.get('/librarian/reservations', { params: status ? { status } : {} }),
+    approveLibrarianReservation: (id, data = {}) => apiClient.post(`/librarian/reservations/${id}/approve`, data),
+    denyLibrarianReservation: (id, data = {}) => apiClient.post(`/librarian/reservations/${id}/deny`, data),
+
     // Admin Operations
     getAdminAnalytics: () => apiClient.get('/admin/analytics'),
     getAdminApiLogs: () => apiClient.get('/admin/api-logs'),

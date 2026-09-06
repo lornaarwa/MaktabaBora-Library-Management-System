@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, Clock, ShieldCheck, ShieldAlert, Sparkles, ShoppingBag, Loader2, User, UserPlus, Bookmark, XCircle, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLibrary } from '../context/LibraryContext';
 import { api } from '../services/api';
 import DarajaPayModal from '../components/DarajaPayModal';
 import SubscriptionPassModal from '../components/SubscriptionPassModal';
@@ -14,6 +15,7 @@ import BookMiniCard from '../components/BookMiniCard';
 
 export default function MemberDashboard() {
     const { user } = useAuth();
+    const { pushToast } = useLibrary();
     const [loans, setLoans] = useState([]);
     const [reservations, setReservations] = useState([]);
     const [digitalLibrary, setDigitalLibrary] = useState([]);
@@ -67,8 +69,9 @@ export default function MemberDashboard() {
         try {
             await api.cancelReservation(reservationId);
             setReservations(prev => prev.filter(r => r.id !== reservationId));
+            pushToast({ title: 'Reservation Cancelled', detail: `Cancelled reservation for "${bookTitle}".`, tone: 'info' });
         } catch (err) {
-            alert(err.message || 'Failed to cancel reservation.');
+            pushToast({ title: 'Cancellation Failed', detail: err.message || 'Failed to cancel reservation.', tone: 'error' });
         }
     };
 
@@ -79,7 +82,7 @@ export default function MemberDashboard() {
             const res = await api.readDigitalBook(book.id);
             setReaderModal({ isOpen: true, data: res.data || res });
         } catch (err) {
-            alert(err.message || 'Failed to stream digital book.');
+            pushToast({ title: 'Reader Error', detail: err.message || 'Failed to stream digital book.', tone: 'error' });
         }
     };
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLibrary } from '../context/LibraryContext';
 import { api } from '../services/api';
 import {
   User,
@@ -35,6 +36,7 @@ import ReceiptModal from '../components/ReceiptModal';
 
 export default function Profile() {
   const { user, setUser } = useAuth();
+  const { pushToast } = useLibrary();
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState('account'); // 'account' | 'receipts'
@@ -145,7 +147,7 @@ export default function Profile() {
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      alert('Image file size exceeds 2MB limit. Please choose a smaller image.');
+      pushToast({ title: 'File Too Large', detail: 'Image file size exceeds 2MB limit. Please choose a smaller image.', tone: 'error' });
       return;
     }
 
@@ -159,8 +161,9 @@ export default function Profile() {
           setUser(updatedUser);
           localStorage.setItem('smartlib_user', JSON.stringify(updatedUser));
         }
+        pushToast({ title: 'Avatar Updated', detail: 'Your profile picture has been updated successfully.', tone: 'success' });
       } catch (err) {
-        alert(err.message || 'Failed to upload profile picture.');
+        pushToast({ title: 'Upload Failed', detail: err.message || 'Failed to upload profile picture.', tone: 'error' });
       }
     };
     reader.readAsDataURL(file);
@@ -211,12 +214,13 @@ export default function Profile() {
         });
       }
       setCancelMsg('Your membership subscription has been cancelled.');
+      pushToast({ title: 'Subscription Cancelled', detail: 'Your membership subscription has been cancelled.', tone: 'info' });
       setTimeout(() => {
         setCancelModalOpen(false);
         setCancelMsg(null);
       }, 2000);
     } catch (err) {
-      alert(err.message || 'Failed to cancel membership.');
+      pushToast({ title: 'Cancellation Failed', detail: err.message || 'Failed to cancel membership.', tone: 'error' });
     } finally {
       setCancelling(false);
     }
@@ -229,8 +233,9 @@ export default function Profile() {
     try {
       await api.cancelReservation(reservationId);
       setReservations((prev) => prev.filter((r) => r.id !== reservationId));
+      pushToast({ title: 'Reservation Cancelled', detail: `Cancelled hold reservation for "${bookTitle}".`, tone: 'info' });
     } catch (err) {
-      alert(err.message || 'Failed to cancel reservation.');
+      pushToast({ title: 'Cancellation Failed', detail: err.message || 'Failed to cancel reservation.', tone: 'error' });
     }
   };
 
@@ -245,8 +250,9 @@ export default function Profile() {
       if (res.reimbursement) {
         setReimbursementStatus(res.reimbursement);
       }
+      pushToast({ title: 'Refund Requested', detail: 'Your refund request has been submitted for review.', tone: 'success' });
     } catch (err) {
-      alert(err.message || 'Failed to submit refund request.');
+      pushToast({ title: 'Refund Request Failed', detail: err.message || 'Failed to submit refund request.', tone: 'error' });
     } finally {
       setRefundSubmitting(false);
     }
