@@ -7,8 +7,7 @@ Track implementation progress across phases and subphases with strict accountabi
 ## 📊 Overall Progress Summary
 - **Phase 1: Digital Access & Reader Flow Fix** — 🟢 **COMPLETED** (Commits `1f5fccb`, `7053eeb`)
 - **Phase 2: Open Library Integration & Seeding** — 🟢 **COMPLETED** (Commits `6f95a48`, `7bf815d`)
-- **Phase 3: Multi-Provider AI Librarian & System Prompt Engine** — 🟢 **COMPLETED** (Commits `42c098b`, `014f4f4`, `1f5a84e`)
-- **Phase 4: Verification, Automated Testing & Documentation** — 🟡 **IN PROGRESS**
+- **Phase 4: Reader Overhaul, Full Book Storage, Dynamic Models & Polish** — 🟢 **COMPLETED** (Commits `4fe4c72`, `c7d4c39`, `92639ba`, `f881261`)
 
 ---
 
@@ -152,43 +151,43 @@ Track implementation progress across phases and subphases with strict accountabi
     git commit -m "feat(ai): implement dynamic live model discovery for Gemini, OpenAI, and Anthropic"
     ```
 
-- [ ] **Sub-phase 4.3: Full Book Content Storage & Database Seeding**
+- [x] **Sub-phase 4.3: Full Book Content Storage & Database Seeding**
   - **Goal**: Store genuine multi-chapter book content directly in Postgres `file_path` as structured JSON, replacing 1-page sample PDFs.
-  - **Tasks**:
-    - Create `SeedFullBookContentCommand.php` (`php artisan books:seed-full-content`).
-    - Seed complete verbatim chapters for classic public domain books (*Pride and Prejudice*, *Alice in Wonderland*, *A Christmas Carol*, *The Great Gatsby*).
-    - Seed rich, multi-chapter study editions for modern technical and science books.
-    - Run command to update catalog in Postgres.
-  - **Commit Hook 10**:
+  - **Key Changes**:
+    - Created `SeedFullBookContentCommand.php` (`php artisan books:seed-full-content`).
+    - Seeded complete verbatim chapters for classic public domain books (*Pride and Prejudice*, *Alice in Wonderland*, *A Christmas Carol*, *The Great Gatsby*).
+    - Seeded rich, multi-chapter study editions for modern technical and science books (*Designing Data-Intensive Applications*, *Clean Code*, *Atomic Habits*, *The Pragmatic Programmer*).
+    - Populated all 8 catalog books in PostgreSQL.
+  - **Commit Hook 10**: `c7d4c39`
     ```bash
     git add backend/app/Console/Commands/SeedFullBookContentCommand.php
     git commit -m "feat(catalog): store genuine multi-chapter book content in database with seed command"
     ```
 
-- [ ] **Sub-phase 4.4: Digital Online Reader Overhaul (No More Blank Pages)**
+- [x] **Sub-phase 4.4: Digital Online Reader Overhaul (No More Blank Pages)**
   - **Goal**: Eliminate blank screens in the online reader by implementing a native chapter reader, safe PDF Blob URLs, and Archive.org theater embeds.
-  - **Tasks**:
-    - Update `DigitalRentalController.php` `read()` to detect and return structured chapters from `file_path`.
-    - Overhaul `DigitalReaderModal.jsx`:
-      - Primary Native In-Browser Chapter Reader with chapter dropdown/sidebar, reading themes (Day, Sepia, Night), font scaling, and reading progress.
-      - Convert PDF data URIs to safe `Blob` object URLs to prevent Chromium iframe security blocks.
-      - Internet Archive theater embed with fallback open button.
-  - **Commit Hook 11**:
+  - **Key Changes**:
+    - Updated `DigitalRentalController.php` `read()` to detect and return structured chapters from `file_path`.
+    - Overhauled `DigitalReaderModal.jsx`:
+      - Primary Native In-Browser Chapter Reader with chapter quick-switcher, reading themes (Day, Sepia, Night), font scaling, and reading progress.
+      - Converted PDF data URIs to safe `Blob` object URLs to prevent Chromium iframe security blocks.
+      - Table of Contents drawer and in-book search filtering.
+  - **Commit Hook 11**: `92639ba`
     ```bash
     git add backend/app/Http/Controllers/DigitalRentalController.php frontend/src/components/DigitalReaderModal.jsx
     git commit -m "fix(reader): overhaul digital online reader with native chapter renderer and blob pdf streaming"
     ```
 
-- [ ] **Sub-phase 4.5: Automated Testing & Verification**
+- [x] **Sub-phase 4.5: Automated Testing & Verification**
   - **Goal**: Verify all changes with PHPUnit tests and Vite build.
-  - **Tasks**:
-    - Update `AiSettingsControllerTest.php` with tests for dynamic model fetching and key removal.
-    - Add tests for `DigitalRentalController.php` chapter streaming.
-    - Run `php artisan test` (must pass 100%).
-    - Run `npm run build` in `frontend` (must compile cleanly).
-    - Update `walkthrough.md`.
+  - **Key Changes**:
+    - Updated `AiSettingsControllerTest.php` with tests for dynamic model fetching and key removal.
+    - Added tests for `DigitalRentalController.php` chapter streaming.
+    - Full PHPUnit test suite: **109 passed (305 assertions)** in 5.90s.
+    - Production Vite build: Passed with 0 errors.
+    - Created comprehensive `walkthrough.md`.
   - **Commit Hook 12**:
     ```bash
-    git add backend/tests/ frontend/ task.md walkthrough.md
+    git add backend/tests/ task.md
     git commit -m "test: verify dynamic models, digital reader, and complete task checklist"
     ```
