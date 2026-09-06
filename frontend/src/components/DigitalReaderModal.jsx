@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { 
     BookOpen, Download, ExternalLink, Plus, Minus, Maximize2, 
     FileText, Sparkles, ChevronLeft, ChevronRight, Sun, Moon, 
@@ -11,6 +11,7 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
     const activeBook = bookData || book;
     
     // Reader configuration state
+    const scrollContainerRef = useRef(null);
     const [fontSize, setFontSize] = useState(16);
     const [fontFamily, setFontFamily] = useState('serif'); // 'serif' | 'sans'
     const [theme, setTheme] = useState('sepia'); // 'day' | 'sepia' | 'night'
@@ -177,6 +178,20 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
         }
     }, [currentPageInChapter, currentChapterIndex, chapters]);
 
+    const handleNextChapter = useCallback(() => {
+        if (currentChapterIndex < chapters.length - 1) {
+            setCurrentChapterIndex(prev => prev + 1);
+            setCurrentPageInChapter(0);
+        }
+    }, [currentChapterIndex, chapters.length]);
+
+    const handlePrevChapter = useCallback(() => {
+        if (currentChapterIndex > 0) {
+            setCurrentChapterIndex(prev => prev - 1);
+            setCurrentPageInChapter(0);
+        }
+    }, [currentChapterIndex]);
+
     // Keyboard arrow listener for smooth reading
     useEffect(() => {
         if (!isOpenState || viewMode !== 'reader') return;
@@ -195,6 +210,38 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpenState, viewMode, handleNextPage, handlePrevPage]);
+
+    // Scroll Observer: track visible page sheet in scroll reading layout
+    useEffect(() => {
+        if (!isOpenState || viewMode !== 'reader' || readingLayout !== 'scroll') return;
+
+        const container = scrollContainerRef.current;
+        if (!container) return;
+
+        const pageCards = container.querySelectorAll('.reader-page-card');
+        if (!pageCards || pageCards.length === 0) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const pageIdx = Number(entry.target.getAttribute('data-page-index'));
+                        if (!isNaN(pageIdx)) {
+                            setCurrentPageInChapter(pageIdx);
+                        }
+                    }
+                });
+            },
+            {
+                root: container,
+                rootMargin: '-15% 0px -65% 0px',
+                threshold: 0,
+            }
+        );
+
+        pageCards.forEach(card => observer.observe(card));
+        return () => observer.disconnect();
+    }, [isOpenState, viewMode, readingLayout, currentChapterIndex, chapterPages.length]);
 
     if (!isOpenState || !activeBook) return null;
 
@@ -240,6 +287,42 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
         if (!searchQuery.trim()) return true;
         return p.toLowerCase().includes(searchQuery.toLowerCase());
     });
+
+    const renderParagraph = (para, pIdx) => {
+        const isCodeBlock = para.startsWith('```');
+        const isBullet = para.startsWith('•') || para.startsWith('- ') || /^\d+\.\s/.test(para);
+        const isHeading = para.startsWith('###');
+
+        if (isHeading) {
+            return (
+                <h3 key={pIdx} className="text-lg font-bold font-sans pt-4 border-b border-bark-100/40 pb-1">
+                    {para.replace(/^###\s*/, '')}
+                </h3>
+            );
+        }
+
+        if (isCodeBlock) {
+            return (
+                <pre key={pIdx} className="p-4 rounded-xl bg-paper/90 border border-bark-200 font-mono text-xs overflow-x-auto my-4 text-bark-900">
+                    {para.replace(/```[a-z]*\n?/g, '')}
+                </pre>
+            );
+        }
+
+        if (isBullet) {
+            return (
+                <div key={pIdx} className="pl-4 border-l-2 border-tan-dark py-0.5">
+                    {para}
+                </div>
+            );
+        }
+
+        return (
+            <p key={pIdx} className="text-justify indent-6">
+                {para}
+            </p>
+        );
+    };
 
     return (
         <Modal
@@ -343,7 +426,7 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
             <div className="space-y-3">
                 {/* Control Ribbon: Table of Contents, Layout Mode, Search, Themes, Typography */}
                 <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border border-bark-100 bg-cream-light/40">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <button
                             type="button"
                             onClick={() => setShowToc(!showToc)}
@@ -354,6 +437,47 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                             <List className="w-3.5 h-3.5" />
                             <span>Contents ({totalChapters} Ch.)</span>
                         </button>
+
+                        {/* Top-Bar Chapter Navigation Alongside Toggles */}
+                        <div className="flex items-center rounded-lg border border-bark-100 bg-paper p-0.5 text-xs shadow-sm">
+                            <button
+                                type="button"
+                                onClick={handlePrevChapter}
+                                disabled={currentChapterIndex === 0}
+                                className="px-2 py-1 rounded-md text-bark-700 hover:bg-cream disabled:opacity-30 transition flex items-center gap-0.5"
+                                title="Previous Chapter"
+                            >
+                                <ChevronLeft className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline font-semibold">Prev Ch</span>
+                            </button>
+
+                            <select
+                                value={currentChapterIndex}
+                                onChange={(e) => {
+                                    setCurrentChapterIndex(Number(e.target.value));
+                                    setCurrentPageInChapter(0);
+                                }}
+                                className="bg-transparent text-bark-900 font-bold text-xs px-1.5 py-1 focus:outline-none cursor-pointer max-w-[120px] sm:max-w-[170px] truncate"
+                                title="Jump to Chapter"
+                            >
+                                {chapters.map((ch, idx) => (
+                                    <option key={ch.number || idx} value={idx}>
+                                        Ch. {ch.number || idx + 1}: {ch.title || `Chapter ${idx + 1}`}
+                                    </option>
+                                ))}
+                            </select>
+
+                            <button
+                                type="button"
+                                onClick={handleNextChapter}
+                                disabled={currentChapterIndex >= totalChapters - 1}
+                                className="px-2 py-1 rounded-md text-bark-700 hover:bg-cream disabled:opacity-30 transition flex items-center gap-0.5"
+                                title="Next Chapter"
+                            >
+                                <span className="hidden sm:inline font-semibold">Next Ch</span>
+                                <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
 
                         {/* Layout Mode (Paginated vs Scroll) */}
                         <div className="flex items-center rounded-lg border border-bark-100 bg-paper p-0.5 text-xs">
@@ -385,7 +509,7 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search in book..."
-                                className="pl-7 pr-6 py-1 rounded-lg border border-bark-100 bg-paper text-xs text-bark-900 placeholder:text-bark-400 w-32 sm:w-44 focus:outline-none focus:border-bark-300"
+                                className="pl-7 pr-6 py-1 rounded-lg border border-bark-100 bg-paper text-xs text-bark-900 placeholder:text-bark-400 w-28 sm:w-36 focus:outline-none focus:border-bark-300"
                             />
                             {searchQuery && (
                                 <button
@@ -541,6 +665,7 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                     {/* View Mode: Native Chapter Reader (Primary) */}
                     {viewMode === 'reader' && (
                         <div 
+                            ref={scrollContainerRef}
                             className={`p-6 sm:p-10 max-h-[640px] overflow-y-auto transition-colors duration-200 ${currentTheme.container} ${
                                 fontFamily === 'serif' ? 'font-serif' : 'font-sans'
                             }`}
@@ -565,74 +690,112 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                                 </div>
                             )}
 
-                            {/* Chapter Prose Body */}
-                            <div className="max-w-3xl mx-auto space-y-6 leading-relaxed min-h-[380px]">
-                                {searchQuery && (
-                                    <div className="p-3 rounded-xl bg-tan-light/40 border border-bark-100 font-sans text-xs text-bark-800 mb-4 flex items-center justify-between">
-                                        <span>Showing matches for <strong>"{searchQuery}"</strong> ({paragraphsToRender.length} paragraphs)</span>
-                                        <button onClick={() => setSearchQuery('')} className="underline text-tan-dark font-bold">Clear Search</button>
-                                    </div>
-                                )}
+                            {searchQuery && (
+                                <div className="max-w-3xl mx-auto p-3 rounded-xl bg-tan-light/40 border border-bark-100 font-sans text-xs text-bark-800 mb-6 flex items-center justify-between">
+                                    <span>Showing search matches for <strong>"{searchQuery}"</strong></span>
+                                    <button onClick={() => setSearchQuery('')} className="underline text-tan-dark font-bold">Clear Search</button>
+                                </div>
+                            )}
 
-                                {paragraphsToRender.map((para, pIdx) => {
-                                    const isCodeBlock = para.startsWith('```');
-                                    const isBullet = para.startsWith('•') || para.startsWith('- ') || /^\d+\.\s/.test(para);
-                                    const isHeading = para.startsWith('###');
+                            {readingLayout === 'scroll' ? (
+                                /* Continuous Scroll Mode with DISTINCT Physical Page Cards/Sheets */
+                                <div className="max-w-3xl mx-auto space-y-10 my-4">
+                                    {chapterPages.map((pageContent, pageIdx) => {
+                                        const pageParagraphs = pageContent.split('\n\n').filter(p => {
+                                            if (!searchQuery.trim()) return true;
+                                            return p.toLowerCase().includes(searchQuery.toLowerCase());
+                                        });
 
-                                    if (isHeading) {
+                                        if (searchQuery && pageParagraphs.length === 0) return null;
+
+                                        const pageGlobalNum = (chapterStartingPages[currentChapterIndex] || 1) + pageIdx;
+
                                         return (
-                                            <h3 key={pIdx} className="text-lg font-bold font-sans pt-4 border-b border-bark-100/40 pb-1">
-                                                {para.replace(/^###\s*/, '')}
-                                            </h3>
-                                        );
-                                    }
+                                            <div
+                                                key={pageIdx}
+                                                id={`reader-page-sheet-${pageIdx}`}
+                                                data-page-index={pageIdx}
+                                                className={`reader-page-card relative p-8 sm:p-12 rounded-2xl border ${currentTheme.border} ${
+                                                    theme === 'night'
+                                                        ? 'bg-zinc-950/80 shadow-2xl shadow-black/50 ring-1 ring-white/5'
+                                                        : theme === 'sepia'
+                                                        ? 'bg-[#FAF4E8] shadow-md shadow-[#433422]/5 ring-1 ring-[#E4D5BE]/60'
+                                                        : 'bg-white shadow-md shadow-zinc-200/80 ring-1 ring-zinc-200/60'
+                                                } transition-all duration-200`}
+                                            >
+                                                {/* Distinct Page Top Running Header */}
+                                                <div className={`flex items-center justify-between pb-4 mb-6 border-b ${currentTheme.chapterHeader} text-[11px] font-mono select-none opacity-85`}>
+                                                    <div className="flex items-center gap-2 truncate pr-4">
+                                                        <span className="font-bold uppercase tracking-wider text-tan-dark">
+                                                            {title}
+                                                        </span>
+                                                        <span className="opacity-40">·</span>
+                                                        <span className="truncate opacity-75">
+                                                            Ch. {currentChapter?.number || currentChapterIndex + 1}: {currentChapter?.title || `Chapter ${currentChapterIndex + 1}`}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                                        <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold ${currentTheme.accent}`}>
+                                                            Page {pageIdx + 1} of {chapterPages.length}
+                                                        </span>
+                                                        <span className="opacity-60 text-[10px]">
+                                                            (Book Pg {pageGlobalNum})
+                                                        </span>
+                                                    </div>
+                                                </div>
 
-                                    if (isCodeBlock) {
-                                        return (
-                                            <pre key={pIdx} className="p-4 rounded-xl bg-paper/90 border border-bark-200 font-mono text-xs overflow-x-auto my-4 text-bark-900">
-                                                {para.replace(/```[a-z]*\n?/g, '')}
-                                            </pre>
-                                        );
-                                    }
+                                                {/* Distinct Page Content Body */}
+                                                <div className="space-y-6 leading-relaxed min-h-[240px]">
+                                                    {pageParagraphs.map((para, pIdx) => renderParagraph(para, pIdx))}
+                                                </div>
 
-                                    if (isBullet) {
-                                        return (
-                                            <div key={pIdx} className="pl-4 border-l-2 border-tan-dark py-0.5">
-                                                {para}
+                                                {/* Distinct Page Bottom Running Footer */}
+                                                <div className={`mt-8 pt-4 border-t ${currentTheme.border} flex items-center justify-between text-[11px] font-mono select-none ${currentTheme.subtext}`}>
+                                                    <span className="text-[10px] uppercase tracking-wider opacity-75">
+                                                        Chapter {currentChapterIndex + 1}
+                                                    </span>
+                                                    <span className="font-bold text-xs tracking-widest text-tan-dark">
+                                                        — Page {pageIdx + 1} of {chapterPages.length} —
+                                                    </span>
+                                                    <span className="text-[10px] opacity-75">
+                                                        Book Page {pageGlobalNum} of {totalBookPages}
+                                                    </span>
+                                                </div>
                                             </div>
                                         );
-                                    }
-
-                                    return (
-                                        <p key={pIdx} className="text-justify indent-6">
-                                            {para}
-                                        </p>
-                                    );
-                                })}
-                            </div>
+                                    })}
+                                </div>
+                            ) : (
+                                /* Single Page Paginated Mode */
+                                <div className="max-w-3xl mx-auto space-y-6 leading-relaxed min-h-[380px]">
+                                    {paragraphsToRender.map((para, pIdx) => renderParagraph(para, pIdx))}
+                                </div>
+                            )}
 
                             {/* Chapter Bottom Navigation Footer */}
                             <div className={`mt-10 pt-6 border-t ${currentTheme.chapterHeader} flex items-center justify-between font-sans text-xs`}>
                                 <button
                                     type="button"
-                                    onClick={handlePrevPage}
-                                    disabled={currentChapterIndex === 0 && currentPageInChapter === 0}
+                                    onClick={readingLayout === 'scroll' ? handlePrevChapter : handlePrevPage}
+                                    disabled={currentChapterIndex === 0 && (readingLayout === 'scroll' || currentPageInChapter === 0)}
                                     className={`px-4 py-2 rounded-xl border ${currentTheme.border} ${currentTheme.accent} font-bold flex items-center gap-1.5 disabled:opacity-30`}
                                 >
-                                    <ChevronLeft className="w-4 h-4" /> Previous {readingLayout === 'paginated' ? 'Page' : 'Chapter'}
+                                    <ChevronLeft className="w-4 h-4" /> Previous {readingLayout === 'scroll' ? 'Chapter' : 'Page'}
                                 </button>
 
                                 <span className={`font-mono text-center ${currentTheme.subtext}`}>
-                                    Page {currentGlobalPage} of {totalBookPages} · Ch. {currentChapterIndex + 1}
+                                    {readingLayout === 'scroll'
+                                        ? `Chapter ${currentChapterIndex + 1} of ${totalChapters} (${chapterPages.length} Pages)`
+                                        : `Page ${currentGlobalPage} of ${totalBookPages} · Ch. ${currentChapterIndex + 1}`}
                                 </span>
 
                                 <button
                                     type="button"
-                                    onClick={handleNextPage}
-                                    disabled={currentChapterIndex >= totalChapters - 1 && currentPageInChapter >= chapterPages.length - 1}
+                                    onClick={readingLayout === 'scroll' ? handleNextChapter : handleNextPage}
+                                    disabled={currentChapterIndex >= totalChapters - 1 && (readingLayout === 'scroll' || currentPageInChapter >= chapterPages.length - 1)}
                                     className={`px-4 py-2 rounded-xl border ${currentTheme.border} ${currentTheme.accent} font-bold flex items-center gap-1.5 disabled:opacity-30`}
                                 >
-                                    Next {readingLayout === 'paginated' ? 'Page' : 'Chapter'} <ChevronRight className="w-4 h-4" />
+                                    Next {readingLayout === 'scroll' ? 'Chapter' : 'Page'} <ChevronRight className="w-4 h-4" />
                                 </button>
                             </div>
                         </div>
