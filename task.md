@@ -332,7 +332,7 @@ Track implementation progress across phases and subphases with strict accountabi
     git commit -m "feat(ui): implement persistent global dark mode across all pages, shell, and reader"
     ```
 
-- [ ] **Sub-phase 6.3: Member Reservations API & Receipts Data Layer**
+- [x] **Sub-phase 6.3: Member Reservations API & Receipts Data Layer**
   - **Goal**: Expose member hold reservations endpoint so users can retrieve their reservation history for official slips.
   - **Key Changes**:
     - In `backend/app/Http/Controllers/ReservationController.php`:

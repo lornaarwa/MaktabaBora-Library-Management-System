@@ -63,6 +63,7 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
                 ->middleware(['ensure.digital_access']);
 
             // Book Hold / Reservations Queue
+            Route::get('/reservations', [ReservationController::class, 'index']);
             Route::post('/reservations', [ReservationController::class, 'store'])
                 ->middleware(['check.book_availability', 'check.reservation_availability']);
 
