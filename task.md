@@ -5,20 +5,20 @@ Track implementation progress across phases and subphases with strict accountabi
 ---
 
 ## Phase 1: Digital Access & Reader Flow Fix
-- [ ] **Sub-phase 1.1: Backend Access Resolution & Middleware Hardening**
+- [x] **Sub-phase 1.1: Backend Access Resolution & Middleware Hardening**
   - Update `EnsureValidDigitalAccess.php` to resolve both `book_id` and `digital_purchases.id` for the authenticated member/user.
   - Update `DigitalRentalService.php` to check active purchase entitlement across both `member_id` and `user_id`.
   - Update `DigitalRentalController.php` `read()` to stream content for resolved book and `myLibrary()` to include full book details.
-- [ ] **Commit Hook 1**: 
+- [x] **Commit Hook 1**: 
   ```bash
   git add backend/app/Http/Middleware/EnsureValidDigitalAccess.php backend/app/Services/DigitalRentalService.php backend/app/Http/Controllers/DigitalRentalController.php
   git commit -m "fix(backend): resolve digital reading access verification and support purchase ID fallback"
   ```
 
-- [ ] **Sub-phase 1.2: Frontend Member Library & Digital Reader Modal Upgrade**
+- [x] **Sub-phase 1.2: Frontend Member Library & Digital Reader Modal Upgrade**
   - Fix `MemberDashboard.jsx` so `digitalLibrary.map` extracts `const book = item.book || item`, displays actual book titles and authors, and passes `book` to `handleReadDigital`.
   - Upgrade `DigitalReaderModal.jsx` to render an interactive `<iframe>` embed reader when `activeBook.file_url` is an Internet Archive embed (`https://archive.org/embed/...`) or external stream, embed PDF for data URI / storage PDFs, and provide fallback pagination.
-- [ ] **Commit Hook 2**: 
+- [x] **Commit Hook 2**: 
   ```bash
   git add frontend/src/pages/MemberDashboard.jsx frontend/src/components/DigitalReaderModal.jsx
   git commit -m "fix(frontend): bind purchased book properties and render embed stream in digital reader modal"
@@ -27,7 +27,7 @@ Track implementation progress across phases and subphases with strict accountabi
 ---
 
 ## Phase 2: Open Library Integration & Seeding
-- [ ] **Sub-phase 2.1: API-Compliant OpenLibraryService & Artisan Command**
+- [x] **Sub-phase 2.1: API-Compliant OpenLibraryService & Artisan Command**
   - Create `backend/app/Services/OpenLibraryService.php` strictly following https://openlibrary.org/developers/api:
     - Identified `User-Agent: SmartLibrarySystem/1.0 (dev@smartlibrary.org)` header for 3 req/sec rate tier.
     - 350ms delay between consecutive requests with backoff handling.
@@ -36,16 +36,16 @@ Track implementation progress across phases and subphases with strict accountabi
     - Capture public scans (`https://archive.org/embed/{ia}`) or generate high-quality fallback PDF stream.
     - Automatically create physical `BookCopy` records with barcodes and shelf rack locations.
   - Create `backend/app/Console/Commands/FetchOpenLibraryBooks.php` (`php artisan books:fetch-openlibrary {subject=technology} {--count=10}`).
-- [ ] **Commit Hook 3**: 
+- [x] **Commit Hook 3**: 
   ```bash
   git add backend/app/Services/OpenLibraryService.php backend/app/Console/Commands/FetchOpenLibraryBooks.php
   git commit -m "feat(catalog): add API-compliant OpenLibraryService and fetch-openlibrary artisan command"
   ```
 
-- [ ] **Sub-phase 2.2: Staff 1-Click Open Library Search & Import UI**
+- [x] **Sub-phase 2.2: Staff 1-Click Open Library Search & Import UI**
   - Add `GET /api/v1/librarian/openlibrary/search` and `POST /api/v1/librarian/openlibrary/import` in `routes/api.php` and `LibrarianDashboardController.php`.
   - Add "Import from Open Library" modal/section in `LibrarianDashboard.jsx` with genre preset chips, search input, cover preview, and one-click import button.
-- [ ] **Commit Hook 4**: 
+- [x] **Commit Hook 4**: 
   ```bash
   git add backend/app/Http/Controllers/LibrarianDashboardController.php backend/routes/api.php frontend/src/pages/LibrarianDashboard.jsx frontend/src/services/api.js
   git commit -m "feat(staff): add interactive Open Library search and 1-click import to catalog"
