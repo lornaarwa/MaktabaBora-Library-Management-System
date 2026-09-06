@@ -79,6 +79,19 @@ class OpenLibraryService
     }
 
     /**
+     * Search and immediately import matching books into local catalog.
+     *
+     * @param string $query
+     * @param int $limit
+     * @return array<int, Book>
+     */
+    public function searchAndImport(string $query, int $limit = 5): array
+    {
+        $results = $this->search($query, $limit);
+        return $this->importBooks($results)['books'];
+    }
+
+    /**
      * Fetch books by subject category (e.g., science, technology, fiction).
      *
      * @param string $subject
@@ -282,7 +295,8 @@ class OpenLibraryService
             }
         }
 
-        $ia = $work['ia'] ?? $work['availability']['identifier'] ?? null;
+        $rawIa = $work['ia'] ?? $work['availability']['identifier'] ?? null;
+        $ia = is_array($rawIa) ? ($rawIa[0] ?? null) : $rawIa;
         $readerEmbedUrl = $ia ? "https://archive.org/embed/{$ia}" : null;
 
         $cleanIsbn = '978-' . rand(100, 999) . '-' . rand(1000, 9999) . '-' . rand(10, 99);
