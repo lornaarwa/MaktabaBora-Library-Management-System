@@ -121,6 +121,11 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
             // Open Library Search & 1-Click Catalog Import
             Route::get('/openlibrary/search', [LibrarianDashboardController::class, 'searchOpenLibrary']);
             Route::post('/openlibrary/import', [LibrarianDashboardController::class, 'importOpenLibrary']);
+
+            // Hold Reservations Approvals & Circulation Desk
+            Route::get('/reservations', [LibrarianDashboardController::class, 'reservations']);
+            Route::post('/reservations/{reservation}/approve', [LibrarianDashboardController::class, 'approveReservation']);
+            Route::post('/reservations/{reservation}/deny', [LibrarianDashboardController::class, 'denyReservation']);
         });
 
         // Admin Console Routes

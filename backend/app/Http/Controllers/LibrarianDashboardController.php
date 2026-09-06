@@ -391,4 +391,101 @@ class LibrarianDashboardController extends Controller
             'data' => $req,
         ]);
     }
+
+    // 4. Hold Reservations Management (Approvals & Denials)
+    public function reservations(Request $request): JsonResponse
+    {
+        $status = $request->query('status');
+        $query = Reservation::with(['book.copies', 'member.user'])->latest();
+
+        if ($status && in_array($status, ['pending', 'fulfilled', 'cancelled', 'expired'])) {
+            $query->where('status', $status);
+        }
+
+        $reservations = $query->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $reservations,
+        ]);
+    }
+
+    public function approveReservation(Request $request, Reservation $reservation): JsonResponse
+    {
+        if ($reservation->status !== 'pending') {
+            return response()->json([
+                'error' => "Reservation #{$reservation->id} is already {$reservation->status}."
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'barcode' => 'nullable|string|exists:book_copies,barcode',
+            'days' => 'nullable|integer|min:1|max:30',
+        ]);
+
+        $copy = null;
+        if (!empty($validated['barcode'])) {
+            $copy = BookCopy::where('barcode', $validated['barcode'])
+                ->where('book_id', $reservation->book_id)
+                ->first();
+            if (!$copy || $copy->status !== 'available') {
+                return response()->json([
+                    'error' => "Specified copy {$validated['barcode']} is not available for this book."
+                ], 422);
+            }
+        } else {
+            $copy = BookCopy::where('book_id', $reservation->book_id)
+                ->where('status', 'available')
+                ->first();
+        }
+
+        if (!$copy) {
+            return response()->json([
+                'error' => 'No available physical copy found for this book to complete checkout.'
+            ], 422);
+        }
+
+        $days = $validated['days'] ?? 14;
+        $loan = Loan::create([
+            'book_copy_id' => $copy->id,
+            'member_id' => $reservation->member_id,
+            'loan_date' => now(),
+            'due_date' => now()->addDays($days),
+            'status' => 'active',
+            'renewal_count' => 0,
+        ]);
+
+        $copy->update(['status' => 'checked_out']);
+        if ($copy->book) {
+            $copy->book->decrement('available_copies');
+        }
+
+        $reservation->update(['status' => 'fulfilled']);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Reservation approved. Book issued successfully with barcode {$copy->barcode}.",
+            'loan' => $loan->load(['bookCopy.book', 'member.user']),
+            'reservation' => $reservation->load(['book', 'member.user']),
+        ]);
+    }
+
+    public function denyReservation(Request $request, Reservation $reservation): JsonResponse
+    {
+        if ($reservation->status !== 'pending') {
+            return response()->json([
+                'error' => "Reservation #{$reservation->id} is already {$reservation->status}."
+            ], 422);
+        }
+
+        $reservation->update([
+            'status' => 'cancelled',
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Hold reservation #{$reservation->id} has been denied and cancelled.",
+            'reservation' => $reservation->load(['book', 'member.user']),
+        ]);
+    }
 }
