@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
     BookOpen, Download, ExternalLink, Plus, Minus, Maximize2, 
     FileText, Sparkles, ChevronLeft, ChevronRight, Sun, Moon, 
-    Coffee, Search, Bookmark, List, CheckCircle2, ShieldCheck, X
+    Coffee, Search, Bookmark, List, CheckCircle2, ShieldCheck, X,
+    Columns, AlignJustify
 } from 'lucide-react';
 import { Modal } from './ui/Modal';
 
@@ -14,6 +15,8 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
     const [fontFamily, setFontFamily] = useState('serif'); // 'serif' | 'sans'
     const [theme, setTheme] = useState('sepia'); // 'day' | 'sepia' | 'night'
     const [currentChapterIndex, setCurrentChapterIndex] = useState(0);
+    const [currentPageInChapter, setCurrentPageInChapter] = useState(0);
+    const [readingLayout, setReadingLayout] = useState('paginated'); // 'paginated' | 'scroll'
     const [viewMode, setViewMode] = useState('reader'); // 'reader' | 'embed' | 'pdf'
     const [searchQuery, setSearchQuery] = useState('');
     const [showToc, setShowToc] = useState(false);
@@ -27,7 +30,6 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
         if (Array.isArray(activeBook.chapters) && activeBook.chapters.length > 0) {
             return activeBook.chapters;
         }
-        // Fallback: check if activeBook.file_path contains JSON chapters
         if (typeof activeBook.file_path === 'string' && activeBook.file_path.trim().startsWith('{')) {
             try {
                 const parsed = JSON.parse(activeBook.file_path);
@@ -38,7 +40,6 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                 // Not JSON
             }
         }
-        // Default single chapter from description
         return [
             {
                 number: 1,
@@ -49,7 +50,7 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
         ];
     }, [activeBook]);
 
-    // Handle Blob creation for base64 PDF data URIs to circumvent Chromium iframe security blocks
+    // Handle Blob creation for base64 PDF data URIs
     useEffect(() => {
         let objectUrl = null;
         const fileUrl = activeBook?.file_url || activeBook?.file_path;
@@ -74,7 +75,6 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
             setBlobPdfUrl(null);
         }
 
-        // Set default view mode based on content availability
         if (chapters.length > 0) {
             setViewMode('reader');
         } else if (fileUrl && (fileUrl.startsWith('http') || fileUrl.includes('archive.org'))) {
@@ -84,6 +84,7 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
         }
 
         setCurrentChapterIndex(0);
+        setCurrentPageInChapter(0);
 
         return () => {
             if (objectUrl) {
@@ -92,15 +93,110 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
         };
     }, [activeBook, chapters]);
 
-    if (!isOpenState || !activeBook) return null;
-
-    const title = activeBook.title || 'Digital E-Book';
-    const author = activeBook.author || 'Library Catalog';
+    const title = activeBook?.title || 'Digital E-Book';
+    const author = activeBook?.author || 'Library Catalog';
     const totalChapters = chapters.length;
     const currentChapter = chapters[currentChapterIndex] || chapters[0];
-    const readingProgressPercent = totalChapters > 0 ? Math.round(((currentChapterIndex + 1) / totalChapters) * 100) : 100;
-    const rawFileUrl = activeBook.file_url || activeBook.file_path;
+    const rawFileUrl = activeBook?.file_url || activeBook?.file_path;
     const isExternalEmbed = rawFileUrl && typeof rawFileUrl === 'string' && (rawFileUrl.startsWith('http://') || rawFileUrl.startsWith('https://'));
+
+    // Pagination algorithm: chunk current chapter content into standard pages (~350 words / ~2000 chars)
+    const chapterPages = useMemo(() => {
+        const rawContent = currentChapter?.content || '';
+        if (!rawContent.trim()) return [''];
+
+        const paragraphs = rawContent.split('\n\n');
+        const pages = [];
+        let currentPageParagraphs = [];
+        let currentLength = 0;
+
+        for (const para of paragraphs) {
+            const paraLen = para.length;
+            if (currentLength + paraLen > 2200 && currentPageParagraphs.length > 0) {
+                pages.push(currentPageParagraphs.join('\n\n'));
+                currentPageParagraphs = [para];
+                currentLength = paraLen;
+            } else {
+                currentPageParagraphs.push(para);
+                currentLength += paraLen + 2;
+            }
+        }
+
+        if (currentPageParagraphs.length > 0) {
+            pages.push(currentPageParagraphs.join('\n\n'));
+        }
+
+        return pages.length > 0 ? pages : [rawContent];
+    }, [currentChapter]);
+
+    // Calculate total estimated book pages and starting page for each chapter
+    const { chapterStartingPages, totalBookPages } = useMemo(() => {
+        const startingPages = [];
+        let runningPages = 1;
+
+        for (let i = 0; i < chapters.length; i++) {
+            startingPages.push(runningPages);
+            const textLen = (chapters[i]?.content || '').length;
+            const estimatedPages = Math.max(1, Math.ceil(textLen / 2200));
+            runningPages += estimatedPages;
+        }
+
+        return {
+            chapterStartingPages: startingPages,
+            totalBookPages: Math.max(1, runningPages - 1),
+        };
+    }, [chapters]);
+
+    const currentGlobalPage = Math.min(
+        totalBookPages,
+        (chapterStartingPages[currentChapterIndex] || 1) + currentPageInChapter
+    );
+    const readingProgressPercent = totalBookPages > 0
+        ? Math.min(100, Math.round((currentGlobalPage / totalBookPages) * 100))
+        : 100;
+
+    // Navigation callbacks
+    const handleNextPage = useCallback(() => {
+        if (currentPageInChapter < chapterPages.length - 1) {
+            setCurrentPageInChapter(prev => prev + 1);
+        } else if (currentChapterIndex < chapters.length - 1) {
+            setCurrentChapterIndex(prev => prev + 1);
+            setCurrentPageInChapter(0);
+        }
+    }, [currentPageInChapter, chapterPages.length, currentChapterIndex, chapters.length]);
+
+    const handlePrevPage = useCallback(() => {
+        if (currentPageInChapter > 0) {
+            setCurrentPageInChapter(prev => prev - 1);
+        } else if (currentChapterIndex > 0) {
+            const prevIndex = currentChapterIndex - 1;
+            const prevText = chapters[prevIndex]?.content || '';
+            const prevEstPages = Math.max(1, Math.ceil(prevText.length / 2200));
+            setCurrentChapterIndex(prevIndex);
+            setCurrentPageInChapter(Math.max(0, prevEstPages - 1));
+        }
+    }, [currentPageInChapter, currentChapterIndex, chapters]);
+
+    // Keyboard arrow listener for smooth reading
+    useEffect(() => {
+        if (!isOpenState || viewMode !== 'reader') return;
+
+        const handleKeyDown = (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+                e.preventDefault();
+                handleNextPage();
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                e.preventDefault();
+                handlePrevPage();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpenState, viewMode, handleNextPage, handlePrevPage]);
+
+    if (!isOpenState || !activeBook) return null;
 
     // Theme color maps
     const themeStyles = {
@@ -135,18 +231,22 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
 
     const currentTheme = themeStyles[theme] || themeStyles.sepia;
 
-    // Filter chapter paragraphs if search query exists
-    const chapterParagraphs = (currentChapter?.content || '').split('\n\n');
-    const filteredParagraphs = searchQuery.trim()
-        ? chapterParagraphs.filter(p => p.toLowerCase().includes(searchQuery.toLowerCase()))
-        : chapterParagraphs;
+    // Filter text if search query exists
+    const activeText = readingLayout === 'paginated'
+        ? (chapterPages[currentPageInChapter] || '')
+        : (currentChapter?.content || '');
+
+    const paragraphsToRender = activeText.split('\n\n').filter(p => {
+        if (!searchQuery.trim()) return true;
+        return p.toLowerCase().includes(searchQuery.toLowerCase());
+    });
 
     return (
         <Modal
             open={isOpenState}
             onClose={onClose}
             title={title}
-            subtitle={`By ${author} · Lifetime Authorized Reader`}
+            subtitle={`By ${author} · Verified Digital Reader (${totalBookPages} Total Pages)`}
             size="xl"
             footer={
                 <div className="flex flex-wrap items-center justify-between gap-3 w-full">
@@ -163,7 +263,7 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                                 }`}
                             >
                                 <BookOpen className="w-3.5 h-3.5" />
-                                <span>Chapter Reader</span>
+                                <span>Book Reader</span>
                             </button>
 
                             {(blobPdfUrl || isExternalEmbed) && (
@@ -182,27 +282,29 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                             )}
                         </div>
 
-                        {/* Chapter Pagination Buttons in Reader Mode */}
-                        {viewMode === 'reader' && totalChapters > 1 && (
-                            <div className="flex items-center gap-1">
+                        {/* Page Navigation Controls in Reader Mode */}
+                        {viewMode === 'reader' && (
+                            <div className="flex items-center gap-1.5 bg-paper border border-bark-100 rounded-xl px-2 py-1 shadow-sm">
                                 <button
                                     type="button"
-                                    onClick={() => setCurrentChapterIndex(prev => Math.max(0, prev - 1))}
-                                    disabled={currentChapterIndex === 0}
-                                    className="p-1.5 rounded-lg border border-bark-100 bg-paper text-bark-700 hover:bg-cream disabled:opacity-40"
-                                    title="Previous Chapter"
+                                    onClick={handlePrevPage}
+                                    disabled={currentChapterIndex === 0 && currentPageInChapter === 0}
+                                    className="p-1.5 rounded-lg text-bark-700 hover:bg-cream disabled:opacity-30 transition"
+                                    title="Previous Page (Left Arrow)"
                                 >
                                     <ChevronLeft className="w-4 h-4" />
                                 </button>
-                                <span className="font-mono text-xs text-bark-600 px-2">
-                                    Ch. {currentChapterIndex + 1} / {totalChapters}
+
+                                <span className="font-mono text-xs font-bold text-bark-900 px-2 min-w-28 text-center">
+                                    Page {currentGlobalPage} of {totalBookPages}
                                 </span>
+
                                 <button
                                     type="button"
-                                    onClick={() => setCurrentChapterIndex(prev => Math.min(totalChapters - 1, prev + 1))}
-                                    disabled={currentChapterIndex >= totalChapters - 1}
-                                    className="p-1.5 rounded-lg border border-bark-100 bg-paper text-bark-700 hover:bg-cream disabled:opacity-40"
-                                    title="Next Chapter"
+                                    onClick={handleNextPage}
+                                    disabled={currentChapterIndex >= totalChapters - 1 && currentPageInChapter >= chapterPages.length - 1}
+                                    className="p-1.5 rounded-lg text-bark-700 hover:bg-cream disabled:opacity-30 transition"
+                                    title="Next Page (Right Arrow)"
                                 >
                                     <ChevronRight className="w-4 h-4" />
                                 </button>
@@ -231,7 +333,7 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                                 className="px-3 py-1.5 rounded-xl bg-bark-700 hover:bg-bark-800 text-xs font-bold text-cream-light flex items-center gap-1.5 shadow-sm transition"
                             >
                                 <ExternalLink className="w-3.5 h-3.5" />
-                                <span>Open Full Theater</span>
+                                <span>Open Theater Scan</span>
                             </a>
                         )}
                     </div>
@@ -239,7 +341,7 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
             }
         >
             <div className="space-y-3">
-                {/* Control Ribbon: Table of Contents, Search, Themes, Typography */}
+                {/* Control Ribbon: Table of Contents, Layout Mode, Search, Themes, Typography */}
                 <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border border-bark-100 bg-cream-light/40">
                     <div className="flex items-center gap-2">
                         <button
@@ -250,9 +352,32 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                             }`}
                         >
                             <List className="w-3.5 h-3.5" />
-                            <span>Contents</span>
+                            <span>Contents ({totalChapters} Ch.)</span>
                         </button>
 
+                        {/* Layout Mode (Paginated vs Scroll) */}
+                        <div className="flex items-center rounded-lg border border-bark-100 bg-paper p-0.5 text-xs">
+                            <button
+                                type="button"
+                                onClick={() => setReadingLayout('paginated')}
+                                className={`px-2 py-1 rounded-md flex items-center gap-1 font-semibold ${readingLayout === 'paginated' ? 'bg-bark-700 text-cream-light' : 'text-bark-600 hover:text-bark-900'}`}
+                                title="Page Flip Mode"
+                            >
+                                <Columns className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Flip Pages</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setReadingLayout('scroll')}
+                                className={`px-2 py-1 rounded-md flex items-center gap-1 font-semibold ${readingLayout === 'scroll' ? 'bg-bark-700 text-cream-light' : 'text-bark-600 hover:text-bark-900'}`}
+                                title="Continuous Scroll Mode"
+                            >
+                                <AlignJustify className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Scroll</span>
+                            </button>
+                        </div>
+
+                        {/* In-Book Search */}
                         <div className="relative">
                             <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-bark-400" />
                             <input
@@ -260,7 +385,7 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Search in book..."
-                                className="pl-7 pr-6 py-1 rounded-lg border border-bark-100 bg-paper text-xs text-bark-900 placeholder:text-bark-400 w-36 sm:w-48 focus:outline-none focus:border-bark-300"
+                                className="pl-7 pr-6 py-1 rounded-lg border border-bark-100 bg-paper text-xs text-bark-900 placeholder:text-bark-400 w-32 sm:w-44 focus:outline-none focus:border-bark-300"
                             />
                             {searchQuery && (
                                 <button
@@ -274,9 +399,9 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                         </div>
                     </div>
 
-                    {/* Reading Preferences (Theme, Font Size, Font Style) */}
+                    {/* Reading Preferences (Theme, Font Style, Font Size) */}
                     <div className="flex items-center gap-3">
-                        {/* Theme Toggles */}
+                        {/* Themes */}
                         <div className="flex items-center rounded-lg border border-bark-100 bg-paper p-0.5">
                             <button
                                 type="button"
@@ -337,7 +462,7 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                             <span className="font-mono text-xs text-bark-600 w-8 text-center">{fontSize}px</span>
                             <button
                                 type="button"
-                                onClick={() => setFontSize(s => Math.min(26, s + 1))}
+                                onClick={() => setFontSize(s => Math.min(28, s + 1))}
                                 className="p-1.5 rounded-lg border border-bark-100 bg-paper hover:bg-cream text-bark-700"
                                 title="Increase font size"
                             >
@@ -353,7 +478,9 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                         <span>LIFETIME ACCESS · UNENCRYPTED DIGITAL STREAM</span>
                     </div>
-                    <span>CHAPTER {currentChapterIndex + 1} OF {totalChapters} ({readingProgressPercent}% READ)</span>
+                    <span>
+                        BOOK PAGE {currentGlobalPage} OF {totalBookPages} · CH. {currentChapterIndex + 1} (PG {currentPageInChapter + 1}/{chapterPages.length}) · {readingProgressPercent}% READ
+                    </span>
                 </div>
                 <div className="w-full bg-cream-light/60 rounded-full h-1.5 overflow-hidden">
                     <div 
@@ -366,11 +493,14 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                 <div className="relative rounded-2xl overflow-hidden border border-bark-100 shadow-inner">
                     {/* Table of Contents Drawer */}
                     {showToc && (
-                        <div className="absolute inset-y-0 left-0 w-72 bg-paper border-r border-bark-200 z-20 shadow-2xl p-4 overflow-y-auto animate-in slide-in-from-left duration-200">
+                        <div className="absolute inset-y-0 left-0 w-80 bg-paper border-r border-bark-200 z-20 shadow-2xl p-4 overflow-y-auto animate-in slide-in-from-left duration-200">
                             <div className="flex items-center justify-between pb-3 border-b border-bark-100 mb-3">
-                                <h3 className="text-xs font-bold uppercase tracking-wider text-bark-900 flex items-center gap-1.5">
-                                    <List className="w-3.5 h-3.5 text-tan-dark" /> Table of Contents
-                                </h3>
+                                <div>
+                                    <h3 className="text-xs font-bold uppercase tracking-wider text-bark-900 flex items-center gap-1.5">
+                                        <List className="w-3.5 h-3.5 text-tan-dark" /> Table of Contents
+                                    </h3>
+                                    <p className="text-[10px] text-bark-500">{totalChapters} Chapters · {totalBookPages} Pages</p>
+                                </div>
                                 <button
                                     type="button"
                                     onClick={() => setShowToc(false)}
@@ -386,16 +516,22 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                                         type="button"
                                         onClick={() => {
                                             setCurrentChapterIndex(idx);
+                                            setCurrentPageInChapter(0);
                                             setShowToc(false);
                                         }}
-                                        className={`w-full text-left px-3 py-2 rounded-xl text-xs transition ${
+                                        className={`w-full text-left px-3 py-2 rounded-xl text-xs transition flex items-center justify-between ${
                                             currentChapterIndex === idx
                                                 ? 'bg-bark-700 text-cream-light font-bold shadow-sm'
                                                 : 'text-bark-700 hover:bg-cream-light/60'
                                         }`}
                                     >
-                                        <div className="font-mono text-[10px] opacity-75">Chapter {ch.number || idx + 1}</div>
-                                        <div className="truncate">{ch.title || `Chapter ${idx + 1}`}</div>
+                                        <div className="truncate pr-2">
+                                            <div className="font-mono text-[9px] opacity-75">Chapter {ch.number || idx + 1}</div>
+                                            <div className="truncate">{ch.title || `Chapter ${idx + 1}`}</div>
+                                        </div>
+                                        <span className="font-mono text-[10px] opacity-60 flex-shrink-0">
+                                            p. {chapterStartingPages[idx] || 1}
+                                        </span>
                                     </button>
                                 ))}
                             </div>
@@ -410,33 +546,35 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                             }`}
                             style={{ fontSize: `${fontSize}px` }}
                         >
-                            {/* Chapter Header */}
-                            <div className={`pb-6 mb-8 border-b ${currentTheme.chapterHeader}`}>
-                                <div className="text-center space-y-2">
-                                    <span className={`font-mono text-xs uppercase tracking-widest ${currentTheme.subtext}`}>
-                                        Chapter {currentChapter?.number || currentChapterIndex + 1} of {totalChapters}
-                                    </span>
-                                    <h2 className="text-2xl sm:text-3xl font-extrabold font-sans tracking-tight">
-                                        {currentChapter?.title || `Chapter ${currentChapterIndex + 1}`}
-                                    </h2>
-                                    {currentChapter?.subtitle && (
-                                        <p className={`text-sm italic ${currentTheme.subtext}`}>
-                                            {currentChapter.subtitle}
-                                        </p>
-                                    )}
+                            {/* Chapter Header (Shown on Page 1 or in Scroll Mode) */}
+                            {(currentPageInChapter === 0 || readingLayout === 'scroll') && (
+                                <div className={`pb-6 mb-8 border-b ${currentTheme.chapterHeader}`}>
+                                    <div className="text-center space-y-2">
+                                        <span className={`font-mono text-xs uppercase tracking-widest ${currentTheme.subtext}`}>
+                                            Chapter {currentChapter?.number || currentChapterIndex + 1} of {totalChapters}
+                                        </span>
+                                        <h2 className="text-2xl sm:text-3xl font-extrabold font-sans tracking-tight">
+                                            {currentChapter?.title || `Chapter ${currentChapterIndex + 1}`}
+                                        </h2>
+                                        {currentChapter?.subtitle && (
+                                            <p className={`text-sm italic ${currentTheme.subtext}`}>
+                                                {currentChapter.subtitle}
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Chapter Prose Body */}
-                            <div className="max-w-3xl mx-auto space-y-6 leading-relaxed">
+                            <div className="max-w-3xl mx-auto space-y-6 leading-relaxed min-h-[380px]">
                                 {searchQuery && (
                                     <div className="p-3 rounded-xl bg-tan-light/40 border border-bark-100 font-sans text-xs text-bark-800 mb-4 flex items-center justify-between">
-                                        <span>Showing matching paragraphs for <strong>"{searchQuery}"</strong> ({filteredParagraphs.length} matches)</span>
-                                        <button onClick={() => setSearchQuery('')} className="underline text-tan-dark font-bold">Clear Filter</button>
+                                        <span>Showing matches for <strong>"{searchQuery}"</strong> ({paragraphsToRender.length} paragraphs)</span>
+                                        <button onClick={() => setSearchQuery('')} className="underline text-tan-dark font-bold">Clear Search</button>
                                     </div>
                                 )}
 
-                                {filteredParagraphs.map((para, pIdx) => {
+                                {paragraphsToRender.map((para, pIdx) => {
                                     const isCodeBlock = para.startsWith('```');
                                     const isBullet = para.startsWith('•') || para.startsWith('- ') || /^\d+\.\s/.test(para);
                                     const isHeading = para.startsWith('###');
@@ -474,33 +612,27 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                             </div>
 
                             {/* Chapter Bottom Navigation Footer */}
-                            <div className={`mt-12 pt-6 border-t ${currentTheme.chapterHeader} flex items-center justify-between font-sans text-xs`}>
+                            <div className={`mt-10 pt-6 border-t ${currentTheme.chapterHeader} flex items-center justify-between font-sans text-xs`}>
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        setCurrentChapterIndex(prev => Math.max(0, prev - 1));
-                                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                                    }}
-                                    disabled={currentChapterIndex === 0}
+                                    onClick={handlePrevPage}
+                                    disabled={currentChapterIndex === 0 && currentPageInChapter === 0}
                                     className={`px-4 py-2 rounded-xl border ${currentTheme.border} ${currentTheme.accent} font-bold flex items-center gap-1.5 disabled:opacity-30`}
                                 >
-                                    <ChevronLeft className="w-4 h-4" /> Previous Chapter
+                                    <ChevronLeft className="w-4 h-4" /> Previous {readingLayout === 'paginated' ? 'Page' : 'Chapter'}
                                 </button>
 
-                                <span className={`font-mono ${currentTheme.subtext}`}>
-                                    End of Chapter {currentChapter?.number || currentChapterIndex + 1}
+                                <span className={`font-mono text-center ${currentTheme.subtext}`}>
+                                    Page {currentGlobalPage} of {totalBookPages} · Ch. {currentChapterIndex + 1}
                                 </span>
 
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        setCurrentChapterIndex(prev => Math.min(totalChapters - 1, prev + 1));
-                                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                                    }}
-                                    disabled={currentChapterIndex >= totalChapters - 1}
+                                    onClick={handleNextPage}
+                                    disabled={currentChapterIndex >= totalChapters - 1 && currentPageInChapter >= chapterPages.length - 1}
                                     className={`px-4 py-2 rounded-xl border ${currentTheme.border} ${currentTheme.accent} font-bold flex items-center gap-1.5 disabled:opacity-30`}
                                 >
-                                    Next Chapter <ChevronRight className="w-4 h-4" />
+                                    Next {readingLayout === 'paginated' ? 'Page' : 'Chapter'} <ChevronRight className="w-4 h-4" />
                                 </button>
                             </div>
                         </div>
