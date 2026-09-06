@@ -121,7 +121,21 @@ class DigitalRentalController extends Controller
 
     public function read(Request $request, int|string $id): JsonResponse
     {
-        $book = Book::find($id);
+        $user = $request->user();
+        $book = $request->attributes->get('resolved_book') ?? Book::find($id);
+
+        if (!$book && $user) {
+            $purchase = DigitalPurchase::where('id', $id)
+                ->where('user_id', $user->id)
+                ->first();
+            if ($purchase) {
+                $book = $purchase->book;
+            }
+        }
+
+        if (!$book) {
+            return $this->sendError('Target book not found.', [], 404);
+        }
 
         $fileUrl = null;
         if ($book->file_path) {
@@ -137,6 +151,9 @@ class DigitalRentalController extends Controller
         return $this->sendResponse([
             'book_id' => $book->id,
             'title' => $book->title,
+            'author' => $book->author,
+            'cover_image_path' => $book->cover_image_path,
+            'description' => $book->description,
             'file_url' => $fileUrl,
             'access_type' => 'lifetime',
             'stream_token' => bin2hex(random_bytes(16)),
@@ -147,7 +164,9 @@ class DigitalRentalController extends Controller
     {
         $user = $request->user();
         $purchases = DigitalPurchase::where('user_id', $user->id)
+            ->where('status', 'active')
             ->with('book')
+            ->latest()
             ->get();
 
         return $this->sendResponse($purchases, 'Purchased digital library retrieved.');

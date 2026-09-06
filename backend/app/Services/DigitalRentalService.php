@@ -94,8 +94,13 @@ class DigitalRentalService implements DigitalRentalServiceInterface
             return true;
         }
 
-        // 2. Check for active lifetime purchase
-        return DigitalPurchase::where('member_id', $member->id)
+        // 2. Check for active lifetime purchase across member_id OR user_id
+        return DigitalPurchase::where(function ($q) use ($member) {
+                $q->where('member_id', $member->id);
+                if ($member->user_id) {
+                    $q->orWhere('user_id', $member->user_id);
+                }
+            })
             ->where('book_id', $book->id)
             ->where('status', 'active')
             ->exists();
