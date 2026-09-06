@@ -169,6 +169,11 @@ export const api = {
     getMembershipTiers: () => apiClient.get('/admin/membership-tiers'),
     updateMembershipTiers: (tiers) => apiClient.put('/admin/membership-tiers', { tiers }),
 
+    // AI Settings & Multi-Provider Configuration
+    getAiSettings: () => apiClient.get('/admin/ai-settings'),
+    updateAiSettings: (data) => apiClient.put('/admin/ai-settings', data),
+    testAiKey: (data) => apiClient.post('/admin/ai-settings/test-key', data),
+
     // AI Assistant
     sendAiMessage: (prompt) => apiClient.post('/ai/chat', { prompt }),
 };

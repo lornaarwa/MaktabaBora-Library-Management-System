@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
     Database, Table, Plus, Edit2, Trash2, Search, X, Loader2, AlertCircle, CheckCircle2, 
     Users, Shield, BookOpen, Layers, BookCheck, Clock, CreditCard, Sparkles, ShoppingBag,
-    ChevronLeft, ChevronRight, Menu, Activity, UserPlus, ShieldAlert, ShieldCheck, UserCheck, TrendingUp
+    ChevronLeft, ChevronRight, Menu, Activity, UserPlus, ShieldAlert, ShieldCheck, UserCheck, TrendingUp,
+    Bot, Key, Eye, EyeOff, RefreshCw, Cpu
 } from 'lucide-react';
 import { api, getFrontendTerminalLogs } from '../services/api';
 
@@ -89,6 +90,125 @@ export default function AdminDashboard() {
         }
     };
 
+    // AI Settings & Multi-Provider Console State
+    const [aiSettings, setAiSettings] = useState({
+        active_provider: 'gemini',
+        providers: {
+            gemini: { name: 'Google Gemini', model: 'gemini-1.5-flash', available_models: ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'], has_key: false, masked_key: '' },
+            openai: { name: 'OpenAI', model: 'gpt-4o-mini', available_models: ['gpt-4o-mini', 'gpt-4o', 'gpt-3.5-turbo'], has_key: false, masked_key: '' },
+            anthropic: { name: 'Anthropic Claude', model: 'claude-3-5-sonnet-20241022', available_models: ['claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307'], has_key: false, masked_key: '' },
+            offline: { name: 'Offline Grounded Engine', model: 'deterministic-catalog-engine', available_models: ['deterministic-catalog-engine'], has_key: true, masked_key: '' },
+        },
+        system_prompt: '',
+        temperature: 0.4,
+        max_tokens: 800,
+    });
+    const [aiLoading, setAiLoading] = useState(false);
+    const [savingAi, setSavingAi] = useState(false);
+    const [testingConnection, setTestingConnection] = useState(false);
+    const [connectionTestResult, setConnectionTestResult] = useState(null);
+    const [showAiKey, setShowAiKey] = useState(false);
+    const [inputApiKey, setInputApiKey] = useState('');
+    const [activeProviderCard, setActiveProviderCard] = useState('gemini');
+
+    const fetchAiSettings = async () => {
+        setAiLoading(true);
+        try {
+            const res = await api.getAiSettings();
+            if (res?.data) {
+                setAiSettings(res.data);
+                setActiveProviderCard(res.data.active_provider || 'gemini');
+            }
+        } catch (err) {
+            setError('Failed to fetch AI configuration.');
+        } finally {
+            setAiLoading(false);
+        }
+    };
+
+    const handleSaveAiSettings = async () => {
+        setSavingAi(true);
+        setError(null);
+        setSuccessMsg(null);
+        try {
+            const payload = {
+                active_provider: aiSettings.active_provider,
+                system_prompt: aiSettings.system_prompt,
+                temperature: parseFloat(aiSettings.temperature) || 0.4,
+                max_tokens: parseInt(aiSettings.max_tokens, 10) || 800,
+                providers: {
+                    [activeProviderCard]: {
+                        model: aiSettings.providers?.[activeProviderCard]?.model,
+                        api_key: inputApiKey.trim() ? inputApiKey.trim() : undefined,
+                    },
+                },
+            };
+            const res = await api.updateAiSettings(payload);
+            if (res?.data) {
+                setAiSettings(res.data);
+            }
+            setInputApiKey('');
+            setSuccessMsg('AI Librarian configuration saved successfully!');
+        } catch (err) {
+            setError(err.message || 'Failed to save AI configuration.');
+        } finally {
+            setSavingAi(false);
+        }
+    };
+
+    const handleTestAiConnection = async () => {
+        setTestingConnection(true);
+        setConnectionTestResult(null);
+        try {
+            const res = await api.testAiKey({
+                provider: activeProviderCard,
+                api_key: inputApiKey.trim() || undefined,
+                model: aiSettings.providers?.[activeProviderCard]?.model,
+            });
+            setConnectionTestResult({
+                success: true,
+                message: res.message || 'Successfully connected to provider API!',
+            });
+        } catch (err) {
+            setConnectionTestResult({
+                success: false,
+                message: err.message || 'Connection test failed. Check API key and quota.',
+            });
+        } finally {
+            setTestingConnection(false);
+        }
+    };
+
+    const handleResetDefaultPrompt = () => {
+        if (window.confirm('Reset the AI Librarian system prompt to the official system default?')) {
+            setAiSettings(prev => ({
+                ...prev,
+                system_prompt: `You are SmartLib AI, the official intelligent librarian and interactive guide for the MaktabaBora Smart Library Management System.
+
+### MISSION & BEHAVIOR
+1. Grounded Accuracy: Answer book queries using ONLY the live catalog records and the authenticated member's account details provided in the context. Never invent books, authors, ISBNs, or fake links.
+2. Friendly & Professional: Be welcoming, concise, well-structured, and helpful to students, scholars, and library patrons.
+3. Interactive Navigation Guide: Help users navigate the Smart Library web platform smoothly.
+
+### WEBSITE NAVIGATION DIRECTORY
+When users ask about website navigation, account features, or how to perform actions, provide exact links and steps:
+- **Browse & Search Catalog**: /catalog (Filter by genre, search titles/authors/ISBN, check copy availability, or preview covers).
+- **Shopping Cart & Checkout**: /cart (Purchase digital e-books for instant online reading via M-Pesa).
+- **Member Dashboard**: /member (View active physical book loans, due dates, renew books, view fine balance, pay fines via M-Pesa STK, and access My Digital Library reader).
+- **Membership & Perks**: /membership (Compare Student Pass, Standard Reader, and Scholar tiers, subscribe or upgrade membership).
+- **Book Details Page**: /books/:id (Inspect book synopsis, view available shelf copies, check digital price, or place a hold reservation).
+
+### BOOK RECOMMENDATION & AVAILABILITY RULES
+- When a user asks for recommendations, analyze their query or interest, recommend 2-4 real titles from the catalog context.
+- Clearly state whether copies are available to borrow physically on the shelf, or if the user can buy lifetime digital reading access to read online immediately.
+- If a book has 0 available physical copies, explain that they can place a hold reservation or purchase the digital e-book version.
+
+### ACCOUNT & LOANS CONTEXT
+- If the user asks about their due dates, fines, or active loans, use the authenticated account context provided below and specify exact dates and KES fine amounts.`,
+            }));
+        }
+    };
+
     // Fetch Analytics on mount
     const fetchAnalytics = async () => {
         setAnalyticsLoading(true);
@@ -145,6 +265,8 @@ export default function AdminDashboard() {
             fetchApiLogs();
         } else if (activeTab === 'membership_tiers') {
             fetchMembershipTiers();
+        } else if (activeTab === 'ai_settings') {
+            fetchAiSettings();
         } else if (activeTab !== 'overview' && activeTab !== 'add_librarian' && activeTab !== 'add_book') {
             const targetTable = activeTab === 'users' ? 'users' : activeTab === 'members' ? 'members' : activeTab === 'librarians' ? 'librarians' : activeTab;
             fetchTableData(targetTable);
@@ -406,6 +528,18 @@ export default function AdminDashboard() {
                 >
                     <ShieldCheck className="w-4 h-4" />
                     <span>Membership Tiers</span>
+                </button>
+
+                <button
+                    onClick={() => setActiveTab('ai_settings')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                        activeTab === 'ai_settings'
+                            ? 'bg-bark-700 text-cream-light shadow-card'
+                            : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+                    }`}
+                >
+                    <Bot className="w-4 h-4 text-tan-dark" />
+                    <span>AI Librarian & Providers</span>
                 </button>
 
                 <button
@@ -1059,6 +1193,325 @@ export default function AdminDashboard() {
                             )}
                         </div>
                     )}
+
+                    {/* AI Librarian & Multi-Provider Engine Console View */}
+                    {activeTab === 'ai_settings' && (
+                        <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-6 shadow-sm">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-bark-100 pb-4">
+                                <div>
+                                    <h2 className="text-lg font-extrabold text-bark-900 flex items-center gap-2">
+                                        <Bot className="w-5 h-5 text-tan-dark" /> AI Librarian & Multi-Provider Console
+                                    </h2>
+                                    <p className="text-xs text-bark-500 mt-0.5">
+                                        Configure API keys, switch LLM providers (Gemini, OpenAI, Anthropic, or Offline Fallback), and customize the library navigation system prompt.
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={fetchAiSettings}
+                                        disabled={aiLoading}
+                                        className="p-2 rounded-xl bg-paper border border-bark-100 text-bark-600 hover:text-bark-900 text-xs transition-all shadow-sm flex items-center gap-1.5"
+                                        title="Reload settings"
+                                    >
+                                        <RefreshCw className={`w-3.5 h-3.5 ${aiLoading ? 'animate-spin' : ''}`} />
+                                        <span className="hidden sm:inline">Refresh</span>
+                                    </button>
+                                    <button
+                                        onClick={handleSaveAiSettings}
+                                        disabled={savingAi}
+                                        className="px-4 py-2 rounded-xl bg-bark-700 hover:bg-bark-800 text-cream-light text-xs font-bold transition-all shadow-card flex items-center gap-2 disabled:opacity-50"
+                                    >
+                                        {savingAi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                        <span>Save AI Configuration</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {aiLoading ? (
+                                <div className="flex items-center justify-center py-16 text-bark-500 text-xs font-mono">
+                                    <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading AI configuration...
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {/* Provider Cards Selector */}
+                                    <div>
+                                        <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-2">
+                                            Select AI Provider to Configure
+                                        </label>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                            {Object.entries(aiSettings.providers || {}).map(([pKey, pData]) => {
+                                                const isActive = aiSettings.active_provider === pKey;
+                                                const isSelectedCard = activeProviderCard === pKey;
+
+                                                return (
+                                                    <div
+                                                        key={pKey}
+                                                        onClick={() => {
+                                                            setActiveProviderCard(pKey);
+                                                            setInputApiKey('');
+                                                            setConnectionTestResult(null);
+                                                        }}
+                                                        className={`cursor-pointer rounded-2xl border p-4 transition-all relative ${
+                                                            isSelectedCard
+                                                                ? 'border-tan-dark bg-paper shadow-card ring-2 ring-tan-dark/30'
+                                                                : 'border-bark-100 bg-paper/60 hover:bg-paper hover:border-bark-200'
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <div className="p-2 rounded-xl bg-cream text-bark-800">
+                                                                {pKey === 'gemini' && <Sparkles className="w-4 h-4 text-tan-dark" />}
+                                                                {pKey === 'openai' && <Bot className="w-4 h-4 text-emerald-700" />}
+                                                                {pKey === 'anthropic' && <Cpu className="w-4 h-4 text-amber-700" />}
+                                                                {pKey === 'offline' && <ShieldCheck className="w-4 h-4 text-cyan-700" />}
+                                                            </div>
+
+                                                            {isActive ? (
+                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                                                    <CheckCircle2 className="w-2.5 h-2.5" /> Active Live
+                                                                </span>
+                                                            ) : pData.has_key ? (
+                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-tan/20 text-tan-dark border border-tan/30">
+                                                                    Configured
+                                                                </span>
+                                                            ) : pKey !== 'offline' ? (
+                                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200">
+                                                                    No Key
+                                                                </span>
+                                                            ) : null}
+                                                        </div>
+
+                                                        <h3 className="text-xs font-extrabold text-bark-900">{pData.name}</h3>
+                                                        <p className="font-mono text-[10px] text-bark-500 mt-1 truncate">
+                                                            Model: {pData.model}
+                                                        </p>
+
+                                                        {pKey === 'gemini' && (
+                                                            <span className="mt-2 inline-block text-[9px] font-medium text-tan-dark bg-tan/10 px-2 py-0.5 rounded">
+                                                                Recommended • Fast
+                                                            </span>
+                                                        )}
+                                                        {pKey === 'offline' && (
+                                                            <span className="mt-2 inline-block text-[9px] font-medium text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded">
+                                                                100% Offline • Zero Cost
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Active Selected Provider Settings Box */}
+                                    {aiSettings.providers?.[activeProviderCard] && (
+                                        <div className="rounded-2xl border border-bark-100 bg-paper p-5 space-y-4 shadow-card">
+                                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-bark-100 pb-3">
+                                                <div>
+                                                    <span className="text-[10px] font-mono font-bold uppercase text-tan-dark tracking-wider">
+                                                        Provider Configuration
+                                                    </span>
+                                                    <h3 className="text-sm font-extrabold text-bark-900">
+                                                        {aiSettings.providers[activeProviderCard].name}
+                                                    </h3>
+                                                </div>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setAiSettings(prev => ({ ...prev, active_provider: activeProviderCard }))}
+                                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                                        aiSettings.active_provider === activeProviderCard
+                                                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                                            : 'bg-bark-700 hover:bg-bark-800 text-cream-light shadow-sm'
+                                                    }`}
+                                                >
+                                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                                    {aiSettings.active_provider === activeProviderCard ? 'Currently Active Provider' : 'Set as Active Provider'}
+                                                </button>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {/* Model Selection */}
+                                                <div>
+                                                    <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">
+                                                        Model Selection
+                                                    </label>
+                                                    <select
+                                                        value={aiSettings.providers[activeProviderCard].model || ''}
+                                                        onChange={(e) => {
+                                                            const newModel = e.target.value;
+                                                            setAiSettings(prev => ({
+                                                                ...prev,
+                                                                providers: {
+                                                                    ...prev.providers,
+                                                                    [activeProviderCard]: {
+                                                                        ...prev.providers[activeProviderCard],
+                                                                        model: newModel,
+                                                                    },
+                                                                },
+                                                            }));
+                                                        }}
+                                                        className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2.5 text-xs text-bark-900 font-medium focus:ring-2 focus:ring-tan-dark"
+                                                    >
+                                                        {aiSettings.providers[activeProviderCard].available_models?.map((m) => (
+                                                            <option key={m} value={m}>{m}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+
+                                                {/* API Key Input (if not offline) */}
+                                                {activeProviderCard !== 'offline' ? (
+                                                    <div>
+                                                        <div className="flex items-center justify-between mb-1">
+                                                            <label className="text-xs font-bold text-bark-800 uppercase tracking-wider">
+                                                                API Secret Key
+                                                            </label>
+                                                            {aiSettings.providers[activeProviderCard].masked_key && (
+                                                                <span className="font-mono text-[10px] text-bark-500">
+                                                                    Saved: <code className="bg-cream px-1.5 py-0.2 rounded text-bark-700">{aiSettings.providers[activeProviderCard].masked_key}</code>
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div className="relative">
+                                                            <input
+                                                                type={showAiKey ? 'text' : 'password'}
+                                                                value={inputApiKey}
+                                                                onChange={(e) => setInputApiKey(e.target.value)}
+                                                                placeholder={aiSettings.providers[activeProviderCard].has_key ? 'Leave blank to keep existing key, or enter new key...' : 'Enter provider API key...'}
+                                                                className="w-full rounded-xl border border-bark-100 bg-paper pl-4 pr-10 py-2.5 text-xs text-bark-900 font-mono focus:ring-2 focus:ring-tan-dark"
+                                                            />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setShowAiKey(!showAiKey)}
+                                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-bark-400 hover:text-bark-700"
+                                                                title={showAiKey ? 'Hide key' : 'Show key'}
+                                                            >
+                                                                {showAiKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-cyan-50 border border-cyan-200 text-cyan-900 text-xs">
+                                                        <ShieldCheck className="w-5 h-5 text-cyan-600 flex-shrink-0" />
+                                                        <span>The offline engine executes deterministic queries locally on the catalog database. No external API key is required.</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Test Connection Button & Result */}
+                                            <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={handleTestAiConnection}
+                                                    disabled={testingConnection}
+                                                    className="px-4 py-2 rounded-xl bg-paper border border-bark-200 hover:bg-cream-light/60 text-bark-800 text-xs font-bold transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                                                >
+                                                    {testingConnection ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Key className="w-3.5 h-3.5 text-tan-dark" />}
+                                                    <span>Test API Connection</span>
+                                                </button>
+
+                                                {connectionTestResult && (
+                                                    <div className={`px-3 py-1.5 rounded-xl text-xs flex items-center gap-2 border ${
+                                                        connectionTestResult.success
+                                                            ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                                                            : 'bg-red-50 border-red-200 text-red-800'
+                                                    }`}>
+                                                        {connectionTestResult.success ? (
+                                                            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                                                        ) : (
+                                                            <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                                                        )}
+                                                        <span>{connectionTestResult.message}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Hyperparameters & System Prompt */}
+                                    <div className="rounded-2xl border border-bark-100 bg-paper p-5 space-y-4 shadow-card">
+                                        <h3 className="text-sm font-extrabold text-bark-900 border-b border-bark-100 pb-2">
+                                            Model Hyperparameters & Behavior
+                                        </h3>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <label className="text-xs font-bold text-bark-800 uppercase tracking-wider">
+                                                        Temperature (Creativity)
+                                                    </label>
+                                                    <span className="font-mono text-xs font-bold text-tan-dark">
+                                                        {aiSettings.temperature}
+                                                    </span>
+                                                </div>
+                                                <input
+                                                    type="range"
+                                                    min="0.0"
+                                                    max="1.0"
+                                                    step="0.1"
+                                                    value={aiSettings.temperature ?? 0.4}
+                                                    onChange={(e) => setAiSettings({ ...aiSettings, temperature: parseFloat(e.target.value) })}
+                                                    className="w-full accent-tan-dark cursor-pointer"
+                                                />
+                                                <p className="text-[10px] text-bark-500 mt-1">Lower values (0.2–0.4) provide more grounded and focused answers.</p>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">
+                                                    Max Output Tokens
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="100"
+                                                    max="4000"
+                                                    value={aiSettings.max_tokens ?? 800}
+                                                    onChange={(e) => setAiSettings({ ...aiSettings, max_tokens: parseInt(e.target.value, 10) || 800 })}
+                                                    className="w-full rounded-xl border border-bark-100 bg-paper px-4 py-2 text-xs text-bark-900 font-mono focus:ring-2 focus:ring-tan-dark"
+                                                />
+                                                <p className="text-[10px] text-bark-500 mt-1">Controls the maximum response length per user query.</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-2">
+                                            <div className="flex items-center justify-between mb-1.5">
+                                                <label className="text-xs font-bold text-bark-800 uppercase tracking-wider">
+                                                    AI Librarian System Prompt & Navigation Guide
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleResetDefaultPrompt}
+                                                    className="text-[11px] text-tan-dark hover:underline font-semibold"
+                                                >
+                                                    Reset to Default Prompt
+                                                </button>
+                                            </div>
+                                            <textarea
+                                                rows={10}
+                                                value={aiSettings.system_prompt || ''}
+                                                onChange={(e) => setAiSettings({ ...aiSettings, system_prompt: e.target.value })}
+                                                placeholder="Enter system prompt instructions..."
+                                                className="w-full rounded-xl border border-bark-100 bg-cream-light/30 px-4 py-3 text-xs text-bark-900 font-mono focus:ring-2 focus:ring-tan-dark leading-relaxed"
+                                            />
+                                            <p className="text-[10px] text-bark-500 mt-1">
+                                                Tip: The system prompt instructs the assistant on website navigation routes (/catalog, /cart, /member, /membership), book recommendations, and tone.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Bottom Save Action */}
+                                    <div className="flex justify-end pt-2">
+                                        <button
+                                            onClick={handleSaveAiSettings}
+                                            disabled={savingAi}
+                                            className="px-6 py-2.5 rounded-xl bg-bark-700 hover:bg-bark-800 text-cream-light text-xs font-bold transition-all shadow-card flex items-center gap-2 disabled:opacity-50"
+                                        >
+                                            {savingAi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                                            <span>Save AI Configuration</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {activeTab === 'members' && (
                         <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
                             <div className="flex items-center justify-between border-b border-bark-100 pb-4">
