@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Clock, ShieldCheck, ShieldAlert, Sparkles, ShoppingBag, Loader2, User, UserPlus } from 'lucide-react';
+import { BookOpen, Clock, ShieldCheck, ShieldAlert, Sparkles, ShoppingBag, Loader2, User, UserPlus, Bookmark, XCircle, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import DarajaPayModal from '../components/DarajaPayModal';
@@ -15,6 +15,7 @@ import BookMiniCard from '../components/BookMiniCard';
 export default function MemberDashboard() {
     const { user } = useAuth();
     const [loans, setLoans] = useState([]);
+    const [reservations, setReservations] = useState([]);
     const [digitalLibrary, setDigitalLibrary] = useState([]);
     const [subscription, setSubscription] = useState(null);
     const [recommended, setRecommended] = useState([]);
@@ -30,17 +31,20 @@ export default function MemberDashboard() {
         const fetchDashboardData = async () => {
             setLoading(true);
             try {
-                const [loansRes, subRes, digitalRes, recsRes] = await Promise.all([
+                const [loansRes, subRes, digitalRes, recsRes, resRes] = await Promise.all([
                     api.getLoans().catch(() => ({ data: [] })),
                     api.getSubscriptionStatus().catch(() => ({ data: null })),
                     api.getMyDigitalLibrary().catch(() => ({ data: [] })),
                     api.getRecommendations().catch(() => ({ data: [] })),
+                    api.getMyReservations().catch(() => ({ data: [] })),
                 ]);
 
                 setLoans(loansRes.data || loansRes || []);
                 setSubscription(subRes.data || null);
                 setDigitalLibrary(digitalRes.data || digitalRes || []);
                 setRecommended(recsRes.data || recsRes || []);
+                const resList = Array.isArray(resRes) ? resRes : resRes?.data || [];
+                setReservations(resList);
                 setRecommendedLoading(false);
             } catch (err) {
                 // Handled silently
@@ -55,6 +59,18 @@ export default function MemberDashboard() {
             setLoading(false);
         }
     }, [user]);
+
+    const handleCancelReservation = async (reservationId, bookTitle) => {
+        if (!window.confirm(`Are you sure you want to cancel your physical hold reservation for "${bookTitle}"?`)) {
+            return;
+        }
+        try {
+            await api.cancelReservation(reservationId);
+            setReservations(prev => prev.filter(r => r.id !== reservationId));
+        } catch (err) {
+            alert(err.message || 'Failed to cancel reservation.');
+        }
+    };
 
     const isSubscribed = user?.member?.is_subscribed || subscription?.is_subscribed;
 
@@ -129,9 +145,10 @@ export default function MemberDashboard() {
             </div>
 
             {/* Stat Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {loading ? (
                     <>
+                        <StatCardSkeleton />
                         <StatCardSkeleton />
                         <StatCardSkeleton />
                         <StatCardSkeleton />
@@ -146,18 +163,25 @@ export default function MemberDashboard() {
                             delay={0}
                         />
                         <StatCard
+                            label="Hold Reservations"
+                            value={reservations.filter(r => r.status === 'pending' || r.status === 'ready_for_pickup').length}
+                            icon={Bookmark}
+                            hint="Physical books queued for pickup"
+                            delay={0.05}
+                        />
+                        <StatCard
                             label="Digital Entitlements"
                             value={digitalLibrary.length}
                             icon={ShoppingBag}
                             hint="Purchased lifetime e-books"
-                            delay={0.07}
+                            delay={0.10}
                         />
                         <StatCard
                             label="Overdue Items"
                             value={loans.filter(l => l.status === 'overdue').length}
                             icon={Clock}
                             hint="Loans past return due date"
-                            delay={0.14}
+                            delay={0.15}
                         />
                     </>
                 )}
@@ -198,10 +222,78 @@ export default function MemberDashboard() {
                 </div>
             )}
 
+            {/* Physical Hold Reservations & Pickups */}
+            <div className="rounded-2xl border border-bark-100 bg-paper p-6 space-y-4 shadow-card">
+                <div className="flex items-center justify-between border-b border-bark-100 pb-3">
+                    <h3 className="text-base font-bold text-bark-900 flex items-center gap-2">
+                        <Bookmark className="w-4 h-4 text-bark-700" /> Physical Hold Reservations &amp; Collection Desk
+                    </h3>
+                    <span className="font-mono text-xs text-bark-500">
+                        {reservations.filter(r => r.status === 'pending' || r.status === 'ready_for_pickup').length} Active Hold(s)
+                    </span>
+                </div>
+
+                {loading ? (
+                    <div className="flex items-center justify-center py-8 text-bark-500 font-mono text-xs">
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" /> Fetching reservations...
+                    </div>
+                ) : reservations.filter(r => r.status !== 'cancelled' && r.status !== 'expired').length === 0 ? (
+                    <div className="text-center py-6 text-xs text-bark-500 bg-cream-light/20 rounded-xl border border-dashed border-bark-200 space-y-2">
+                        <p>You have no active physical hold reservations.</p>
+                        <Link to="/catalog">
+                            <Button variant="secondary" className="text-xs py-1.5 px-3">
+                                Browse Catalog to Reserve Physical Books
+                            </Button>
+                        </Link>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {reservations.filter(r => r.status !== 'cancelled' && r.status !== 'expired').map((res) => {
+                            const isReady = res.status === 'ready_for_pickup';
+                            const dateStr = res.reserved_at || res.created_at ? new Date(res.reserved_at || res.created_at).toLocaleDateString() : 'Recent';
+                            const expiryStr = res.expires_at ? new Date(res.expires_at).toLocaleDateString() : null;
+
+                            return (
+                                <div key={res.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl border border-bark-100 bg-cream-light/30 gap-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-14 rounded overflow-hidden bg-cream-light border border-bark-100 flex-shrink-0 flex items-center justify-center">
+                                            {res.book?.cover_image_path ? (
+                                                <img src={res.book.cover_image_path} alt={res.book.title} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <Bookmark className="w-4 h-4 text-bark-400" />
+                                            )}
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <span className="font-bold text-sm text-bark-900">{res.book?.title || 'Library Book'}</span>
+                                                <Badge tone={isReady ? 'available' : 'exclusive'}>
+                                                    {isReady ? 'READY FOR PICKUP AT DESK' : `QUEUE POSITION #${res.queue_position || 1}`}
+                                                </Badge>
+                                            </div>
+                                            <p className="text-xs text-bark-500">
+                                                By {res.book?.author || 'Unknown Author'} · Reserved: {dateStr} {expiryStr ? `· Hold Expiry: ${expiryStr}` : ''}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => handleCancelReservation(res.id, res.book?.title || 'Book')}
+                                        className="text-xs border border-bark-200 text-rose-700 hover:bg-rose-50 hover:border-rose-300"
+                                    >
+                                        <XCircle className="w-3.5 h-3.5 mr-1 text-rose-600" /> Cancel Hold
+                                    </Button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
             {/* Borrowed Physical Items Table / Cards */}
             <div className="rounded-2xl border border-bark-100 bg-paper p-6 space-y-4 shadow-card">
                 <h3 className="text-base font-bold text-bark-900 flex items-center gap-2">
-                    <BookOpen className="w-4 h-4 text-bark-700" /> Currently Borrowed Books & Countdowns
+                    <BookOpen className="w-4 h-4 text-bark-700" /> Currently Borrowed Books &amp; Countdowns
                 </h3>
 
                 {loading ? (
@@ -215,17 +307,22 @@ export default function MemberDashboard() {
                         {loans.map((loan) => {
                             const daysLeft = daysUntil(loan.due_date);
                             const isOverdue = daysLeft < 0 || loan.status === 'overdue';
+                            const title = loan.book_title || loan.book_copy?.book?.title || loan.book?.title || 'Library Book';
+                            const barcode = loan.barcode || loan.book_copy?.barcode || 'N/A';
+                            const author = loan.book_copy?.book?.author || loan.book?.author;
 
                             return (
                                 <div key={loan.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl border border-bark-100 bg-cream-light/30 gap-4">
                                     <div className="space-y-1">
                                         <div className="flex items-center gap-2">
-                                            <span className="font-bold text-sm text-bark-900">{loan.book_title || loan.book?.title}</span>
+                                            <span className="font-bold text-sm text-bark-900">{title}</span>
                                             <Badge tone={isOverdue ? 'overdue' : 'available'}>
                                                 {isOverdue ? `OVERDUE BY ${Math.abs(daysLeft)} DAYS` : `DUE IN ${daysLeft} DAYS`}
                                             </Badge>
                                         </div>
-                                        <p className="text-xs font-mono text-bark-500">Barcode: {loan.barcode} | Loaned: {loan.loan_date}</p>
+                                        <p className="text-xs font-mono text-bark-500">
+                                            {author ? `By ${author} | ` : ''}Barcode: {barcode} | Loaned: {loan.loan_date} | Due: {loan.due_date}
+                                        </p>
                                     </div>
 
                                     {loan.fine_amount > 0 && (
