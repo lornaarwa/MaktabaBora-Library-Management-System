@@ -222,6 +222,18 @@ export default function Profile() {
     }
   };
 
+  const handleCancelReservation = async (reservationId, bookTitle) => {
+    if (!window.confirm(`Are you sure you want to cancel your physical hold reservation for "${bookTitle}"?`)) {
+      return;
+    }
+    try {
+      await api.cancelReservation(reservationId);
+      setReservations((prev) => prev.filter((r) => r.id !== reservationId));
+    } catch (err) {
+      alert(err.message || 'Failed to cancel reservation.');
+    }
+  };
+
   // Handle Request Refund
   const handleRefundSubmit = async (e) => {
     e.preventDefault();
@@ -510,12 +522,15 @@ export default function Profile() {
             {activeLoans.map((loan) => {
               const daysLeft = daysUntil(loan.due_date);
               const isOverdue = daysLeft < 0 || loan.status === 'overdue';
+              const title = loan.book_title || loan.book_copy?.book?.title || loan.book?.title || 'Library Book';
+              const barcode = loan.barcode || loan.book_copy?.barcode || 'N/A';
+              const author = loan.book_copy?.book?.author || loan.book?.author;
 
               return (
                 <div key={loan.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-2xl border border-bark-100 bg-cream-light/30 gap-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm text-bark-900">{loan.book_title || loan.book?.title || 'Library Book Title'}</span>
+                      <span className="font-bold text-sm text-bark-900">{title}</span>
                       <span className={`rounded-md px-2 py-0.5 font-mono text-[10px] font-bold uppercase ${
                         isOverdue ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                       }`}>
@@ -523,13 +538,13 @@ export default function Profile() {
                       </span>
                     </div>
                     <p className="text-xs font-mono text-bark-500">
-                      Barcode: <strong className="text-bark-800">{loan.barcode || loan.book_copy?.barcode}</strong> | Loan Date: {loan.loan_date} | Due: {loan.due_date}
+                      {author ? `By ${author} | ` : ''}Barcode: <strong className="text-bark-800">{barcode}</strong> | Loan Date: {loan.loan_date} | Due: {loan.due_date}
                     </p>
                   </div>
 
                   {loan.fine_amount > 0 && (
                     <button
-                      onClick={() => setDarajaModal({ isOpen: true, fine: { id: loan.fine_id || 1, amount: loan.fine_amount, title: loan.book_title } })}
+                      onClick={() => setDarajaModal({ isOpen: true, fine: { id: loan.fine_id || 1, amount: loan.fine_amount, title } })}
                       className="px-4 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 font-bold text-xs hover:bg-rose-100 transition"
                     >
                       Pay Overdue Fine KES {loan.fine_amount}
@@ -538,6 +553,80 @@ export default function Profile() {
                 </div>
               );
             })}
+          </div>
+        )}
+      </div>
+
+      {/* ░░░ SECTION 2B: PHYSICAL HOLD RESERVATIONS & COLLECTION ░░░ */}
+      <div className="rounded-3xl border border-bark-100 bg-paper p-6 sm:p-8 space-y-5 shadow-card">
+        <div className="flex items-center justify-between border-b border-bark-100 pb-4">
+          <div>
+            <h2 className="text-base font-extrabold text-bark-900 flex items-center gap-2">
+              <Bookmark className="w-5 h-5 text-bark-700" /> Physical Hold Reservations &amp; Collection Desk
+            </h2>
+            <p className="text-xs text-bark-500 mt-0.5">Physical books you have reserved for collection at the library desk.</p>
+          </div>
+          <span className="rounded-xl bg-cream-light/60 px-3 py-1 font-mono text-xs font-bold text-bark-700 border border-bark-100">
+            {reservations.filter((r) => r.status !== 'cancelled' && r.status !== 'expired').length} Active Hold(s)
+          </span>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-10 text-bark-500 font-mono text-xs">
+            <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading hold reservations...
+          </div>
+        ) : reservations.filter((r) => r.status !== 'cancelled' && r.status !== 'expired').length === 0 ? (
+          <div className="text-center py-8 bg-cream-light/30 rounded-2xl border border-dashed border-bark-200 space-y-2">
+            <p className="text-xs text-bark-500">You currently have no active physical hold reservations.</p>
+            <Link to="/catalog" className="inline-block">
+              <button className="px-3.5 py-1.5 rounded-xl bg-bark-700 text-cream-light text-xs font-bold shadow-sm hover:bg-bark-800 transition">
+                Explore Catalog to Reserve
+              </button>
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {reservations
+              .filter((r) => r.status !== 'cancelled' && r.status !== 'expired')
+              .map((res) => {
+                const isReady = res.status === 'ready_for_pickup';
+                const dateStr = res.reserved_at || res.created_at ? new Date(res.reserved_at || res.created_at).toLocaleDateString() : 'Recent';
+                const expiryStr = res.expires_at ? new Date(res.expires_at).toLocaleDateString() : null;
+
+                return (
+                  <div key={res.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-2xl border border-bark-100 bg-cream-light/30 gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-14 rounded-lg overflow-hidden bg-cream-light border border-bark-100 flex-shrink-0 flex items-center justify-center">
+                        {res.book?.cover_image_path ? (
+                          <img src={res.book.cover_image_path} alt={res.book.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <Bookmark className="w-4 h-4 text-bark-400" />
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-bold text-sm text-bark-900">{res.book?.title || 'Reserved Book'}</span>
+                          <span className={`rounded-md px-2 py-0.5 font-mono text-[10px] font-bold uppercase ${
+                            isReady ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-amber-100 text-amber-900 border border-amber-300'
+                          }`}>
+                            {isReady ? 'Ready for Pickup at Desk' : `Queue Position #${res.queue_position || 1}`}
+                          </span>
+                        </div>
+                        <p className="text-xs text-bark-500 font-mono">
+                          {res.book?.author ? `By ${res.book.author} · ` : ''}Reserved: {dateStr} {expiryStr ? `· Expiry: ${expiryStr}` : ''}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleCancelReservation(res.id, res.book?.title || 'Book')}
+                      className="px-3 py-1.5 rounded-xl border border-bark-200 text-rose-700 bg-paper hover:bg-rose-50 text-xs font-bold transition flex items-center gap-1"
+                    >
+                      <XCircle className="w-3.5 h-3.5 text-rose-600" /> Cancel Hold
+                    </button>
+                  </div>
+                );
+              })}
           </div>
         )}
       </div>
