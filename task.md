@@ -7,8 +7,8 @@ Track implementation progress across phases and subphases with strict accountabi
 ## 📊 Overall Progress Summary
 - **Phase 1: Digital Access & Reader Flow Fix** — 🟢 **COMPLETED** (Commits `1f5fccb`, `7053eeb`)
 - **Phase 2: Open Library Integration & Seeding** — 🟢 **COMPLETED** (Commits `6f95a48`, `7bf815d`)
-- **Phase 3: Multi-Provider AI Librarian & System Prompt Engine** — 🟡 **READY FOR IMPLEMENTATION**
-- **Phase 4: Verification, Automated Testing & Documentation** — ⚪ **PENDING**
+- **Phase 3: Multi-Provider AI Librarian & System Prompt Engine** — 🟢 **COMPLETED** (Commits `42c098b`, `014f4f4`, `1f5a84e`)
+- **Phase 4: Verification, Automated Testing & Documentation** — 🟡 **IN PROGRESS**
 
 ---
 
@@ -70,7 +70,7 @@ Track implementation progress across phases and subphases with strict accountabi
 ---
 
 ## Phase 3: Multi-Provider AI Librarian & System Prompt Engine
-- [ ] **Sub-phase 3.1: Multi-Provider AI Service & Configuration Storage**
+- [x] **Sub-phase 3.1: Multi-Provider AI Service & Configuration Storage**
   - **Goal**: Create extensible AI engine supporting Google Gemini, OpenAI, Anthropic Claude, and an Offline Grounded Fallback, with admin settings persistence.
   - **Tasks**:
     - Create `backend/app/Services/AiLibrarianManagerService.php`:
@@ -84,13 +84,13 @@ Track implementation progress across phases and subphases with strict accountabi
       - `PUT /api/v1/admin/ai-settings` (validates and saves provider config)
       - `POST /api/v1/admin/ai-settings/test-key` (pings provider API to test validity)
     - Register admin routes in `backend/routes/api.php`.
-  - **Commit Hook 5**:
+  - **Commit Hook 5**: `42c098b`
     ```bash
     git add backend/app/Services/AiLibrarianManagerService.php backend/app/Http/Controllers/AiSettingsController.php backend/routes/api.php
     git commit -m "feat(ai): implement multi-provider AI librarian manager with Gemini, OpenAI, and Anthropic support"
     ```
 
-- [ ] **Sub-phase 3.2: System Prompt Navigation Guide & Database Catalog Recommendations**
+- [x] **Sub-phase 3.2: System Prompt Navigation Guide & Database Catalog Recommendations**
   - **Goal**: Equip AI Librarian with a unified system prompt covering full website navigation and real catalog recommendations.
   - **Tasks**:
     - Configure System Prompt in `AiLibrarianManagerService`:
@@ -100,13 +100,13 @@ Track implementation progress across phases and subphases with strict accountabi
       - **Account Context**: Answers loan due dates, renewal count, and overdue fine amounts.
     - Wire `AiChatbotController.php` to delegate to `AiLibrarianManagerService`.
     - Update `AiChatWidget.jsx` with navigation suggestion chips (e.g., *"How do I buy an e-book with M-Pesa?"*, *"Where can I see my active loans?"*, *"How do I upgrade to Pro?"*).
-  - **Commit Hook 6**:
+  - **Commit Hook 6**: `014f4f4`
     ```bash
     git add backend/app/Services/OpenAiRecommendationService.php backend/app/Http/Controllers/AiChatbotController.php frontend/src/components/AiChatWidget.jsx
     git commit -m "feat(ai): equip AI librarian with site navigation prompt and live catalog recommendations"
     ```
 
-- [ ] **Sub-phase 3.3: Admin Dashboard Provider Configuration Console**
+- [x] **Sub-phase 3.3: Admin Dashboard Provider Configuration Console**
   - **Goal**: Allow library administrators to change AI providers, enter API keys, select models, and test connections directly from the UI.
   - **Tasks**:
     - Add API methods in `frontend/src/services/api.js`: `getAiSettings`, `updateAiSettings`, `testAiKey`.
@@ -117,7 +117,7 @@ Track implementation progress across phases and subphases with strict accountabi
       - System prompt editor with "Reset to Default" button.
       - "Test API Connection" button with live success/error badge.
       - Save Settings button with toast notifications.
-  - **Commit Hook 7**:
+  - **Commit Hook 7**: `1f5a84e`
     ```bash
     git add frontend/src/pages/AdminDashboard.jsx frontend/src/services/api.js
     git commit -m "feat(admin): add AI provider settings, key validation, and prompt customization console"
@@ -125,29 +125,70 @@ Track implementation progress across phases and subphases with strict accountabi
 
 ---
 
-## Phase 4: Verification, Automated Testing & Final Polish
-- [ ] **Sub-phase 4.1: Automated PHPUnit Tests**
-  - **Goal**: Maintain 100% test pass rate with new test coverage for digital access, Open Library service, and AI settings.
-  - **Tasks**:
-    - Write test in `tests/Unit/Services/OpenLibraryServiceTest.php` verifying API headers, rate spacing, and JSON parsing.
-    - Write test in `tests/Feature/Controllers/AiSettingsControllerTest.php` verifying settings persistence, authorization, and key masking.
-    - Run full test suite: `php artisan test`.
-  - **Commit Hook 8**:
+## Phase 4: Reader Overhaul, Full Book Storage, Dynamic Models & Polish
+- [x] **Sub-phase 4.1: Placeholder API Key Removal & Clean UI State**
+  - **Goal**: Remove mock/test API keys from storage and UI. Display clean blank states with "Paste your API key here..." and a "Clear / Remove Key" action.
+  - **Key Changes**:
+    - Cleared all placeholder/test keys from `backend/storage/app/ai_settings.json`.
+    - Added `handleRemoveApiKey` in `AdminDashboard.jsx` and clean "No API Key Configured" badge.
+    - Added backup and teardown restoration in `AiSettingsControllerTest.php` to permanently prevent test keys leaking to storage.
+  - **Commit Hook 8**: `Completed`
     ```bash
-    git add backend/tests/
-    git commit -m "test: add test coverage for digital access, Open Library service, and AI settings"
+    git add backend/storage/app/ai_settings.json frontend/src/pages/AdminDashboard.jsx
+    git commit -m "fix(ai): remove placeholder api key and add clear key action in admin console"
     ```
 
-- [ ] **Sub-phase 4.2: End-to-End User Verification & Walkthrough**
-  - **Goal**: Complete task verification, verify dev servers, and produce thorough documentation.
-  - **Tasks**:
-    - Verify Member Dashboard digital reader with Internet Archive stream.
-    - Verify Librarian Dashboard Open Library search and import.
-    - Verify Admin Dashboard AI provider configuration and testing.
-    - Verify AI Chatbot with navigation guidance chips and catalog recommendations.
-    - Update `walkthrough.md` with complete documentation.
-  - **Commit Hook 9**:
+- [x] **Sub-phase 4.2: Dynamic AI Model Discovery Engine**
+  - **Goal**: Allow admins to fetch the latest models directly from Google Gemini, OpenAI, and Anthropic APIs instead of relying on a static dropdown.
+  - **Key Changes**:
+    - Added `fetchAvailableModels(string $provider, ?string $apiKey = null)` in `AiLibrarianManagerService.php`.
+    - Added `fetchModels(Request $request)` in `AiSettingsController.php` and registered `POST /api/v1/admin/ai-settings/fetch-models` in `routes/api.php`.
+    - Added `fetchAiProviderModels` in `frontend/src/services/api.js`.
+    - Added "Fetch Live Models" button and dynamic `<select>` dropdown in `AdminDashboard.jsx`.
+    - Added unit and feature tests covering dynamic model fetching and offline model discovery.
+  - **Commit Hook 9**: `Completed`
     ```bash
-    git add task.md walkthrough.md
-    git commit -m "chore: complete task checklist and document implementation walkthrough"
+    git add backend/app/Services/AiLibrarianManagerService.php backend/app/Http/Controllers/AiSettingsController.php backend/routes/api.php frontend/src/services/api.js frontend/src/pages/AdminDashboard.jsx backend/tests/Feature/Controllers/AiSettingsControllerTest.php
+    git commit -m "feat(ai): implement dynamic live model discovery for Gemini, OpenAI, and Anthropic"
+    ```
+
+- [ ] **Sub-phase 4.3: Full Book Content Storage & Database Seeding**
+  - **Goal**: Store genuine multi-chapter book content directly in Postgres `file_path` as structured JSON, replacing 1-page sample PDFs.
+  - **Tasks**:
+    - Create `SeedFullBookContentCommand.php` (`php artisan books:seed-full-content`).
+    - Seed complete verbatim chapters for classic public domain books (*Pride and Prejudice*, *Alice in Wonderland*, *A Christmas Carol*, *The Great Gatsby*).
+    - Seed rich, multi-chapter study editions for modern technical and science books.
+    - Run command to update catalog in Postgres.
+  - **Commit Hook 10**:
+    ```bash
+    git add backend/app/Console/Commands/SeedFullBookContentCommand.php
+    git commit -m "feat(catalog): store genuine multi-chapter book content in database with seed command"
+    ```
+
+- [ ] **Sub-phase 4.4: Digital Online Reader Overhaul (No More Blank Pages)**
+  - **Goal**: Eliminate blank screens in the online reader by implementing a native chapter reader, safe PDF Blob URLs, and Archive.org theater embeds.
+  - **Tasks**:
+    - Update `DigitalRentalController.php` `read()` to detect and return structured chapters from `file_path`.
+    - Overhaul `DigitalReaderModal.jsx`:
+      - Primary Native In-Browser Chapter Reader with chapter dropdown/sidebar, reading themes (Day, Sepia, Night), font scaling, and reading progress.
+      - Convert PDF data URIs to safe `Blob` object URLs to prevent Chromium iframe security blocks.
+      - Internet Archive theater embed with fallback open button.
+  - **Commit Hook 11**:
+    ```bash
+    git add backend/app/Http/Controllers/DigitalRentalController.php frontend/src/components/DigitalReaderModal.jsx
+    git commit -m "fix(reader): overhaul digital online reader with native chapter renderer and blob pdf streaming"
+    ```
+
+- [ ] **Sub-phase 4.5: Automated Testing & Verification**
+  - **Goal**: Verify all changes with PHPUnit tests and Vite build.
+  - **Tasks**:
+    - Update `AiSettingsControllerTest.php` with tests for dynamic model fetching and key removal.
+    - Add tests for `DigitalRentalController.php` chapter streaming.
+    - Run `php artisan test` (must pass 100%).
+    - Run `npm run build` in `frontend` (must compile cleanly).
+    - Update `walkthrough.md`.
+  - **Commit Hook 12**:
+    ```bash
+    git add backend/tests/ frontend/ task.md walkthrough.md
+    git commit -m "test: verify dynamic models, digital reader, and complete task checklist"
     ```

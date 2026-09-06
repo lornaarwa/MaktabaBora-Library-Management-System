@@ -173,6 +173,7 @@ export const api = {
     getAiSettings: () => apiClient.get('/admin/ai-settings'),
     updateAiSettings: (data) => apiClient.put('/admin/ai-settings', data),
     testAiKey: (data) => apiClient.post('/admin/ai-settings/test-key', data),
+    fetchAiProviderModels: (data) => apiClient.post('/admin/ai-settings/fetch-models', data),
 
     // AI Assistant
     sendAiMessage: (prompt) => apiClient.post('/ai/chat', { prompt }),

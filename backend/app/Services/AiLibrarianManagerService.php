@@ -188,10 +188,15 @@ PROMPT;
                     $current['providers'][$providerKey]['model'] = $provData['model'];
                 }
 
-                // If a new key is provided and not masked (doesn't contain bullet or asterisk)
-                if (isset($provData['api_key'])) {
+                // If remove_key flag is set or api_key explicitly set to empty string
+                if (!empty($provData['remove_key'])) {
+                    $current['providers'][$providerKey]['api_key'] = '';
+                } elseif (isset($provData['api_key'])) {
                     $newKey = trim((string) $provData['api_key']);
-                    if ($newKey !== '' && !str_contains($newKey, '•') && !str_contains($newKey, '*')) {
+                    if ($newKey === '') {
+                        // Empty string explicit reset
+                        $current['providers'][$providerKey]['api_key'] = '';
+                    } elseif (!str_contains($newKey, '•') && !str_contains($newKey, '*')) {
                         $current['providers'][$providerKey]['api_key'] = $newKey;
                     }
                 }
@@ -256,6 +261,126 @@ PROMPT;
             return [
                 'success' => false,
                 'message' => 'API Connection failed: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Fetch available models dynamically from provider APIs.
+     *
+     * @return array{models: array<string>, source: string, message?: string}
+     */
+    public function fetchAvailableModels(string $provider, ?string $apiKey = null): array
+    {
+        $settings = $this->getSettings();
+        $providerConfig = $settings['providers'][$provider] ?? null;
+
+        if ($provider === 'offline') {
+            return [
+                'models' => ['deterministic-catalog-engine'],
+                'source' => 'offline',
+            ];
+        }
+
+        $key = $apiKey ?: ($providerConfig['api_key'] ?? '');
+
+        if (empty(trim($key))) {
+            $currentModels = $providerConfig['available_models'] ?? match ($provider) {
+                'gemini' => ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'],
+                'openai' => ['gpt-4o', 'gpt-4o-mini', 'o1-mini', 'o3-mini', 'gpt-3.5-turbo'],
+                'anthropic' => ['claude-3-7-sonnet-20250219', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229'],
+                default => ['default'],
+            };
+            return [
+                'models' => $currentModels,
+                'source' => 'cache_no_key',
+                'message' => 'No API key provided. Showing standard provider models.',
+            ];
+        }
+
+        try {
+            $models = [];
+            switch ($provider) {
+                case 'gemini':
+                    $res = Http::timeout(10)->get("https://generativelanguage.googleapis.com/v1beta/models", [
+                        'key' => $key,
+                    ]);
+                    if ($res->successful()) {
+                        $items = $res->json('models') ?? [];
+                        foreach ($items as $item) {
+                            $methods = $item['supportedGenerationMethods'] ?? [];
+                            if (in_array('generateContent', $methods, true)) {
+                                $name = str_replace('models/', '', $item['name'] ?? '');
+                                if (!empty($name) && str_contains($name, 'gemini')) {
+                                    $models[] = $name;
+                                }
+                            }
+                        }
+                    } else {
+                        throw new \Exception($res->json('error.message') ?? 'Gemini models request failed with HTTP ' . $res->status());
+                    }
+                    break;
+
+                case 'openai':
+                    $res = Http::withToken($key)->timeout(10)->get('https://api.openai.com/v1/models');
+                    if ($res->successful()) {
+                        $items = $res->json('data') ?? [];
+                        foreach ($items as $item) {
+                            $id = $item['id'] ?? '';
+                            if (preg_match('/^(gpt|o1|o3|chatgpt)/i', $id) && !str_contains($id, 'realtime') && !str_contains($id, 'audio') && !str_contains($id, 'transcription')) {
+                                $models[] = $id;
+                            }
+                        }
+                        sort($models);
+                    } else {
+                        throw new \Exception($res->json('error.message') ?? 'OpenAI models request failed with HTTP ' . $res->status());
+                    }
+                    break;
+
+                case 'anthropic':
+                    $res = Http::withHeaders([
+                        'x-api-key' => $key,
+                        'anthropic-version' => '2023-06-01',
+                    ])->timeout(10)->get('https://api.anthropic.com/v1/models');
+
+                    if ($res->successful()) {
+                        $items = $res->json('data') ?? [];
+                        foreach ($items as $item) {
+                            if (!empty($item['id'])) {
+                                $models[] = $item['id'];
+                            }
+                        }
+                    } else {
+                        // Anthropic models endpoint fallback to verified modern releases
+                        $models = ['claude-3-7-sonnet-20250219', 'claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229'];
+                    }
+                    break;
+
+                default:
+                    throw new \Exception("Unsupported provider {$provider}");
+            }
+
+            if (!empty($models)) {
+                // Update settings file cache
+                $settings['providers'][$provider]['available_models'] = array_values(array_unique($models));
+                $this->saveSettings($settings);
+
+                return [
+                    'models' => array_values(array_unique($models)),
+                    'source' => 'live_api',
+                    'message' => "Successfully fetched live models from {$provider}.",
+                ];
+            }
+
+            throw new \Exception("No text generation models returned from {$provider}.");
+
+        } catch (\Throwable $e) {
+            Log::warning("Live models fetch failed for {$provider}: " . $e->getMessage());
+            $cached = $providerConfig['available_models'] ?? ['default'];
+            return [
+                'models' => $cached,
+                'source' => 'fallback_cache',
+                'message' => 'Live fetch failed: ' . $e->getMessage() . '. Displaying cached models.',
             ];
         }
     }

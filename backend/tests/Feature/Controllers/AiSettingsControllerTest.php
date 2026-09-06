@@ -13,10 +13,16 @@ class AiSettingsControllerTest extends TestCase
 
     private User $admin;
     private User $member;
+    private ?string $originalSettingsBackup = null;
 
     protected function setUp(): void
     {
         parent::setUp();
+
+        $settingsFile = storage_path('app/ai_settings.json');
+        if (file_exists($settingsFile)) {
+            $this->originalSettingsBackup = file_get_contents($settingsFile);
+        }
 
         $this->admin = User::create([
             'name' => 'Main Administrator',
@@ -31,6 +37,18 @@ class AiSettingsControllerTest extends TestCase
             'password' => bcrypt('password123'),
             'role' => 'member',
         ]);
+    }
+
+    protected function tearDown(): void
+    {
+        $settingsFile = storage_path('app/ai_settings.json');
+        if ($this->originalSettingsBackup !== null) {
+            file_put_contents($settingsFile, $this->originalSettingsBackup);
+        } elseif (file_exists($settingsFile)) {
+            @unlink($settingsFile);
+        }
+
+        parent::tearDown();
     }
 
     public function test_unauthenticated_user_cannot_access_ai_settings(): void
@@ -138,4 +156,81 @@ class AiSettingsControllerTest extends TestCase
                 'provider' => 'gemini',
             ]);
     }
+
+    public function test_admin_can_remove_saved_api_key(): void
+    {
+        // First set a key
+        $this->actingAs($this->admin)->putJson('/api/v1/admin/ai-settings', [
+            'providers' => [
+                'openai' => [
+                    'api_key' => 'sk-test-sample-secret-api-key-1234',
+                ],
+            ],
+        ]);
+
+        // Then explicitly remove it
+        $response = $this->actingAs($this->admin)->putJson('/api/v1/admin/ai-settings', [
+            'providers' => [
+                'openai' => [
+                    'remove_key' => true,
+                ],
+            ],
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertFalse($response->json('data.providers.openai.has_key'));
+        $this->assertEquals('', $response->json('data.providers.openai.masked_key'));
+    }
+
+    public function test_admin_can_fetch_models_offline(): void
+    {
+        $response = $this->actingAs($this->admin)->postJson('/api/v1/admin/ai-settings/fetch-models', [
+            'provider' => 'offline',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+                'provider' => 'offline',
+                'models' => ['deterministic-catalog-engine'],
+            ]);
+    }
+
+    public function test_admin_can_fetch_gemini_models_dynamically(): void
+    {
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response([
+                'models' => [
+                    [
+                        'name' => 'models/gemini-2.0-flash',
+                        'supportedGenerationMethods' => ['generateContent', 'countTokens'],
+                    ],
+                    [
+                        'name' => 'models/gemini-1.5-pro',
+                        'supportedGenerationMethods' => ['generateContent'],
+                    ],
+                    [
+                        'name' => 'models/text-embedding-004',
+                        'supportedGenerationMethods' => ['embedContent'], // should be filtered out
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $response = $this->actingAs($this->admin)->postJson('/api/v1/admin/ai-settings/fetch-models', [
+            'provider' => 'gemini',
+            'api_key' => 'AIzaSyMockKeyForTestDiscovery',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+                'provider' => 'gemini',
+                'source' => 'live_api',
+                'count' => 2,
+            ]);
+
+        $this->assertEquals(['gemini-2.0-flash', 'gemini-1.5-pro'], $response->json('models'));
+    }
 }
+

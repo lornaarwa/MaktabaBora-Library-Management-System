@@ -110,6 +110,7 @@ export default function AdminDashboard() {
     const [showAiKey, setShowAiKey] = useState(false);
     const [inputApiKey, setInputApiKey] = useState('');
     const [activeProviderCard, setActiveProviderCard] = useState('gemini');
+    const [fetchingModels, setFetchingModels] = useState(false);
 
     const fetchAiSettings = async () => {
         setAiLoading(true);
@@ -153,6 +154,69 @@ export default function AdminDashboard() {
             setError(err.message || 'Failed to save AI configuration.');
         } finally {
             setSavingAi(false);
+        }
+    };
+
+    const handleRemoveApiKey = async (providerKey) => {
+        if (!window.confirm(`Are you sure you want to remove the saved API key for ${aiSettings.providers?.[providerKey]?.name || providerKey}?`)) return;
+        setSavingAi(true);
+        setError(null);
+        setSuccessMsg(null);
+        try {
+            const payload = {
+                active_provider: aiSettings.active_provider,
+                providers: {
+                    [providerKey]: {
+                        remove_key: true,
+                        api_key: '',
+                    },
+                },
+            };
+            const res = await api.updateAiSettings(payload);
+            if (res?.data) {
+                setAiSettings(res.data);
+            }
+            setInputApiKey('');
+            setSuccessMsg(`API key for ${aiSettings.providers?.[providerKey]?.name || providerKey} removed successfully.`);
+        } catch (err) {
+            setError(err.message || 'Failed to remove API key.');
+        } finally {
+            setSavingAi(false);
+        }
+    };
+
+    const handleFetchModels = async () => {
+        setFetchingModels(true);
+        setError(null);
+        setSuccessMsg(null);
+        try {
+            const res = await api.fetchAiProviderModels({
+                provider: activeProviderCard,
+                api_key: inputApiKey.trim() || undefined,
+            });
+            const modelsList = res.models || [];
+            if (modelsList.length > 0) {
+                setAiSettings(prev => ({
+                    ...prev,
+                    providers: {
+                        ...prev.providers,
+                        [activeProviderCard]: {
+                            ...prev.providers[activeProviderCard],
+                            available_models: modelsList,
+                            model: modelsList.includes(prev.providers[activeProviderCard]?.model)
+                                ? prev.providers[activeProviderCard]?.model
+                                : modelsList[0],
+                        },
+                    },
+                }));
+                setSuccessMsg(`Discovered ${modelsList.length} live models for ${aiSettings.providers[activeProviderCard]?.name || activeProviderCard.toUpperCase()}.`);
+            } else {
+                setError('No models returned from provider.');
+            }
+        } catch (err) {
+            setError(err.message || 'Failed to fetch provider models.');
+        } finally {
+            setFetchingModels(false);
         }
     };
 
@@ -1329,11 +1393,25 @@ When users ask about website navigation, account features, or how to perform act
                                             </div>
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                {/* Model Selection */}
+                                                {/* Model Selection with Live Fetch */}
                                                 <div>
-                                                    <label className="block text-xs font-bold text-bark-800 uppercase tracking-wider mb-1">
-                                                        Model Selection
-                                                    </label>
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <label className="text-xs font-bold text-bark-800 uppercase tracking-wider">
+                                                            Model Selection
+                                                        </label>
+                                                        {activeProviderCard !== 'offline' && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={handleFetchModels}
+                                                                disabled={fetchingModels}
+                                                                className="text-[10px] text-tan-dark hover:underline font-bold flex items-center gap-1 disabled:opacity-50"
+                                                                title="Query provider API to get newly released and available models"
+                                                            >
+                                                                <RefreshCw className={`w-3 h-3 ${fetchingModels ? 'animate-spin' : ''}`} />
+                                                                <span>{fetchingModels ? 'Fetching Models...' : 'Fetch Live Models'}</span>
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                     <select
                                                         value={aiSettings.providers[activeProviderCard].model || ''}
                                                         onChange={(e) => {
@@ -1355,6 +1433,9 @@ When users ask about website navigation, account features, or how to perform act
                                                             <option key={m} value={m}>{m}</option>
                                                         ))}
                                                     </select>
+                                                    <p className="text-[10px] text-bark-500 mt-1 font-mono">
+                                                        {aiSettings.providers[activeProviderCard].available_models?.length || 0} models available for {aiSettings.providers[activeProviderCard].name}
+                                                    </p>
                                                 </div>
 
                                                 {/* API Key Input (if not offline) */}
@@ -1364,9 +1445,23 @@ When users ask about website navigation, account features, or how to perform act
                                                             <label className="text-xs font-bold text-bark-800 uppercase tracking-wider">
                                                                 API Secret Key
                                                             </label>
-                                                            {aiSettings.providers[activeProviderCard].masked_key && (
-                                                                <span className="font-mono text-[10px] text-bark-500">
-                                                                    Saved: <code className="bg-cream px-1.5 py-0.2 rounded text-bark-700">{aiSettings.providers[activeProviderCard].masked_key}</code>
+                                                            {aiSettings.providers[activeProviderCard].has_key ? (
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <span className="font-mono text-[10px] text-bark-500">
+                                                                        Saved: <code className="bg-cream px-1.5 py-0.5 rounded text-bark-700 font-bold">{aiSettings.providers[activeProviderCard].masked_key}</code>
+                                                                    </span>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleRemoveApiKey(activeProviderCard)}
+                                                                        className="text-[10px] text-red-600 hover:text-red-700 font-bold hover:underline ml-1"
+                                                                        title="Remove saved API key"
+                                                                    >
+                                                                        Remove Key
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="px-2 py-0.5 rounded text-[10px] font-mono text-bark-500 bg-cream border border-bark-200">
+                                                                    No API Key Configured
                                                                 </span>
                                                             )}
                                                         </div>
@@ -1375,7 +1470,7 @@ When users ask about website navigation, account features, or how to perform act
                                                                 type={showAiKey ? 'text' : 'password'}
                                                                 value={inputApiKey}
                                                                 onChange={(e) => setInputApiKey(e.target.value)}
-                                                                placeholder={aiSettings.providers[activeProviderCard].has_key ? 'Leave blank to keep existing key, or enter new key...' : 'Enter provider API key...'}
+                                                                placeholder={aiSettings.providers[activeProviderCard].has_key ? 'Enter new key to replace saved key, or click Remove Key...' : 'Paste your API key here...'}
                                                                 className="w-full rounded-xl border border-bark-100 bg-paper pl-4 pr-10 py-2.5 text-xs text-bark-900 font-mono focus:ring-2 focus:ring-tan-dark"
                                                             />
                                                             <button

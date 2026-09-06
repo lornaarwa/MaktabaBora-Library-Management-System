@@ -41,6 +41,7 @@ class AiSettingsController extends Controller
             'providers' => 'sometimes|array',
             'providers.*.model' => 'sometimes|string',
             'providers.*.api_key' => 'nullable|string',
+            'providers.*.remove_key' => 'sometimes|boolean',
         ]);
 
         $updated = $this->aiManager->updateFromAdmin($validated);
@@ -73,4 +74,30 @@ class AiSettingsController extends Controller
 
         return response()->json($result, $status);
     }
+
+    /**
+     * Fetch available models dynamically from provider.
+     */
+    public function fetchModels(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'provider' => 'required|string|in:gemini,openai,anthropic,offline',
+            'api_key' => 'nullable|string',
+        ]);
+
+        $result = $this->aiManager->fetchAvailableModels(
+            $validated['provider'],
+            $validated['api_key'] ?? null
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'provider' => $validated['provider'],
+            'models' => $result['models'],
+            'source' => $result['source'] ?? 'api',
+            'message' => $result['message'] ?? 'Models fetched successfully.',
+            'count' => count($result['models']),
+        ]);
+    }
 }
+

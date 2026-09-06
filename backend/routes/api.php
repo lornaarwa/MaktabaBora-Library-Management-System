@@ -145,6 +145,7 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
             Route::get('/ai-settings', [AiSettingsController::class, 'index']);
             Route::put('/ai-settings', [AiSettingsController::class, 'update']);
             Route::post('/ai-settings/test-key', [AiSettingsController::class, 'testKey']);
+            Route::post('/ai-settings/fetch-models', [AiSettingsController::class, 'fetchModels']);
 
             // Dynamic Table CRUD Management Routes
             Route::get('/tables', [\App\Http\Controllers\AdminCrudController::class, 'indexTables']);
