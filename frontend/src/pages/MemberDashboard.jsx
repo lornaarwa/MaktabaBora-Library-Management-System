@@ -254,17 +254,34 @@ export default function MemberDashboard() {
                     <p className="text-xs text-bark-500 py-6 text-center">No digital e-books purchased yet.</p>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {digitalLibrary.map((item) => (
-                            <div key={item.id} className="rounded-xl border border-bark-100 bg-cream-light/30 p-4 space-y-3 flex flex-col justify-between">
-                                <div>
-                                    <h4 className="font-bold text-sm text-bark-900 line-clamp-1">{item.title}</h4>
-                                    <p className="text-xs text-bark-500">By {item.author}</p>
+                        {digitalLibrary.map((item) => {
+                            const book = item.book || item;
+                            return (
+                                <div key={item.id} className="rounded-xl border border-bark-100 bg-cream-light/30 p-4 space-y-3 flex flex-col justify-between hover:border-bark-300 transition-colors">
+                                    <div className="flex gap-3 items-start">
+                                        <div className="w-12 h-16 rounded-md overflow-hidden bg-cream-light flex-shrink-0 border border-bark-100 shadow-sm">
+                                            {book.cover_image_path ? (
+                                                <img src={book.cover_image_path} alt={book.title} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center font-bold text-[10px] text-bark-400 bg-cream-light/60">
+                                                    E-Book
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <h4 className="font-bold text-sm text-bark-900 line-clamp-1">{book.title || 'Untitled Book'}</h4>
+                                            <p className="text-xs text-bark-500 truncate">By {book.author || 'Unknown Author'}</p>
+                                            <span className="inline-block mt-1 font-mono text-[9px] uppercase tracking-wider text-olive-dark bg-olive/20 px-1.5 py-0.5 rounded font-semibold">
+                                                Lifetime Access
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <Button variant="secondary" onClick={() => handleReadDigital(book)} className="w-full text-xs">
+                                        Read E-Book Stream
+                                    </Button>
                                 </div>
-                                <Button variant="secondary" onClick={() => handleReadDigital(item)} className="w-full text-xs">
-                                    Read E-Book Stream
-                                </Button>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>
