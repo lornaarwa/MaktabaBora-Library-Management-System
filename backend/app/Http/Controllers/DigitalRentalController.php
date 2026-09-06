@@ -138,14 +138,42 @@ class DigitalRentalController extends Controller
         }
 
         $fileUrl = null;
+        $contentType = 'text';
+        $chapters = [];
+        $readingMinutes = 60;
+
         if ($book->file_path) {
-            if (str_starts_with($book->file_path, 'data:') || str_starts_with($book->file_path, 'http://') || str_starts_with($book->file_path, 'https://')) {
-                $fileUrl = $book->file_path;
+            $rawPath = trim($book->file_path);
+
+            if (str_starts_with($rawPath, '{') && str_ends_with($rawPath, '}')) {
+                $decoded = json_decode($rawPath, true);
+                if (is_array($decoded) && ($decoded['type'] ?? '') === 'chapters') {
+                    $contentType = 'chapters';
+                    $chapters = $decoded['chapters'] ?? [];
+                    $readingMinutes = $decoded['estimated_reading_minutes'] ?? 120;
+                }
+            } elseif (str_starts_with($rawPath, 'data:application/pdf')) {
+                $contentType = 'pdf_data';
+                $fileUrl = $rawPath;
+            } elseif (str_starts_with($rawPath, 'http://') || str_starts_with($rawPath, 'https://')) {
+                $contentType = 'embed_url';
+                $fileUrl = $rawPath;
             } else {
-                $fileUrl = url($book->file_path);
+                $fileUrl = url($rawPath);
             }
-        } else {
-            $fileUrl = url("/storage/digital-books/sample-{$book->id}.pdf");
+        }
+
+        // If no chapters decoded but plain text description exists, create fallback chapter
+        if ($contentType !== 'chapters' && empty($chapters) && empty($fileUrl)) {
+            $contentType = 'chapters';
+            $chapters = [
+                [
+                    'number' => 1,
+                    'title' => 'Overview and Introduction',
+                    'subtitle' => 'Official Library Reading Material',
+                    'content' => $book->description ?: "Welcome to the digital edition of {$book->title} by {$book->author}.",
+                ],
+            ];
         }
 
         return $this->sendResponse([
@@ -154,7 +182,11 @@ class DigitalRentalController extends Controller
             'author' => $book->author,
             'cover_image_path' => $book->cover_image_path,
             'description' => $book->description,
+            'content_type' => $contentType,
             'file_url' => $fileUrl,
+            'chapters' => $chapters,
+            'total_chapters' => count($chapters),
+            'estimated_reading_minutes' => $readingMinutes,
             'access_type' => 'lifetime',
             'stream_token' => bin2hex(random_bytes(16)),
         ], 'Digital content stream authorized.');
