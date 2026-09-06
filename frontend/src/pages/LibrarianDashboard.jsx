@@ -1,14 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLibrary } from '../context/LibraryContext';
 import { 
     QrCode, BookCheck, ShieldAlert, CheckCircle2, Users, BarChart3, AlertCircle, Loader2, BookOpen,
     Plus, Edit2, Trash2, Search, X, Layers, Table, CreditCard, ChevronLeft, ChevronRight, Menu, Activity, Shield,
-    DollarSign, RefreshCw, XCircle, ChevronDown, Sparkles, Globe, DownloadCloud
+    DollarSign, RefreshCw, XCircle, ChevronDown, Sparkles, Globe, DownloadCloud, UploadCloud, FileText, Image as ImageIcon,
+    Eye, ExternalLink, Check, BookmarkCheck, UserCheck, UserX, Clock
 } from 'lucide-react';
 import { api } from '../services/api';
 
+function generateIsbn13() {
+    const prefix = '978';
+    const country = '0';
+    const random8 = Array.from({ length: 8 }, () => Math.floor(Math.random() * 10)).join('');
+    const first12 = `${prefix}${country}${random8}`;
+    let sum = 0;
+    for (let i = 0; i < 12; i++) {
+        sum += parseInt(first12[i], 10) * (i % 2 === 0 ? 1 : 3);
+    }
+    const check = (10 - (sum % 10)) % 10;
+    const full = `${first12}${check}`;
+    return `${full.slice(0, 3)}-${full.slice(3, 4)}-${full.slice(4, 8)}-${full.slice(8, 12)}-${full.slice(12)}`;
+}
+
 export default function LibrarianDashboard() {
     const { user, setUser } = useAuth();
+    const { pushToast } = useLibrary();
 
     // First-Time Password Change State
     const [pwdForm, setPwdForm] = useState({ new_password: '', new_password_confirmation: '' });
@@ -147,14 +164,16 @@ export default function LibrarianDashboard() {
     const [returnForm, setReturnForm] = useState({ loan_id: '' });
     const [returnSubmitting, setReturnSubmitting] = useState(false);
 
-    // Add Book Form State
+    // Add Book Form State (Minipage)
     const [bookForm, setBookForm] = useState({
-        isbn: '', title: '', author: '', publisher: '', genre: 'Software',
+        isbn: generateIsbn13(), title: '', author: '', publisher: '', genre: 'Software',
         description: '', cover_image_path: '', file_path: '', publication_year: 2026,
         digital_purchase_price: 50.00, foreign_price: '', foreign_currency: 'USD', initial_copies: 1
     });
     const [bookSubmitting, setBookSubmitting] = useState(false);
     const [editingBook, setEditingBook] = useState(null);
+    const [fileMeta, setFileMeta] = useState(null);
+    const [catalogSearch, setCatalogSearch] = useState('');
 
     // Add/Edit Book Copy Form State
     const [copyForm, setCopyForm] = useState({
@@ -298,6 +317,42 @@ export default function LibrarianDashboard() {
         }
     };
 
+    // Local Upload Handlers (Base64)
+    const handleLocalFileUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (file.size > 25 * 1024 * 1024) {
+            pushToast({ title: 'File Too Large', detail: 'Book file exceeds 25MB limit.', tone: 'error' });
+            return;
+        }
+        setFileMeta({
+            name: file.name,
+            size: (file.size / 1024).toFixed(1) + ' KB',
+            type: file.name.split('.').pop()?.toUpperCase() || 'FILE'
+        });
+        const reader = new FileReader();
+        reader.onload = () => {
+            setBookForm(prev => ({ ...prev, file_path: reader.result }));
+            pushToast({ title: 'Book File Attached', detail: `${file.name} encoded as Base64 for digital reader.`, tone: 'success' });
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleLocalCoverUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+            pushToast({ title: 'Image Too Large', detail: 'Cover image exceeds 5MB limit.', tone: 'error' });
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+            setBookForm(prev => ({ ...prev, cover_image_path: reader.result }));
+            pushToast({ title: 'Cover Uploaded', detail: 'Book cover image preview updated.', tone: 'success' });
+        };
+        reader.readAsDataURL(file);
+    };
+
     // 3. Add / Edit Book
     const handleBookSubmit = async (e) => {
         e.preventDefault();
@@ -307,19 +362,21 @@ export default function LibrarianDashboard() {
         try {
             if (editingBook) {
                 await api.updateBook(editingBook.id, bookForm);
-                setSuccessMsg(`Book "${bookForm.title}" updated successfully.`);
+                pushToast({ title: 'Catalog Updated', detail: `Book "${bookForm.title}" updated successfully.`, tone: 'success' });
                 setEditingBook(null);
             } else {
                 await api.createBook(bookForm);
-                setSuccessMsg(`Book "${bookForm.title}" added to inventory catalog.`);
+                pushToast({ title: 'Book Ingested', detail: `Book "${bookForm.title}" added to inventory with ISBN ${bookForm.isbn}.`, tone: 'success' });
             }
             setBookForm({
-                isbn: '', title: '', author: '', publisher: '', genre: 'Software',
+                isbn: generateIsbn13(), title: '', author: '', publisher: '', genre: 'Software',
                 description: '', cover_image_path: '', file_path: '', publication_year: 2026,
                 digital_purchase_price: 50.00, foreign_price: '', foreign_currency: 'USD', initial_copies: 1
             });
+            setFileMeta(null);
             fetchAllData();
         } catch (err) {
+            pushToast({ title: 'Ingestion Failed', detail: err.message || 'Failed to save book.', tone: 'error' });
             setErrorMsg(err.message || 'Failed to save book.');
         } finally {
             setBookSubmitting(false);
@@ -330,9 +387,10 @@ export default function LibrarianDashboard() {
         if (!window.confirm('Are you sure you want to remove this book from catalog?')) return;
         try {
             await api.deleteBook(id);
-            setSuccessMsg('Book deleted successfully.');
+            pushToast({ title: 'Book Removed', detail: 'Book removed from catalog inventory.', tone: 'info' });
             fetchAllData();
         } catch (err) {
+            pushToast({ title: 'Delete Failed', detail: err.message || 'Failed to delete book.', tone: 'error' });
             setErrorMsg(err.message || 'Failed to delete book.');
         }
     };
@@ -899,251 +957,488 @@ export default function LibrarianDashboard() {
                                 </form>
                             </div>
                         </div>
-                    )}
-
-                    {/* TAB 2: Add Books to Inventory & Catalog Management */}
+                    )}                    {/* TAB 2: Add Books to Inventory & Catalog Management (Revamped Minipage) */}
                     {activeTab === 'add_books' && (
-                        <div className="space-y-6">
-                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
-                                <div className="flex items-center justify-between border-b border-bark-100 pb-4">
-                                    <div>
-                                        <h2 className="text-base font-bold text-bark-900 flex items-center gap-2 font-mono">
-                                            <BookOpen className="w-4 h-4 text-bark-700" /> {editingBook ? 'Edit Book Record' : 'Add New Book to Inventory'}
+                        <div className="space-y-6 animate-in fade-in duration-200">
+                            {/* Minipage Header Banner */}
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 sm:p-8 shadow-sm">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-bark-100 pb-5">
+                                    <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-bark-700 text-cream-light uppercase tracking-wider">
+                                                INVENTORY MINIPAGE
+                                            </span>
+                                            {editingBook && (
+                                                <span className="px-2.5 py-0.5 rounded text-[10px] font-mono font-bold bg-olive-dark text-white uppercase tracking-wider">
+                                                    EDITING BOOK #{editingBook.id}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <h2 className="text-xl sm:text-2xl font-extrabold text-bark-900 tracking-tight">
+                                            {editingBook ? 'Edit Catalog Record' : 'Manual Book Inventory Ingestion'}
                                         </h2>
-                                        <p className="text-xs text-bark-500 mt-0.5">Register new physical & digital title catalog entry</p>
+                                        <p className="text-xs sm:text-sm text-bark-500">
+                                            Auto-generate standard ISBN-13 numbers, attach local digital reader files via Base64, and register physical inventory copies.
+                                        </p>
                                     </div>
                                     {editingBook && (
                                         <button
-                                            onClick={() => setEditingBook(null)}
-                                            className="px-3 py-1 rounded bg-cream text-bark-700 text-xs hover:bg-zinc-700 font-mono"
+                                            type="button"
+                                            onClick={() => {
+                                                setEditingBook(null);
+                                                setBookForm({
+                                                    isbn: generateIsbn13(), title: '', author: '', publisher: '', genre: 'Software',
+                                                    description: '', cover_image_path: '', file_path: '', publication_year: 2026,
+                                                    digital_purchase_price: 50.00, foreign_price: '', foreign_currency: 'USD', initial_copies: 1
+                                                });
+                                                setFileMeta(null);
+                                            }}
+                                            className="px-4 py-2 rounded-xl bg-cream border border-bark-100 text-bark-700 text-xs font-bold hover:bg-cream-light transition-all shadow-sm"
                                         >
                                             Cancel Editing
                                         </button>
                                     )}
                                 </div>
 
-                                <form onSubmit={handleBookSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="mt-4 p-3.5 rounded-xl bg-cream border border-bark-100/80 text-xs text-bark-600 flex items-start gap-3">
+                                    <Sparkles className="w-4 h-4 text-tan shrink-0 mt-0.5" />
+                                    <div className="space-y-0.5">
+                                        <p className="font-semibold text-bark-800">Automatic ISBN-13 & Local File Base64 Encoding</p>
+                                        <p className="text-[11px] leading-relaxed text-bark-500">
+                                            Manual entries generate valid 13-digit ISBNs with checksum verification. (Open Library imports preserve their authentic international ISBNs). Attached book files (.pdf, .epub, .txt) and cover images are encoded directly to Base64 data URLs for seamless streaming in the digital reader.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Ingestion Form */}
+                            <form onSubmit={handleBookSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                {/* Left Column: Metadata & Classification (7 cols) */}
+                                <div className="lg:col-span-7 bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-5 shadow-sm">
+                                    <div className="border-b border-bark-100 pb-3">
+                                        <h3 className="text-sm font-bold text-bark-900 font-mono flex items-center gap-2">
+                                            <BookOpen className="w-4 h-4 text-bark-700" /> Bibliographic & Circulation Details
+                                        </h3>
+                                    </div>
+
+                                    {/* Auto-Generated ISBN */}
                                     <div>
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">ISBN Number</label>
-                                        <input
-                                            type="text"
-                                            value={bookForm.isbn}
-                                            onChange={(e) => setBookForm({ ...bookForm, isbn: e.target.value })}
-                                            placeholder="e.g. 978-0132350884"
-                                            required
-                                            disabled={!!editingBook}
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
-                                        />
+                                        <div className="flex items-center justify-between mb-1">
+                                            <label className="text-xs font-semibold text-bark-700 flex items-center gap-1.5">
+                                                ISBN-13 Barcode <span className="text-bark-400 font-normal">(Auto-Generated)</span>
+                                            </label>
+                                            {!editingBook && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const newIsbn = generateIsbn13();
+                                                        setBookForm(prev => ({ ...prev, isbn: newIsbn }));
+                                                        pushToast({ title: 'New ISBN Generated', detail: newIsbn, tone: 'info' });
+                                                    }}
+                                                    className="text-[11px] font-mono font-semibold text-olive-dark hover:underline flex items-center gap-1"
+                                                >
+                                                    <RefreshCw className="w-3 h-3" /> Regenerate ISBN
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                value={bookForm.isbn}
+                                                onChange={(e) => setBookForm({ ...bookForm, isbn: e.target.value })}
+                                                placeholder="978-0-XXXX-XXXXX-X"
+                                                required
+                                                disabled={!!editingBook}
+                                                className="w-full px-3.5 py-2.5 rounded-xl bg-paper border border-bark-100 text-xs text-bark-900 focus:outline-none focus:border-bark-400 font-mono tracking-wider"
+                                            />
+                                        </div>
+                                        <p className="mt-1 text-[10px] text-bark-400 font-mono">Standard 13-digit EAN/ISBN checksum. You may manually edit if cataloging a physical barcode.</p>
                                     </div>
 
+                                    {/* Title & Author */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold text-bark-700 mb-1">Book Title *</label>
+                                            <input
+                                                type="text"
+                                                value={bookForm.title}
+                                                onChange={(e) => setBookForm({ ...bookForm, title: e.target.value })}
+                                                placeholder="e.g. Designing Data-Intensive Applications"
+                                                required
+                                                className="w-full px-3.5 py-2 rounded-xl bg-paper border border-bark-100 text-xs text-bark-900 focus:outline-none focus:border-bark-400"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-bark-700 mb-1">Author Name *</label>
+                                            <input
+                                                type="text"
+                                                value={bookForm.author}
+                                                onChange={(e) => setBookForm({ ...bookForm, author: e.target.value })}
+                                                placeholder="e.g. Martin Kleppmann"
+                                                required
+                                                className="w-full px-3.5 py-2 rounded-xl bg-paper border border-bark-100 text-xs text-bark-900 focus:outline-none focus:border-bark-400"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Publisher & Year */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold text-bark-700 mb-1">Publisher</label>
+                                            <input
+                                                type="text"
+                                                value={bookForm.publisher}
+                                                onChange={(e) => setBookForm({ ...bookForm, publisher: e.target.value })}
+                                                placeholder="e.g. O'Reilly Media"
+                                                className="w-full px-3.5 py-2 rounded-xl bg-paper border border-bark-100 text-xs text-bark-900 focus:outline-none focus:border-bark-400"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-bark-700 mb-1">Publication Year</label>
+                                            <input
+                                                type="number"
+                                                value={bookForm.publication_year}
+                                                onChange={(e) => setBookForm({ ...bookForm, publication_year: parseInt(e.target.value, 10) || 2026 })}
+                                                min="1800"
+                                                max="2035"
+                                                className="w-full px-3.5 py-2 rounded-xl bg-paper border border-bark-100 text-xs text-bark-900 focus:outline-none focus:border-bark-400 font-mono"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Genre Category */}
                                     <div>
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Book Title</label>
-                                        <input
-                                            type="text"
-                                            value={bookForm.title}
-                                            onChange={(e) => setBookForm({ ...bookForm, title: e.target.value })}
-                                            placeholder="e.g. Clean Code"
-                                            required
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100"
-                                        />
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Genre / Subject Category *</label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={bookForm.genre}
+                                                onChange={(e) => setBookForm({ ...bookForm, genre: e.target.value })}
+                                                placeholder="e.g. Computer Science, Technology, Fiction"
+                                                required
+                                                className="flex-1 px-3.5 py-2 rounded-xl bg-paper border border-bark-100 text-xs text-bark-900 focus:outline-none focus:border-bark-400"
+                                            />
+                                            <select
+                                                onChange={(e) => e.target.value && setBookForm({ ...bookForm, genre: e.target.value })}
+                                                className="px-3 py-2 rounded-xl bg-paper border border-bark-100 text-xs text-bark-700 focus:outline-none"
+                                                defaultValue=""
+                                            >
+                                                <option value="" disabled>Presets...</option>
+                                                <option value="Computer Science">Computer Science</option>
+                                                <option value="Technology">Technology</option>
+                                                <option value="Software">Software</option>
+                                                <option value="Fiction">Fiction</option>
+                                                <option value="Philosophy">Philosophy</option>
+                                                <option value="Science">Science</option>
+                                                <option value="Business">Business</option>
+                                                <option value="Mathematics">Mathematics</option>
+                                            </select>
+                                        </div>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Author Name</label>
-                                        <input
-                                            type="text"
-                                            value={bookForm.author}
-                                            onChange={(e) => setBookForm({ ...bookForm, author: e.target.value })}
-                                            placeholder="e.g. Robert C. Martin"
-                                            required
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100"
-                                        />
+                                    {/* Pricing & Physical Copies */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-bark-100">
+                                        <div>
+                                            <label className="block text-xs font-semibold text-bark-700 mb-1">Digital Price (KES)</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                value={bookForm.digital_purchase_price}
+                                                onChange={(e) => setBookForm({ ...bookForm, digital_purchase_price: e.target.value })}
+                                                className="w-full px-3.5 py-2 rounded-xl bg-paper border border-bark-100 text-xs text-bark-900 focus:outline-none focus:border-bark-400 font-mono"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-semibold text-bark-700 mb-1">Foreign Price <span className="text-bark-400 font-normal">(opt)</span></label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                value={bookForm.foreign_price}
+                                                onChange={(e) => setBookForm({ ...bookForm, foreign_price: e.target.value })}
+                                                placeholder="e.g. 29.99"
+                                                className="w-full px-3.5 py-2 rounded-xl bg-paper border border-bark-100 text-xs text-bark-900 focus:outline-none focus:border-bark-400 font-mono"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-semibold text-bark-700 mb-1">
+                                                {editingBook ? 'Total Copies' : 'Initial Physical Copies'}
+                                            </label>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="50"
+                                                value={bookForm.initial_copies}
+                                                onChange={(e) => setBookForm({ ...bookForm, initial_copies: parseInt(e.target.value, 10) || 1 })}
+                                                disabled={!!editingBook}
+                                                className="w-full px-3.5 py-2 rounded-xl bg-paper border border-bark-100 text-xs text-bark-900 focus:outline-none focus:border-bark-400 font-mono"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right Column: Digital Files, Base64 & Cover Art (5 cols) */}
+                                <div className="lg:col-span-5 space-y-6">
+                                    {/* Local File Upload (Base64) Card */}
+                                    <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
+                                        <div className="border-b border-bark-100 pb-3">
+                                            <h3 className="text-sm font-bold text-bark-900 font-mono flex items-center gap-2">
+                                                <FileText className="w-4 h-4 text-bark-700" /> Digital Book File (.pdf, .epub, .txt)
+                                            </h3>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <div className="relative border-2 border-dashed border-bark-200 hover:border-olive-dark/60 rounded-xl p-4 text-center transition-colors bg-paper/50">
+                                                <input
+                                                    type="file"
+                                                    accept=".pdf,.epub,.txt,.json"
+                                                    onChange={handleLocalFileUpload}
+                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                />
+                                                <div className="flex flex-col items-center justify-center gap-1.5 pointer-events-none">
+                                                    <UploadCloud className="w-6 h-6 text-olive-dark" />
+                                                    <p className="text-xs font-bold text-bark-800">
+                                                        Click or drop local book file
+                                                    </p>
+                                                    <p className="text-[10px] text-bark-400 font-mono">
+                                                        Auto-converted to Base64 in PostgreSQL (max 25MB)
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {fileMeta && (
+                                                <div className="p-3 rounded-xl bg-paper border border-bark-100 flex items-center justify-between text-xs">
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <Check className="w-4 h-4 text-olive-dark shrink-0" />
+                                                        <div className="min-w-0">
+                                                            <p className="font-semibold text-bark-900 truncate">{fileMeta.name}</p>
+                                                            <p className="text-[10px] font-mono text-bark-400">{fileMeta.size} • {fileMeta.type}</p>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setFileMeta(null);
+                                                            setBookForm(prev => ({ ...prev, file_path: '' }));
+                                                        }}
+                                                        className="text-bark-400 hover:text-red-500 p-1"
+                                                        title="Remove attached file"
+                                                    >
+                                                        <X className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {/* Manual fallback input for remote URLs */}
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-bark-500 mb-1">Or File URL / Base64 String</label>
+                                                <input
+                                                    type="text"
+                                                    value={bookForm.file_path}
+                                                    onChange={(e) => setBookForm({ ...bookForm, file_path: e.target.value })}
+                                                    placeholder="data:application/pdf;base64,... or https://..."
+                                                    className="w-full px-3 py-1.5 rounded-lg bg-paper border border-bark-100 text-[11px] text-bark-800 font-mono focus:outline-none"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Publisher</label>
-                                        <input
-                                            type="text"
-                                            value={bookForm.publisher}
-                                            onChange={(e) => setBookForm({ ...bookForm, publisher: e.target.value })}
-                                            placeholder="e.g. Prentice Hall"
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100"
-                                        />
+                                    {/* Cover Art Upload & Preview Card */}
+                                    <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
+                                        <div className="border-b border-bark-100 pb-3">
+                                            <h3 className="text-sm font-bold text-bark-900 font-mono flex items-center gap-2">
+                                                <ImageIcon className="w-4 h-4 text-bark-700" /> Book Cover Artwork
+                                            </h3>
+                                        </div>
+
+                                        <div className="flex gap-4 items-start">
+                                            <div className="w-24 h-32 rounded-xl bg-paper border border-bark-100 shrink-0 overflow-hidden flex items-center justify-center shadow-sm">
+                                                {bookForm.cover_image_path ? (
+                                                    <img
+                                                        src={bookForm.cover_image_path}
+                                                        alt="Cover preview"
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => {
+                                                            e.target.onerror = null;
+                                                            e.target.src = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=300';
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <div className="text-center p-2">
+                                                        <BookOpen className="w-6 h-6 text-bark-300 mx-auto" />
+                                                        <span className="text-[9px] text-bark-400 font-mono block mt-1">No Cover</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="flex-1 space-y-2">
+                                                <div className="relative border border-dashed border-bark-200 hover:border-olive-dark/60 rounded-xl p-3 text-center transition-colors bg-paper/50">
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={handleLocalCoverUpload}
+                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                    />
+                                                    <p className="text-xs font-semibold text-bark-800">Upload Local Cover Image</p>
+                                                    <p className="text-[10px] text-bark-400 font-mono">PNG, JPG, WEBP (Base64)</p>
+                                                </div>
+
+                                                <div>
+                                                    <label className="block text-[11px] font-semibold text-bark-500 mb-1">Or Remote Image URL</label>
+                                                    <input
+                                                        type="text"
+                                                        value={bookForm.cover_image_path}
+                                                        onChange={(e) => setBookForm({ ...bookForm, cover_image_path: e.target.value })}
+                                                        placeholder="https://..."
+                                                        className="w-full px-3 py-1.5 rounded-lg bg-paper border border-bark-100 text-[11px] text-bark-800 font-mono focus:outline-none"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Genre Category</label>
-                                        <input
-                                            type="text"
-                                            value={bookForm.genre}
-                                            onChange={(e) => setBookForm({ ...bookForm, genre: e.target.value })}
-                                            placeholder="e.g. Software, Tech, Fiction"
-                                            required
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Digital Purchase Price (KES)</label>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            value={bookForm.digital_purchase_price}
-                                            onChange={(e) => setBookForm({ ...bookForm, digital_purchase_price: e.target.value })}
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">
-                                            Foreign Retail Price <span className="text-bark-400 font-normal">(optional)</span>
-                                        </label>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            value={bookForm.foreign_price}
-                                            onChange={(e) => setBookForm({ ...bookForm, foreign_price: e.target.value })}
-                                            placeholder="e.g. 29.99 — US$ price from Google Books"
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
-                                        />
-                                        <p className="mt-1 text-[10px] text-bark-400">Displayed with an estimated KSh conversion — never the Kenyan retail price.</p>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Foreign Currency</label>
-                                        <select
-                                            value={bookForm.foreign_currency}
-                                            onChange={(e) => setBookForm({ ...bookForm, foreign_currency: e.target.value })}
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100"
-                                        >
-                                            <option value="USD">USD — US Dollar</option>
-                                            <option value="GBP">GBP — British Pound</option>
-                                            <option value="EUR">EUR — Euro</option>
-                                        </select>
-                                    </div>
-
-                                    <div className="sm:col-span-2">
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Cover Image URL</label>
-                                        <input
-                                            type="text"
-                                            value={bookForm.cover_image_path}
-                                            onChange={(e) => setBookForm({ ...bookForm, cover_image_path: e.target.value })}
-                                            placeholder="https://images.unsplash.com/photo-..."
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
-                                        />
-                                    </div>
-
-                                    <div className="sm:col-span-2">
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Base64 PDF / File Path</label>
-                                        <input
-                                            type="text"
-                                            value={bookForm.file_path}
-                                            onChange={(e) => setBookForm({ ...bookForm, file_path: e.target.value })}
-                                            placeholder="data:application/pdf;base64,JVBERi0x..."
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
-                                        />
-                                    </div>
-
-                                    <div className="sm:col-span-2">
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Description</label>
+                                    {/* Description Textarea */}
+                                    <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-2 shadow-sm">
+                                        <label className="block text-xs font-semibold text-bark-700">Description & Synopsis</label>
                                         <textarea
                                             value={bookForm.description}
                                             onChange={(e) => setBookForm({ ...bookForm, description: e.target.value })}
-                                            rows="2"
-                                            placeholder="Brief overview of book content..."
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100"
+                                            rows="3"
+                                            placeholder="Overview of topics covered, edition details, and library summary..."
+                                            className="w-full px-3.5 py-2.5 rounded-xl bg-paper border border-bark-100 text-xs text-bark-900 focus:outline-none focus:border-bark-400 leading-relaxed"
                                         />
                                     </div>
 
-                                    <div className="sm:col-span-2 flex justify-end">
-                                        <button
-                                            type="submit"
-                                            disabled={bookSubmitting}
-                                            className="py-2.5 px-6 rounded-lg bg-zinc-100 hover:bg-paper text-zinc-950 font-bold text-xs flex items-center gap-2 transition-all shadow-sm"
-                                        >
-                                            {bookSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                                            <span>{editingBook ? 'Save Book Changes' : 'Add Book to Inventory'}</span>
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
+                                    {/* Submit Button */}
+                                    <button
+                                        type="submit"
+                                        disabled={bookSubmitting}
+                                        className="w-full py-3 px-6 rounded-xl bg-bark-800 hover:bg-bark-900 text-cream-light font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-card"
+                                    >
+                                        {bookSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                                        <span>{editingBook ? 'Save Catalog Updates' : 'Add Book to Inventory Catalog'}</span>
+                                    </button>
+                                </div>
+                            </form>
 
-                            {/* Books Catalog Table */}
+                            {/* Books Catalog Directory Table */}
                             <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
-                                <h3 className="text-base font-bold text-bark-900 font-mono">Catalog Books Inventory ({books.length})</h3>
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-bark-100 pb-4">
+                                    <div>
+                                        <h3 className="text-base font-bold text-bark-900 font-mono">Catalog Books Inventory ({books.length})</h3>
+                                        <p className="text-xs text-bark-500">Live records registered in circulation database</p>
+                                    </div>
+                                    <div className="relative w-full sm:w-72">
+                                        <Search className="w-4 h-4 text-bark-400 absolute left-3 top-2.5" />
+                                        <input
+                                            type="text"
+                                            value={catalogSearch}
+                                            onChange={(e) => setCatalogSearch(e.target.value)}
+                                            placeholder="Search by title, author, or ISBN..."
+                                            className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-paper border border-bark-100 text-xs text-bark-900 focus:outline-none"
+                                        />
+                                    </div>
+                                </div>
 
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left text-xs text-bark-700 border-collapse">
                                         <thead className="bg-paper text-bark-500 uppercase text-[10px] tracking-wider font-mono">
                                             <tr>
+                                                <th className="p-3 border-b border-bark-100">Cover & Book</th>
                                                 <th className="p-3 border-b border-bark-100">ISBN</th>
-                                                <th className="p-3 border-b border-bark-100">Title & Author</th>
                                                 <th className="p-3 border-b border-bark-100">Genre</th>
-                                                <th className="p-3 border-b border-bark-100 text-center">Copies (Total/Avail)</th>
-                                                <th className="p-3 border-b border-bark-100 text-center">Price</th>
+                                                <th className="p-3 border-b border-bark-100">Digital / File</th>
+                                                <th className="p-3 border-b border-bark-100">Physical Copies</th>
                                                 <th className="p-3 border-b border-bark-100 text-right">Actions</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-zinc-800/60">
-                                            {books.map((b) => (
-                                                <tr key={b.id} className="hover:bg-paper/50">
-                                                    <td className="p-3 font-mono font-bold text-bark-700">{b.isbn}</td>
+                                        <tbody className="divide-y divide-bark-100">
+                                            {books
+                                                .filter(b => {
+                                                    if (!catalogSearch) return true;
+                                                    const q = catalogSearch.toLowerCase();
+                                                    return (b.title || '').toLowerCase().includes(q) ||
+                                                           (b.author || '').toLowerCase().includes(q) ||
+                                                           (b.isbn || '').toLowerCase().includes(q);
+                                                })
+                                                .slice(0, 20)
+                                                .map((b) => (
+                                                <tr key={b.id} className="hover:bg-cream/40 transition-colors">
                                                     <td className="p-3">
-                                                        <div className="font-bold text-bark-900">{b.title}</div>
-                                                        <div className="text-[11px] text-bark-500">By {b.author}</div>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-9 h-12 rounded bg-paper border border-bark-100 overflow-hidden shrink-0">
+                                                                <img
+                                                                    src={b.cover_image_path || 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=100'}
+                                                                    alt=""
+                                                                    className="w-full h-full object-cover"
+                                                                    onError={(e) => {
+                                                                        e.target.onerror = null;
+                                                                        e.target.src = 'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=100';
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-bold text-bark-900">{b.title}</p>
+                                                                <p className="text-[11px] text-bark-500">{b.author}</p>
+                                                            </div>
+                                                        </div>
                                                     </td>
-                                                    <td className="p-3 text-bark-500 font-mono">{b.genre}</td>
-                                                    <td className="p-3 text-center font-mono">
-                                                        <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-cream text-zinc-200 border border-bark-100">
-                                                            {b.available_copies} / {b.total_copies}
+                                                    <td className="p-3 font-mono text-[11px] text-bark-600">{b.isbn}</td>
+                                                    <td className="p-3">
+                                                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-cream text-bark-700 border border-bark-100">
+                                                            {b.genre}
                                                         </span>
                                                     </td>
-                                                    <td className="p-3 text-center font-mono font-bold text-zinc-200">
-                                                        KES {b.digital_purchase_price || 50.00}
+                                                    <td className="p-3">
+                                                        {b.file_path ? (
+                                                            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-olive-dark/10 text-olive-dark font-bold">
+                                                                Base64 Attached
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-bark-400 text-[11px] font-mono">No File</span>
+                                                        )}
                                                     </td>
-                                                    <td className="p-3 text-right space-x-1.5 font-mono">
-                                                        <button
-                                                            onClick={() => handleToggleRestriction(b.id)}
-                                                            className={`px-2 py-1 rounded text-[10px] font-bold border transition-colors ${
-                                                                b.is_blocked
-                                                                    ? 'bg-red-950 text-red-300 border-red-800'
-                                                                    : 'bg-cream text-bark-700 border-bark-100 hover:bg-zinc-700'
-                                                            }`}
-                                                            title="Toggle restriction"
-                                                        >
-                                                            {b.is_blocked ? 'Restricted' : 'Active'}
-                                                        </button>
-
-                                                        <button
-                                                            onClick={() => {
-                                                                setEditingBook(b);
-                                                                setBookForm({
-                                                                    isbn: b.isbn, title: b.title, author: b.author,
-                                                                    publisher: b.publisher || '', genre: b.genre,
-                                                                    description: b.description || '',
-                                                                    cover_image_path: b.cover_image_path || '',
-                                                                    file_path: b.file_path || '',
-                                                                    publication_year: b.publication_year || 2026,
-                                                                    digital_purchase_price: b.digital_purchase_price || 50.00,
-                                                                    foreign_price: b.foreign_price || '',
-                                                                    foreign_currency: b.foreign_currency || 'USD',
-                                                                    initial_copies: b.total_copies || 1
-                                                                });
-                                                            }}
-                                                            className="p-1.5 rounded bg-cream text-bark-700 hover:bg-zinc-700"
-                                                            title="Edit book"
-                                                        >
-                                                            <Edit2 className="w-3.5 h-3.5" />
-                                                        </button>
-
-                                                        <button
-                                                            onClick={() => handleDeleteBook(b.id)}
-                                                            className="p-1.5 rounded bg-cream text-bark-500 hover:text-red-400 hover:bg-zinc-700"
-                                                            title="Delete book"
-                                                        >
-                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                        </button>
+                                                    <td className="p-3">
+                                                        <span className="font-mono text-bark-800">
+                                                            {b.available_copies ?? b.total_copies ?? 1} avail / {b.total_copies ?? 1} total
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-3 text-right">
+                                                        <div className="flex items-center justify-end gap-1.5">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setEditingBook(b);
+                                                                    setBookForm({
+                                                                        isbn: b.isbn, title: b.title, author: b.author,
+                                                                        publisher: b.publisher || '', genre: b.genre,
+                                                                        description: b.description || '',
+                                                                        cover_image_path: b.cover_image_path || '',
+                                                                        file_path: b.file_path || '',
+                                                                        publication_year: b.publication_year || 2026,
+                                                                        digital_purchase_price: b.digital_purchase_price || 50.00,
+                                                                        foreign_price: b.foreign_price || '',
+                                                                        foreign_currency: b.foreign_currency || 'USD',
+                                                                        initial_copies: b.total_copies || 1
+                                                                    });
+                                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                                }}
+                                                                className="p-1.5 rounded-lg bg-cream border border-bark-100 text-bark-700 hover:bg-cream-light"
+                                                                title="Edit book"
+                                                            >
+                                                                <Edit2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleDeleteBook(b.id)}
+                                                                className="p-1.5 rounded-lg bg-cream border border-bark-100 text-bark-400 hover:text-red-500 hover:bg-cream-light"
+                                                                title="Delete book"
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}
