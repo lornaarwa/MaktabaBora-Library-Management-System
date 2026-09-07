@@ -181,6 +181,8 @@ export default function LibrarianDashboard() {
     });
     const [copySubmitting, setCopySubmitting] = useState(false);
     const [editingCopy, setEditingCopy] = useState(null);
+    const [selectedBookForCopies, setSelectedBookForCopies] = useState(null);
+    const [copiesSearch, setCopiesSearch] = useState('');
 
     // Subscription Form & Modal State
     const [subForm, setSubForm] = useState({
@@ -290,10 +292,11 @@ export default function LibrarianDashboard() {
                 days: parseInt(checkoutForm.days, 10),
             });
 
-            setSuccessMsg(res.message || 'Book copy checked out successfully!');
+            pushToast({ title: 'Book Issued', detail: `Barcode ${checkoutForm.barcode} checked out to member #${checkoutForm.member_id}.`, tone: 'success' });
             setCheckoutForm({ barcode: '', member_id: '', days: 14 });
             fetchAllData();
         } catch (err) {
+            pushToast({ title: 'Checkout Failed', detail: err.message || 'Checkout failed.', tone: 'error' });
             setErrorMsg(err.message || 'Checkout failed.');
         } finally {
             setCheckoutSubmitting(false);
@@ -307,10 +310,11 @@ export default function LibrarianDashboard() {
         setReturnSubmitting(true);
         try {
             const res = await api.returnLoan(parseInt(loanId, 10));
-            setSuccessMsg(res.message || 'Book returned successfully!');
+            pushToast({ title: 'Book Returned', detail: `Loan #${loanId} returned and marked available in catalog.`, tone: 'success' });
             setReturnForm({ loan_id: '' });
             fetchAllData();
         } catch (err) {
+            pushToast({ title: 'Return Failed', detail: err.message || 'Return processing failed.', tone: 'error' });
             setErrorMsg(err.message || 'Return processing failed.');
         } finally {
             setReturnSubmitting(false);
@@ -418,34 +422,37 @@ export default function LibrarianDashboard() {
                     status: copyForm.status,
                     location_rack: copyForm.location_rack
                 });
-                setSuccessMsg(`Book copy barcode "${copyForm.barcode}" updated.`);
+                pushToast({ title: 'Copy Updated', detail: `Barcode ${copyForm.barcode} set to ${copyForm.status} (${copyForm.condition}).`, tone: 'success' });
                 setEditingCopy(null);
             } else {
+                const targetBookId = selectedBookForCopies?.id || parseInt(copyForm.book_id, 10);
                 await api.createLibrarianCopy({
-                    book_id: parseInt(copyForm.book_id, 10),
+                    book_id: targetBookId,
                     barcode: copyForm.barcode,
                     condition: copyForm.condition,
                     status: copyForm.status,
                     location_rack: copyForm.location_rack
                 });
-                setSuccessMsg(`Book copy with barcode "${copyForm.barcode}" registered.`);
+                pushToast({ title: 'Copy Registered', detail: `Barcode ${copyForm.barcode} added to inventory.`, tone: 'success' });
             }
-            setCopyForm({ book_id: '', barcode: '', condition: 'good', status: 'available', location_rack: 'Rack-1' });
+            setCopyForm({ book_id: selectedBookForCopies?.id || '', barcode: '', condition: 'good', status: 'available', location_rack: 'Rack-1' });
             fetchAllData();
         } catch (err) {
+            pushToast({ title: 'Copy Error', detail: err.message || 'Failed to save copy record.', tone: 'error' });
             setErrorMsg(err.message || 'Failed to save book copy.');
         } finally {
             setCopySubmitting(false);
         }
     };
 
-    const handleDeleteCopy = async (id) => {
-        if (!window.confirm('Delete this book copy record?')) return;
+    const handleDeleteCopy = async (id, barcode = '') => {
+        if (!window.confirm(`Delete physical copy ${barcode || `#${id}`} from inventory?`)) return;
         try {
             await api.deleteLibrarianCopy(id);
-            setSuccessMsg('Book copy removed.');
+            pushToast({ title: 'Copy Deleted', detail: `Physical copy ${barcode || `#${id}`} removed from inventory.`, tone: 'info' });
             fetchAllData();
         } catch (err) {
+            pushToast({ title: 'Delete Failed', detail: err.message || 'Failed to delete copy.', tone: 'error' });
             setErrorMsg(err.message || 'Failed to delete copy.');
         }
     };
@@ -1637,165 +1644,412 @@ export default function LibrarianDashboard() {
                         </div>
                     )}
 
-                    {/* TAB 3: Book Copies Management */}
+                    {/* TAB 4: Physical Book Copies (Visual Catalog Grid & Interactive Modal) */}
                     {activeTab === 'book_copies' && (
                         <div className="space-y-6">
-                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
-                                <h2 className="text-base font-bold text-bark-900 flex items-center gap-2 font-mono">
-                                    <Layers className="w-4 h-4 text-bark-700" /> {editingCopy ? 'Edit Copy Record' : 'Register New Physical Book Copy'}
-                                </h2>
-
-                                <form onSubmit={handleCopySubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            {/* Header & Search */}
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 shadow-sm space-y-4">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                     <div>
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Select Book Title</label>
-                                        <select
-                                            value={copyForm.book_id}
-                                            onChange={(e) => setCopyForm({ ...copyForm, book_id: e.target.value })}
-                                            required
-                                            disabled={!!editingCopy}
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100"
-                                        >
-                                            <option value="">-- Choose Book --</option>
-                                            {books.map((b) => (
-                                                <option key={b.id} value={b.id}>{b.title} ({b.isbn})</option>
-                                            ))}
-                                        </select>
+                                        <h2 className="text-base font-bold text-bark-900 flex items-center gap-2 font-mono">
+                                            <Layers className="w-4 h-4 text-bark-700" /> Physical Copies Management
+                                        </h2>
+                                        <p className="text-xs text-bark-500 mt-0.5">
+                                            Select any book from the catalog below to manage physical barcodes, shelf rack locations, and availability statuses.
+                                        </p>
                                     </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Barcode</label>
-                                        <input
-                                            type="text"
-                                            value={copyForm.barcode}
-                                            onChange={(e) => setCopyForm({ ...copyForm, barcode: e.target.value })}
-                                            placeholder="e.g. BC-9780132350884-005"
-                                            required
-                                            disabled={!!editingCopy}
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
-                                        />
+                                    <div className="flex items-center gap-2 font-mono text-xs">
+                                        <span className="px-3 py-1 rounded-lg bg-paper border border-bark-100 text-bark-700 font-semibold">
+                                            {books.length} Books
+                                        </span>
+                                        <span className="px-3 py-1 rounded-lg bg-paper border border-bark-100 text-olive-dark font-semibold">
+                                            {copies.length} Total Copies
+                                        </span>
+                                        <span className="px-3 py-1 rounded-lg bg-paper border border-bark-100 text-emerald-700 font-semibold">
+                                            {copies.filter(c => c.status === 'available').length} Available
+                                        </span>
                                     </div>
+                                </div>
 
-                                    <div>
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Location Rack</label>
-                                        <input
-                                            type="text"
-                                            value={copyForm.location_rack}
-                                            onChange={(e) => setCopyForm({ ...copyForm, location_rack: e.target.value })}
-                                            placeholder="e.g. Rack-4"
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Condition</label>
-                                        <select
-                                            value={copyForm.condition}
-                                            onChange={(e) => setCopyForm({ ...copyForm, condition: e.target.value })}
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100"
-                                        >
-                                            <option value="good">Good</option>
-                                            <option value="damaged">Damaged</option>
-                                            <option value="lost">Lost</option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Availability Status</label>
-                                        <select
-                                            value={copyForm.status}
-                                            onChange={(e) => setCopyForm({ ...copyForm, status: e.target.value })}
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
-                                        >
-                                            <option value="available">available</option>
-                                            <option value="checked_out">checked_out</option>
-                                            <option value="reserved">reserved</option>
-                                            <option value="maintenance">maintenance</option>
-                                        </select>
-                                    </div>
-
-                                    <div className="flex items-end gap-2">
-                                        <button
-                                            type="submit"
-                                            disabled={copySubmitting}
-                                            className="flex-1 py-2 px-4 rounded-lg bg-zinc-100 hover:bg-paper text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm h-9"
-                                        >
-                                            {copySubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                                            <span>{editingCopy ? 'Save Copy' : 'Add Copy'}</span>
-                                        </button>
-                                        {editingCopy && (
-                                            <button
-                                                type="button"
-                                                onClick={() => { setEditingCopy(null); setCopyForm({ book_id: '', barcode: '', condition: 'good', status: 'available', location_rack: 'Rack-1' }); }}
-                                                className="px-3 py-2 rounded-lg bg-cream text-bark-700 text-xs hover:bg-zinc-700 h-9"
-                                            >
-                                                Cancel
-                                            </button>
-                                        )}
-                                    </div>
-                                </form>
-                            </div>
-
-                            {/* Book Copies Table */}
-                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
-                                <h3 className="text-base font-bold text-bark-900 font-mono">Registered Physical Copies ({copies.length})</h3>
-
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left text-xs text-bark-700 border-collapse">
-                                        <thead className="bg-paper text-bark-500 uppercase text-[10px] tracking-wider font-mono">
-                                            <tr>
-                                                <th className="p-3 border-b border-bark-100">Barcode</th>
-                                                <th className="p-3 border-b border-bark-100">Book Title</th>
-                                                <th className="p-3 border-b border-bark-100">Rack Location</th>
-                                                <th className="p-3 border-b border-bark-100 text-center">Condition</th>
-                                                <th className="p-3 border-b border-bark-100 text-center">Status</th>
-                                                <th className="p-3 border-b border-bark-100 text-right">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-zinc-800/60 font-mono">
-                                            {copies.map((c) => (
-                                                <tr key={c.id} className="hover:bg-paper/50">
-                                                    <td className="p-3 font-bold text-bark-900">{c.barcode}</td>
-                                                    <td className="p-3 font-sans font-semibold text-zinc-200">
-                                                        {c.book ? c.book.title : `Book #${c.book_id}`}
-                                                    </td>
-                                                    <td className="p-3 text-bark-500">{c.location_rack || 'N/A'}</td>
-                                                    <td className="p-3 text-center capitalize">{c.condition}</td>
-                                                    <td className="p-3 text-center">
-                                                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
-                                                            c.status === 'available' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-cream text-bark-700 border border-bark-100'
-                                                        }`}>
-                                                            {c.status}
-                                                        </span>
-                                                    </td>
-                                                    <td className="p-3 text-right space-x-1.5">
-                                                        <button
-                                                            onClick={() => {
-                                                                setEditingCopy(c);
-                                                                setCopyForm({
-                                                                    book_id: c.book_id,
-                                                                    barcode: c.barcode,
-                                                                    condition: c.condition,
-                                                                    status: c.status,
-                                                                    location_rack: c.location_rack || 'Rack-1'
-                                                                });
-                                                            }}
-                                                            className="p-1.5 rounded bg-cream text-bark-700 hover:bg-zinc-700"
-                                                        >
-                                                            <Edit2 className="w-3.5 h-3.5" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteCopy(c.id)}
-                                                            className="p-1.5 rounded bg-cream text-bark-500 hover:text-red-400 hover:bg-zinc-700"
-                                                        >
-                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                <div className="relative">
+                                    <Search className="w-4 h-4 absolute left-3 top-3 text-bark-500" />
+                                    <input
+                                        type="text"
+                                        value={copiesSearch}
+                                        onChange={(e) => setCopiesSearch(e.target.value)}
+                                        placeholder="Filter books by title, author, genre, or ISBN to manage physical copies..."
+                                        className="w-full pl-9 pr-4 py-2 rounded-xl border border-bark-100 bg-paper text-bark-900 text-xs focus:ring-1 focus:ring-tan-dark"
+                                    />
                                 </div>
                             </div>
+
+                            {/* Books Catalog Grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                {books
+                                    .filter((b) => {
+                                        if (!copiesSearch) return true;
+                                        const q = copiesSearch.toLowerCase();
+                                        return (
+                                            (b.title || '').toLowerCase().includes(q) ||
+                                            (b.author || '').toLowerCase().includes(q) ||
+                                            (b.genre || '').toLowerCase().includes(q) ||
+                                            (b.isbn || '').toLowerCase().includes(q)
+                                        );
+                                    })
+                                    .map((b) => {
+                                        const bookCopies = copies.filter((c) => c.book_id === b.id);
+                                        const availableCopies = bookCopies.filter((c) => c.status === 'available');
+                                        const loanedCopies = bookCopies.filter((c) => c.status === 'loaned');
+
+                                        return (
+                                            <div
+                                                key={b.id}
+                                                className="bg-paper border border-bark-100 rounded-2xl overflow-hidden shadow-card hover:border-bark-300 hover:shadow-md transition-all flex flex-col justify-between group"
+                                            >
+                                                {/* Cover & Header */}
+                                                <div className="p-4 space-y-3">
+                                                    <div className="relative aspect-[3/4] w-full rounded-xl overflow-hidden bg-cream-light/60 border border-bark-100 flex items-center justify-center shadow-inner">
+                                                        {b.cover_image_path ? (
+                                                            <img
+                                                                src={b.cover_image_path}
+                                                                alt={b.title}
+                                                                className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                                                                loading="lazy"
+                                                            />
+                                                        ) : (
+                                                            <div className="flex flex-col items-center justify-center p-3 text-center">
+                                                                <BookOpen className="w-8 h-8 text-bark-400 mb-1 opacity-60" />
+                                                                <span className="text-[11px] font-bold text-bark-700 line-clamp-2">{b.title}</span>
+                                                            </div>
+                                                        )}
+
+                                                        <div className="absolute top-2 right-2">
+                                                            <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider bg-bark-900/80 text-cream-light backdrop-blur-sm">
+                                                                {b.genre || 'General'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <h3 className="font-bold text-sm text-bark-900 line-clamp-1 group-hover:text-tan-dark transition" title={b.title}>
+                                                            {b.title}
+                                                        </h3>
+                                                        <p className="text-xs text-bark-500 truncate">By {b.author}</p>
+                                                        <p className="text-[10px] font-mono text-bark-400 mt-0.5">
+                                                            ISBN: {b.isbn || 'N/A'}
+                                                        </p>
+                                                    </div>
+
+                                                    {/* Copy count indicators */}
+                                                    <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-bark-100 text-center font-mono">
+                                                        <div className="bg-cream-light/50 rounded-lg p-1">
+                                                            <div className="text-[9px] uppercase text-bark-400">Total</div>
+                                                            <div className="text-xs font-bold text-bark-800">{bookCopies.length}</div>
+                                                        </div>
+                                                        <div className="bg-emerald-50 dark:bg-emerald-950/40 rounded-lg p-1">
+                                                            <div className="text-[9px] uppercase text-emerald-600 dark:text-emerald-400">Ready</div>
+                                                            <div className="text-xs font-bold text-emerald-700 dark:text-emerald-300">{availableCopies.length}</div>
+                                                        </div>
+                                                        <div className="bg-amber-50 dark:bg-amber-950/40 rounded-lg p-1">
+                                                            <div className="text-[9px] uppercase text-amber-600 dark:text-amber-400">Loaned</div>
+                                                            <div className="text-xs font-bold text-amber-700 dark:text-amber-300">{loanedCopies.length}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Action Button */}
+                                                <div className="p-4 pt-0">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSelectedBookForCopies(b);
+                                                            setEditingCopy(null);
+                                                            const cleanIsbn = (b.isbn || `${b.id}`).replace(/[^a-zA-Z0-9]/g, '').slice(-6);
+                                                            const nextSeq = bookCopies.length + 1;
+                                                            setCopyForm({
+                                                                book_id: b.id,
+                                                                barcode: `BC-${cleanIsbn}-${String(nextSeq).padStart(3, '0')}`,
+                                                                condition: 'good',
+                                                                status: 'available',
+                                                                location_rack: 'Rack-1'
+                                                            });
+                                                        }}
+                                                        className="w-full py-2 px-3 rounded-xl bg-bark-700 hover:bg-bark-900 text-cream-light text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-sm"
+                                                    >
+                                                        <Layers className="w-3.5 h-3.5" />
+                                                        <span>Manage Copies ({bookCopies.length})</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                            </div>
+
+                            {/* Interactive Book Copies Modal */}
+                            {selectedBookForCopies && (
+                                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+                                    <div className="bg-paper border border-bark-100 rounded-3xl max-w-4xl w-full p-6 space-y-6 shadow-2xl relative my-8">
+                                        {/* Modal Header */}
+                                        <div className="flex items-start justify-between gap-4 border-b border-bark-100 pb-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-12 h-16 rounded-lg overflow-hidden bg-cream-light border border-bark-100 flex-shrink-0 shadow-sm">
+                                                    {selectedBookForCopies.cover_image_path ? (
+                                                        <img
+                                                            src={selectedBookForCopies.cover_image_path}
+                                                            alt={selectedBookForCopies.title}
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-[10px] text-bark-400 p-1 text-center">
+                                                            No Cover
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <span className="font-mono text-[9px] uppercase tracking-wider text-bark-500 bg-cream-light px-2 py-0.5 rounded">
+                                                        {selectedBookForCopies.genre || 'General'}
+                                                    </span>
+                                                    <h3 className="text-base font-bold text-bark-900 mt-1">
+                                                        {selectedBookForCopies.title}
+                                                    </h3>
+                                                    <p className="text-xs text-bark-500">
+                                                        By {selectedBookForCopies.author} · ISBN: <span className="font-mono">{selectedBookForCopies.isbn || 'N/A'}</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setSelectedBookForCopies(null);
+                                                    setEditingCopy(null);
+                                                }}
+                                                className="p-2 rounded-xl text-bark-400 hover:text-bark-700 hover:bg-cream-light/60 transition"
+                                            >
+                                                <X className="w-5 h-5" />
+                                            </button>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                            {/* Column 1: Add/Edit Copy Form */}
+                                            <div className="lg:col-span-5 bg-cream-light/40 border border-bark-100 rounded-2xl p-5 space-y-4">
+                                                <h4 className="font-bold text-xs text-bark-900 flex items-center gap-2 font-mono">
+                                                    {editingCopy ? <Edit2 className="w-3.5 h-3.5 text-tan-dark" /> : <Plus className="w-3.5 h-3.5 text-tan-dark" />}
+                                                    <span>{editingCopy ? 'Edit Physical Copy' : 'Register New Physical Copy'}</span>
+                                                </h4>
+
+                                                <form onSubmit={handleCopySubmit} className="space-y-3">
+                                                    <div>
+                                                        <div className="flex items-center justify-between mb-1">
+                                                            <label className="text-[11px] font-semibold text-bark-700">Barcode Identifier</label>
+                                                            {!editingCopy && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const cleanIsbn = (selectedBookForCopies.isbn || `${selectedBookForCopies.id}`).replace(/[^a-zA-Z0-9]/g, '').slice(-6);
+                                                                        const rand = Math.floor(100 + Math.random() * 900);
+                                                                        setCopyForm(prev => ({ ...prev, barcode: `BC-${cleanIsbn}-${rand}` }));
+                                                                    }}
+                                                                    className="text-[10px] text-tan-dark hover:underline font-mono"
+                                                                >
+                                                                    Generate Barcode
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                        <input
+                                                            type="text"
+                                                            value={copyForm.barcode}
+                                                            onChange={(e) => setCopyForm({ ...copyForm, barcode: e.target.value })}
+                                                            placeholder="e.g. BC-97801-001"
+                                                            required
+                                                            disabled={!!editingCopy}
+                                                            className="w-full px-3 py-2 rounded-xl bg-paper border border-bark-100 text-xs text-bark-900 font-mono focus:ring-1 focus:ring-tan-dark disabled:opacity-60"
+                                                        />
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="block text-[11px] font-semibold text-bark-700 mb-1">Shelf / Rack Location</label>
+                                                        <input
+                                                            type="text"
+                                                            value={copyForm.location_rack}
+                                                            onChange={(e) => setCopyForm({ ...copyForm, location_rack: e.target.value })}
+                                                            placeholder="e.g. Rack-1, Shelf-B3"
+                                                            required
+                                                            className="w-full px-3 py-2 rounded-xl bg-paper border border-bark-100 text-xs text-bark-900 focus:ring-1 focus:ring-tan-dark"
+                                                        />
+                                                    </div>
+
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        <div>
+                                                            <label className="block text-[11px] font-semibold text-bark-700 mb-1">Condition</label>
+                                                            <select
+                                                                value={copyForm.condition}
+                                                                onChange={(e) => setCopyForm({ ...copyForm, condition: e.target.value })}
+                                                                className="w-full px-3 py-2 rounded-xl bg-paper border border-bark-100 text-xs text-bark-900 focus:ring-1 focus:ring-tan-dark capitalize"
+                                                            >
+                                                                <option value="new">New</option>
+                                                                <option value="good">Good</option>
+                                                                <option value="fair">Fair</option>
+                                                                <option value="poor">Poor</option>
+                                                            </select>
+                                                        </div>
+
+                                                        <div>
+                                                            <label className="block text-[11px] font-semibold text-bark-700 mb-1">Status</label>
+                                                            <select
+                                                                value={copyForm.status}
+                                                                onChange={(e) => setCopyForm({ ...copyForm, status: e.target.value })}
+                                                                className="w-full px-3 py-2 rounded-xl bg-paper border border-bark-100 text-xs text-bark-900 focus:ring-1 focus:ring-tan-dark capitalize"
+                                                            >
+                                                                <option value="available">Available</option>
+                                                                <option value="loaned">Loaned</option>
+                                                                <option value="reserved">Reserved</option>
+                                                                <option value="maintenance">Maintenance</option>
+                                                                <option value="lost">Lost</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="pt-2 flex items-center gap-2">
+                                                        <button
+                                                            type="submit"
+                                                            disabled={copySubmitting}
+                                                            className="flex-1 py-2 px-3 rounded-xl bg-bark-700 hover:bg-bark-900 text-cream-light text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-sm disabled:opacity-50"
+                                                        >
+                                                            {copySubmitting ? (
+                                                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                            ) : editingCopy ? (
+                                                                <Check className="w-3.5 h-3.5" />
+                                                            ) : (
+                                                                <Plus className="w-3.5 h-3.5" />
+                                                            )}
+                                                            <span>{editingCopy ? 'Save Changes' : 'Add Copy to Shelf'}</span>
+                                                        </button>
+
+                                                        {editingCopy && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setEditingCopy(null);
+                                                                    const cleanIsbn = (selectedBookForCopies.isbn || `${selectedBookForCopies.id}`).replace(/[^a-zA-Z0-9]/g, '').slice(-6);
+                                                                    const bookCopies = copies.filter((c) => c.book_id === selectedBookForCopies.id);
+                                                                    setCopyForm({
+                                                                        book_id: selectedBookForCopies.id,
+                                                                        barcode: `BC-${cleanIsbn}-${String(bookCopies.length + 1).padStart(3, '0')}`,
+                                                                        condition: 'good',
+                                                                        status: 'available',
+                                                                        location_rack: 'Rack-1'
+                                                                    });
+                                                                }}
+                                                                className="px-3 py-2 rounded-xl border border-bark-100 text-xs font-semibold text-bark-600 hover:bg-cream-light transition"
+                                                            >
+                                                                Cancel
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </form>
+                                            </div>
+
+                                            {/* Column 2: Existing Physical Copies */}
+                                            <div className="lg:col-span-7 space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <h4 className="font-bold text-xs text-bark-900 font-mono flex items-center gap-2">
+                                                        <Layers className="w-3.5 h-3.5 text-bark-700" />
+                                                        <span>Existing Copies ({copies.filter(c => c.book_id === selectedBookForCopies.id).length})</span>
+                                                    </h4>
+                                                </div>
+
+                                                {copies.filter(c => c.book_id === selectedBookForCopies.id).length === 0 ? (
+                                                    <div className="py-12 text-center text-xs text-bark-500 bg-cream-light/30 border border-bark-100 rounded-2xl space-y-2">
+                                                        <Layers className="w-8 h-8 text-bark-400 mx-auto opacity-50" />
+                                                        <p className="font-semibold text-bark-800">No physical copies on shelf yet.</p>
+                                                        <p>Use the form on the left to register barcodes and place copies on shelves.</p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+                                                        {copies
+                                                            .filter(c => c.book_id === selectedBookForCopies.id)
+                                                            .map((copy) => (
+                                                                <div
+                                                                    key={copy.id}
+                                                                    className="bg-paper border border-bark-100 rounded-xl p-3.5 flex items-center justify-between gap-3 shadow-sm hover:border-bark-300 transition"
+                                                                >
+                                                                    <div className="space-y-1 min-w-0">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <QrCode className="w-4 h-4 text-bark-600 flex-shrink-0" />
+                                                                            <span className="font-mono text-xs font-bold text-bark-900 truncate">
+                                                                                {copy.barcode}
+                                                                            </span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2 flex-wrap text-[11px] text-bark-500 font-mono">
+                                                                            <span>Loc: <span className="text-bark-700 font-semibold">{copy.location_rack || 'Rack-1'}</span></span>
+                                                                            <span>·</span>
+                                                                            <span className="capitalize">Cond: {copy.condition}</span>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                                                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase ${
+                                                                            copy.status === 'available'
+                                                                                ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                                                                                : copy.status === 'loaned'
+                                                                                ? 'bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800'
+                                                                                : copy.status === 'reserved'
+                                                                                ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
+                                                                                : 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
+                                                                        }`}>
+                                                                            {copy.status}
+                                                                        </span>
+
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setEditingCopy(copy);
+                                                                                setCopyForm({
+                                                                                    book_id: copy.book_id,
+                                                                                    barcode: copy.barcode,
+                                                                                    condition: copy.condition,
+                                                                                    status: copy.status,
+                                                                                    location_rack: copy.location_rack || 'Rack-1'
+                                                                                });
+                                                                            }}
+                                                                            className="p-1.5 rounded-lg border border-bark-100 hover:bg-cream-light text-bark-700 transition"
+                                                                            title="Edit copy details"
+                                                                        >
+                                                                            <Edit2 className="w-3.5 h-3.5" />
+                                                                        </button>
+
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleDeleteCopy(copy.id, copy.barcode)}
+                                                                            className="p-1.5 rounded-lg border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-950/30 text-red-600 transition"
+                                                                            title="Delete copy"
+                                                                        >
+                                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-4 border-t border-bark-100 flex justify-end">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setSelectedBookForCopies(null);
+                                                    setEditingCopy(null);
+                                                }}
+                                                className="px-5 py-2 rounded-xl bg-bark-700 hover:bg-bark-900 text-cream-light text-xs font-bold transition shadow-sm"
+                                            >
+                                                Done
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
