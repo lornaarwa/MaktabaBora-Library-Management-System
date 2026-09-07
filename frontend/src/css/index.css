@@ -4,15 +4,17 @@
 
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   /* MaktabaBora brand — deep forest green ramp (bark) */
   --color-bark-50: #f3f6f0;
   --color-bark-100: #e2e8db;
   --color-bark-200: #c5d1c1;
   --color-bark-300: #9fb3a0;
-  --color-bark-400: #75907a;
-  --color-bark-500: #52705a;
-  --color-bark-600: #33593f;
+  --color-bark-400: #587961;
+  --color-bark-500: #3d5e46;
+  --color-bark-600: #284c35;
   --color-bark-700: #1f4d2e;
   --color-bark-800: #163a23;
   --color-bark-900: #0e2a19;
@@ -193,6 +195,56 @@ html.dark .mb-scroll::-webkit-scrollbar-thumb {
 }
 html.dark .mb-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.32) !important;
+}
+
+/* ==========================================================================
+   Global Light Mode System Guarantees
+   ========================================================================== */
+html:not(.dark),
+:root:not(.dark) {
+  --mb-paper: #fbf7f1;
+  --mb-ink: #0e2a19;
+  --color-paper: #fbf7f1;
+  --color-ink: #0e2a19;
+}
+
+html:not(.dark) .text-bark-900,
+:root:not(.dark) .text-bark-900 {
+  color: #0e2a19 !important;
+}
+
+html:not(.dark) .text-bark-800,
+:root:not(.dark) .text-bark-800 {
+  color: #163a23 !important;
+}
+
+html:not(.dark) .text-bark-700,
+:root:not(.dark) .text-bark-700 {
+  color: #1f4d2e !important;
+}
+
+html:not(.dark) .text-bark-600,
+:root:not(.dark) .text-bark-600 {
+  color: #284c35 !important;
+}
+
+html:not(.dark) .text-bark-500,
+:root:not(.dark) .text-bark-500 {
+  color: #3d5e46 !important;
+}
+
+/* Form controls in light mode */
+html:not(.dark) input,
+html:not(.dark) select,
+html:not(.dark) textarea {
+  color-scheme: light;
+  color: #0e2a19;
+}
+
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: #587961;
+  opacity: 0.85;
 }
 
 /* Form controls in dark mode */

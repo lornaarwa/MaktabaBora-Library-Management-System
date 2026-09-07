@@ -519,7 +519,7 @@ When users ask about website navigation, account features, or how to perform act
                         const heightPct = Math.round((d.count / maxVal) * 100);
                         return (
                             <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative">
-                                <div className="text-[9px] font-mono text-white bg-cream-light/40 border border-bark-100 px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity absolute -top-7 z-10 shadow-lg pointer-events-none">
+                                <div className="text-[9px] font-mono text-cream-light bg-bark-900 border border-bark-700 px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity absolute -top-7 z-10 shadow-lg pointer-events-none">
                                     {d.count}
                                 </div>
                                 <div 
@@ -1905,7 +1905,7 @@ When users ask about website navigation, account features, or how to perform act
                     <div className="bg-cream-light/40 border border-bark-100 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl relative">
                         <button
                             onClick={() => setBanModal({ isOpen: false, member: null })}
-                            className="absolute top-4 right-4 p-1.5 text-bark-500 hover:text-white"
+                            className="absolute top-4 right-4 p-1.5 text-bark-500 hover:text-bark-900"
                         >
                             <X className="w-4 h-4" />
                         </button>
@@ -1982,7 +1982,7 @@ When users ask about website navigation, account features, or how to perform act
                     <div className="bg-cream-light/40 border border-bark-100 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl relative max-h-[85vh] flex flex-col">
                         <button
                             onClick={() => setModal({ type: null, record: null })}
-                            className="absolute top-4 right-4 p-1.5 text-bark-500 hover:text-white"
+                            className="absolute top-4 right-4 p-1.5 text-bark-500 hover:text-bark-900"
                         >
                             <X className="w-4 h-4" />
                         </button>

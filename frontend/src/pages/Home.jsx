@@ -75,13 +75,6 @@ export default function Home() {
     }
   };
 
-  const fillDemo = (demoEmail, demoPass) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setMode('login');
-    setError(null);
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-paper text-bark-900">
       
@@ -90,7 +83,7 @@ export default function Home() {
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div className="flex items-center gap-3">
             <Brand variant="mark" className="h-9 w-9 rounded-xl shadow-sm" />
-            <span className="text-base font-extrabold tracking-tight text-bark-900 dark:text-cream-light">
+            <span className="text-base font-extrabold tracking-tight text-bark-900">
               Maktaba<span className="text-tan-dark">Bora</span>
             </span>
           </div>
@@ -113,10 +106,10 @@ export default function Home() {
           
           {/* Direct Title & Clear CTA Prompt */}
           <div className="text-center space-y-2">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-bark-900 dark:text-cream-light tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-bark-900 tracking-tight">
               {mode === 'login' ? 'Sign In to Your Account' : 'Create a New Account'}
             </h1>
-            <p className="text-xs sm:text-sm text-bark-600 dark:text-bark-400">
+            <p className="text-xs sm:text-sm text-bark-600">
               {mode === 'login'
                 ? 'Enter your email and password to access the library.'
                 : 'Fill in your details below to register as a library member.'}
@@ -132,7 +125,7 @@ export default function Home() {
                 'flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-bold text-xs transition focus:outline-none',
                 mode === 'login'
                   ? 'bg-bark-700 text-cream-light shadow-sm'
-                  : 'text-bark-700 dark:text-bark-300 hover:bg-paper dark:hover:bg-bark-700'
+                  : 'text-bark-700 hover:bg-paper dark:text-bark-300 dark:hover:bg-bark-700'
               )}
             >
               <LogIn className="w-4 h-4" />
@@ -146,7 +139,7 @@ export default function Home() {
                 'flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-bold text-xs transition focus:outline-none',
                 mode === 'register'
                   ? 'bg-bark-700 text-cream-light shadow-sm'
-                  : 'text-bark-700 dark:text-bark-300 hover:bg-paper dark:hover:bg-bark-700'
+                  : 'text-bark-700 hover:bg-paper dark:text-bark-300 dark:hover:bg-bark-700'
               )}
             >
               <UserPlus className="w-4 h-4" />
@@ -160,11 +153,11 @@ export default function Home() {
               
               {mode === 'register' && (
                 <div>
-                  <label htmlFor="auth-name" className="block text-xs font-semibold text-bark-700 dark:text-bark-300 mb-1">
+                  <label htmlFor="auth-name" className="block text-xs font-semibold text-bark-700 mb-1">
                     Full Name
                   </label>
                   <div className="relative">
-                    <UserIcon className="w-4 h-4 text-bark-400 absolute left-3.5 top-3.5" />
+                    <UserIcon className="w-4 h-4 text-bark-500 absolute left-3.5 top-3.5" />
                     <input
                       id="auth-name"
                       type="text"
@@ -172,18 +165,18 @@ export default function Home() {
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Jane Doe"
                       required
-                      className="w-full bg-paper dark:bg-bark-800 border border-bark-200 dark:border-bark-700 rounded-xl pl-10 pr-3 py-2.5 text-xs text-bark-900 dark:text-cream-light focus:outline-none focus:border-bark-500 focus:ring-2 focus:ring-tan-dark/50"
+                      className="w-full bg-paper dark:bg-bark-800 border border-bark-200 dark:border-bark-700 rounded-xl pl-10 pr-3 py-2.5 text-xs text-bark-900 focus:outline-none focus:border-bark-500 focus:ring-2 focus:ring-tan-dark/50"
                     />
                   </div>
                 </div>
               )}
 
               <div>
-                <label htmlFor="auth-email" className="block text-xs font-semibold text-bark-700 dark:text-bark-300 mb-1">
+                <label htmlFor="auth-email" className="block text-xs font-semibold text-bark-700 mb-1">
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-bark-400 absolute left-3.5 top-3.5" />
+                  <Mail className="w-4 h-4 text-bark-500 absolute left-3.5 top-3.5" />
                   <input
                     id="auth-email"
                     type="email"
@@ -191,17 +184,17 @@ export default function Home() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="user@example.com"
                     required
-                    className="w-full bg-paper dark:bg-bark-800 border border-bark-200 dark:border-bark-700 rounded-xl pl-10 pr-3 py-2.5 text-xs text-bark-900 dark:text-cream-light focus:outline-none focus:border-bark-500 focus:ring-2 focus:ring-tan-dark/50"
+                    className="w-full bg-paper dark:bg-bark-800 border border-bark-200 dark:border-bark-700 rounded-xl pl-10 pr-3 py-2.5 text-xs text-bark-900 focus:outline-none focus:border-bark-500 focus:ring-2 focus:ring-tan-dark/50"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="auth-password" className="block text-xs font-semibold text-bark-700 dark:text-bark-300 mb-1">
+                <label htmlFor="auth-password" className="block text-xs font-semibold text-bark-700 mb-1">
                   Password
                 </label>
                 <div className="relative">
-                  <KeyRound className="w-4 h-4 text-bark-400 absolute left-3.5 top-3.5" />
+                  <KeyRound className="w-4 h-4 text-bark-500 absolute left-3.5 top-3.5" />
                   <input
                     id="auth-password"
                     type="password"
@@ -209,14 +202,14 @@ export default function Home() {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
                     required
-                    className="w-full bg-paper dark:bg-bark-800 border border-bark-200 dark:border-bark-700 rounded-xl pl-10 pr-3 py-2.5 text-xs text-bark-900 dark:text-cream-light focus:outline-none focus:border-bark-500 focus:ring-2 focus:ring-tan-dark/50"
+                    className="w-full bg-paper dark:bg-bark-800 border border-bark-200 dark:border-bark-700 rounded-xl pl-10 pr-3 py-2.5 text-xs text-bark-900 focus:outline-none focus:border-bark-500 focus:ring-2 focus:ring-tan-dark/50"
                   />
                 </div>
               </div>
 
               {mode === 'login' && (
                 <div className="flex items-center justify-between text-xs pt-1">
-                  <label className="flex items-center gap-2 cursor-pointer text-bark-600 dark:text-bark-400">
+                  <label className="flex items-center gap-2 cursor-pointer text-bark-700 font-medium">
                     <input
                       type="checkbox"
                       checked={rememberMe}
@@ -256,52 +249,17 @@ export default function Home() {
               </button>
             </form>
 
-            {/* Quick Demo Test Accounts */}
-            <div className="pt-3 border-t border-bark-100 dark:border-bark-800 space-y-2">
-              <p className="text-[10px] font-mono uppercase tracking-wider text-bark-500 text-center font-bold">
-                Quick Test Accounts:
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => fillDemo('member@maktababora.org', 'password123')}
-                  className="p-2 rounded-lg border border-bark-100 dark:border-bark-800 bg-cream-light/30 dark:bg-bark-800 text-left hover:border-bark-300 transition"
-                >
-                  <p className="text-[11px] font-bold text-bark-900 dark:text-cream-light">Member</p>
-                  <p className="text-[9px] text-bark-500 font-mono truncate">member@...</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => fillDemo('librarian@maktababora.org', 'password123')}
-                  className="p-2 rounded-lg border border-bark-100 dark:border-bark-800 bg-cream-light/30 dark:bg-bark-800 text-left hover:border-bark-300 transition"
-                >
-                  <p className="text-[11px] font-bold text-bark-900 dark:text-cream-light">Librarian</p>
-                  <p className="text-[9px] text-bark-500 font-mono truncate">librarian@...</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => fillDemo('admin@maktababora.org', 'password123')}
-                  className="p-2 rounded-lg border border-bark-100 dark:border-bark-800 bg-cream-light/30 dark:bg-bark-800 text-left hover:border-bark-300 transition"
-                >
-                  <p className="text-[11px] font-bold text-bark-900 dark:text-cream-light">Admin</p>
-                  <p className="text-[9px] text-bark-500 font-mono truncate">admin@...</p>
-                </button>
-              </div>
-            </div>
-
           </div>
 
           {/* Clean switch toggle hint */}
-          <p className="text-center text-xs text-bark-600 dark:text-bark-400">
+          <p className="text-center text-xs text-bark-700">
             {mode === 'login' ? (
               <>
                 Don't have an account?{' '}
                 <button
                   type="button"
                   onClick={() => { setMode('register'); setError(null); }}
-                  className="font-bold text-bark-900 dark:text-cream-light underline hover:text-tan-dark transition"
+                  className="font-bold text-tan-dark hover:text-bark-900 underline transition"
                 >
                   Register here
                 </button>
@@ -312,7 +270,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => { setMode('login'); setError(null); }}
-                  className="font-bold text-bark-900 dark:text-cream-light underline hover:text-tan-dark transition"
+                  className="font-bold text-tan-dark hover:text-bark-900 underline transition"
                 >
                   Sign in here
                 </button>
