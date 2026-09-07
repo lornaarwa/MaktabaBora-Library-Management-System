@@ -46,6 +46,12 @@ export default function LibrarianDashboard() {
     const [subscriptions, setSubscriptions] = useState([]);
     const [reimbursements, setReimbursements] = useState([]);
     const [refundRequests, setRefundRequests] = useState([]);
+    const [reservations, setReservations] = useState([]);
+    const [resSearchQuery, setResSearchQuery] = useState('');
+    const [resFilterStatus, setResFilterStatus] = useState('pending');
+    const [approvingResId, setApprovingResId] = useState(null);
+    const [denyingResId, setDenyingResId] = useState(null);
+    const [selectedBarcodes, setSelectedBarcodes] = useState({});
     const [reimbLoading, setReimbLoading] = useState(false);
     const [loading, setLoading] = useState(true);
 
@@ -233,13 +239,14 @@ export default function LibrarianDashboard() {
     const fetchAllData = async () => {
         setLoading(true);
         try {
-            const [metricsRes, membersRes, booksRes, copiesRes, loansRes, subsRes] = await Promise.all([
+            const [metricsRes, membersRes, booksRes, copiesRes, loansRes, subsRes, resRes] = await Promise.all([
                 api.getMetrics().catch(() => ({ total_books: 0, active_loans: 0, overdue_loans: 0, total_unpaid_fines: 0 })),
                 api.getLibrarianMembers().catch(() => ({ data: [] })),
                 api.getBooks().catch(() => ({ data: [] })),
                 api.getLibrarianCopies().catch(() => ({ data: [] })),
                 api.getActiveLoans().catch(() => ({ data: [] })),
                 api.getLibrarianSubscriptions().catch(() => ({ data: [] })),
+                api.getLibrarianReservations().catch(() => ({ data: [] })),
             ]);
 
             setMetrics(metricsRes.data || metricsRes || {});
@@ -248,6 +255,7 @@ export default function LibrarianDashboard() {
             setCopies(copiesRes.data || copiesRes || []);
             setActiveLoans(loansRes.data || loansRes || []);
             setSubscriptions(subsRes.data || subsRes || []);
+            setReservations(resRes.data || resRes || []);
 
             // Fetch reimbursements and refund requests separately (soft-fail)
             try {
@@ -259,6 +267,51 @@ export default function LibrarianDashboard() {
             setErrorMsg(err.message || 'Failed to load librarian data.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleApproveReservation = async (reservation, copyBarcode = null) => {
+        setApprovingResId(reservation.id);
+        try {
+            const barcodeToUse = copyBarcode || selectedBarcodes[reservation.id];
+            const payload = barcodeToUse ? { barcode: barcodeToUse } : {};
+            await api.approveLibrarianReservation(reservation.id, payload);
+            pushToast({
+                title: 'Hold Approved & Loan Issued',
+                detail: `Book "${reservation.book?.title || 'Book'}" loan issued to ${reservation.member?.user?.name || 'Member'}.`,
+                tone: 'success'
+            });
+            fetchAllData();
+        } catch (err) {
+            pushToast({
+                title: 'Approval Failed',
+                detail: err.message || 'Failed to approve hold reservation. Check copy availability.',
+                tone: 'error'
+            });
+        } finally {
+            setApprovingResId(null);
+        }
+    };
+
+    const handleDenyReservation = async (reservation) => {
+        if (!window.confirm(`Deny hold reservation #${reservation.id} for "${reservation.book?.title || 'Book'}"?`)) return;
+        setDenyingResId(reservation.id);
+        try {
+            await api.denyLibrarianReservation(reservation.id);
+            pushToast({
+                title: 'Reservation Denied',
+                detail: `Hold reservation #${reservation.id} cancelled.`,
+                tone: 'info'
+            });
+            fetchAllData();
+        } catch (err) {
+            pushToast({
+                title: 'Action Failed',
+                detail: err.message || 'Failed to deny hold reservation.',
+                tone: 'error'
+            });
+        } finally {
+            setDenyingResId(null);
         }
     };
 
@@ -712,6 +765,18 @@ export default function LibrarianDashboard() {
                 </button>
 
                 <button
+                    onClick={() => setActiveTab('reservations')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                        activeTab === 'reservations'
+                            ? 'bg-bark-700 text-cream-light shadow-card'
+                            : 'text-bark-700 hover:bg-cream-light/60 hover:text-bark-900'
+                    }`}
+                >
+                    <BookmarkCheck className="w-4 h-4 text-tan" />
+                    <span>Hold Approvals ({reservations.filter(r => r.status === 'pending').length})</span>
+                </button>
+
+                <button
                     onClick={() => setActiveTab('subscriptions')}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                         activeTab === 'subscriptions'
@@ -720,7 +785,7 @@ export default function LibrarianDashboard() {
                     }`}
                 >
                     <CreditCard className="w-4 h-4" />
-                    <span>Subscriptions (CRUD)</span>
+                    <span>Subscriptions ({subscriptions.filter(s => s.payment_status === 'paid' && (!s.expires_at || new Date(s.expires_at) >= new Date())).length})</span>
                 </button>
 
                 <button
@@ -2774,6 +2839,315 @@ export default function LibrarianDashboard() {
                                     ))}
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {/* TAB 7: Catalog Hold Reservations & Circulation Desk */}
+                    {activeTab === 'reservations' && (
+                        <div className="space-y-6">
+                            {/* Header Card */}
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 shadow-sm space-y-4">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                    <div>
+                                        <h2 className="text-base font-bold text-bark-900 flex items-center gap-2 font-mono">
+                                            <BookmarkCheck className="w-4 h-4 text-tan-dark" />
+                                            <span>Catalog Hold Reservations & Circulation Desk</span>
+                                        </h2>
+                                        <p className="text-xs text-bark-500 mt-0.5">
+                                            Review catalog hold reservations, verify borrower eligibility criteria, and approve loans or deny holds.
+                                        </p>
+                                    </div>
+
+                                    {/* Status counters */}
+                                    <div className="flex items-center gap-2 font-mono text-xs">
+                                        <span className="px-3 py-1 rounded-lg bg-paper border border-bark-100 text-amber-700 font-semibold">
+                                            {reservations.filter(r => r.status === 'pending').length} Pending
+                                        </span>
+                                        <span className="px-3 py-1 rounded-lg bg-paper border border-bark-100 text-emerald-700 font-semibold">
+                                            {reservations.filter(r => r.status === 'fulfilled').length} Fulfilled
+                                        </span>
+                                        <span className="px-3 py-1 rounded-lg bg-paper border border-bark-100 text-rose-700 font-semibold">
+                                            {reservations.filter(r => r.status === 'cancelled').length} Cancelled
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Filters & Search */}
+                                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                                    <div className="relative flex-1">
+                                        <Search className="w-4 h-4 absolute left-3 top-3 text-bark-500" />
+                                        <input
+                                            type="text"
+                                            value={resSearchQuery}
+                                            onChange={(e) => setResSearchQuery(e.target.value)}
+                                            placeholder="Search holds by member name, email, member number, or book title..."
+                                            className="w-full pl-9 pr-4 py-2 rounded-xl border border-bark-100 bg-paper text-bark-900 text-xs focus:ring-1 focus:ring-tan-dark"
+                                        />
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5 p-1 rounded-xl bg-paper border border-bark-100 font-mono text-xs">
+                                        {[
+                                            { id: 'pending', label: 'Pending Holds' },
+                                            { id: 'fulfilled', label: 'Fulfilled Loans' },
+                                            { id: 'cancelled', label: 'Cancelled' },
+                                            { id: 'all', label: 'All Records' },
+                                        ].map((t) => (
+                                            <button
+                                                key={t.id}
+                                                type="button"
+                                                onClick={() => setResFilterStatus(t.id)}
+                                                className={`px-3 py-1 rounded-lg font-semibold transition ${
+                                                    resFilterStatus === t.id
+                                                        ? 'bg-bark-700 text-cream-light shadow-sm'
+                                                        : 'text-bark-600 hover:text-bark-900'
+                                                }`}
+                                            >
+                                                {t.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Reservations Cards Grid / List */}
+                            {(() => {
+                                const list = reservations.filter((r) => {
+                                    if (resFilterStatus !== 'all' && r.status !== resFilterStatus) return false;
+                                    if (!resSearchQuery.trim()) return true;
+                                    const q = resSearchQuery.toLowerCase();
+                                    const name = (r.member?.user?.name || r.user?.name || '').toLowerCase();
+                                    const email = (r.member?.user?.email || r.user?.email || '').toLowerCase();
+                                    const memberNum = (r.member?.member_number || '').toLowerCase();
+                                    const title = (r.book?.title || '').toLowerCase();
+                                    const author = (r.book?.author || '').toLowerCase();
+                                    return name.includes(q) || email.includes(q) || memberNum.includes(q) || title.includes(q) || author.includes(q);
+                                });
+
+                                if (list.length === 0) {
+                                    return (
+                                        <div className="py-16 text-center text-xs text-bark-500 bg-paper/40 border border-bark-100 rounded-2xl space-y-2">
+                                            <BookmarkCheck className="w-8 h-8 text-bark-400 mx-auto opacity-50" />
+                                            <p className="font-bold text-sm text-bark-800">No hold reservations found</p>
+                                            <p>Reservations placed from the public book catalog will appear here for librarian verification.</p>
+                                        </div>
+                                    );
+                                }
+
+                                return (
+                                    <div className="space-y-4">
+                                        {list.map((r) => {
+                                            const isApproving = approvingResId === r.id;
+                                            const isDenying = denyingResId === r.id;
+                                            const memberName = r.member?.user?.name || r.user?.name || `Member #${r.member_id}`;
+                                            const memberEmail = r.member?.user?.email || r.user?.email || 'N/A';
+                                            const memberCard = r.member?.member_number || `MEM-${r.member_id}`;
+                                            const systemUserId = r.member?.user_id || r.user?.id || r.member?.id;
+                                            const reservedTime = r.reservation_date || r.created_at;
+
+                                            // Copy inventory for this book
+                                            const allBookCopies = r.book?.copies || copies.filter(c => c.book_id === r.book_id) || [];
+                                            const availableCopies = allBookCopies.filter(c => c.status === 'available');
+
+                                            return (
+                                                <div
+                                                    key={r.id}
+                                                    className="bg-paper border border-bark-100 rounded-2xl p-5 shadow-card hover:border-bark-300 transition space-y-4"
+                                                >
+                                                    {/* Header */}
+                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-bark-100 pb-3">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-tan/20 text-tan-dark flex items-center justify-center font-mono font-bold text-xs">
+                                                                #{r.priority || 1}
+                                                            </div>
+                                                            <div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="font-mono text-xs font-bold text-bark-900">
+                                                                        HOLD ID: #RES-{r.id}
+                                                                    </span>
+                                                                    <span className="text-[10px] font-mono text-bark-400">
+                                                                        Queue Position: #{r.priority || 1}
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-[11px] text-bark-500 font-mono">
+                                                                    Reserved: {reservedTime ? new Date(reservedTime).toLocaleString() : 'Recent'}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+
+                                                        <div>
+                                                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold font-mono uppercase inline-flex items-center gap-1 ${
+                                                                r.status === 'fulfilled'
+                                                                    ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                                                                    : r.status === 'cancelled'
+                                                                    ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
+                                                                    : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
+                                                            }`}>
+                                                                <Clock className="w-3 h-3" />
+                                                                <span>{r.status}</span>
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Details: 2 Columns */}
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        {/* Column 1: Member Info & Verification Criteria */}
+                                                        <div className="bg-cream-light/30 border border-bark-100 rounded-xl p-4 space-y-3">
+                                                            <div className="flex items-center justify-between">
+                                                                <h4 className="text-xs font-bold text-bark-900 font-mono flex items-center gap-1.5">
+                                                                    <UserCheck className="w-3.5 h-3.5 text-bark-700" />
+                                                                    <span>Borrower Verification Criteria</span>
+                                                                </h4>
+                                                                <span className="text-[10px] font-mono uppercase bg-paper border border-bark-100 px-2 py-0.5 rounded text-bark-700">
+                                                                    User ID: #{systemUserId}
+                                                                </span>
+                                                            </div>
+
+                                                            <div className="space-y-1.5 text-xs text-bark-700">
+                                                                <div className="flex items-center justify-between">
+                                                                    <span className="text-bark-500 font-mono text-[11px]">Member Name:</span>
+                                                                    <span className="font-bold text-bark-900">{memberName}</span>
+                                                                </div>
+                                                                <div className="flex items-center justify-between">
+                                                                    <span className="text-bark-500 font-mono text-[11px]">Email Address:</span>
+                                                                    <span className="font-mono text-bark-800">{memberEmail}</span>
+                                                                </div>
+                                                                <div className="flex items-center justify-between">
+                                                                    <span className="text-bark-500 font-mono text-[11px]">Card / ID:</span>
+                                                                    <span className="font-mono font-semibold text-bark-800">{memberCard}</span>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Verified Criteria Met Checklist */}
+                                                            <div className="pt-2 border-t border-bark-100/60 space-y-1 text-[11px] font-mono text-bark-600">
+                                                                <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
+                                                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                    <span>Account verified & active standing</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
+                                                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                    <span>Eligible borrow quota ({r.member?.active_loans_count || 0}/{r.member?.borrow_limit || 3} active loans)</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Column 2: Reserved Book & Inventory Status */}
+                                                        <div className="bg-cream-light/30 border border-bark-100 rounded-xl p-4 space-y-3">
+                                                            <h4 className="text-xs font-bold text-bark-900 font-mono flex items-center gap-1.5">
+                                                                <BookOpen className="w-3.5 h-3.5 text-bark-700" />
+                                                                <span>Book Reserved & Shelf Inventory</span>
+                                                            </h4>
+
+                                                            <div className="flex gap-3 items-start">
+                                                                <div className="w-14 h-20 rounded-md overflow-hidden bg-cream-light flex-shrink-0 border border-bark-100 shadow-sm">
+                                                                    {r.book?.cover_image_path ? (
+                                                                        <img
+                                                                            src={r.book.cover_image_path}
+                                                                            alt={r.book.title}
+                                                                            className="w-full h-full object-cover"
+                                                                        />
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex items-center justify-center text-[9px] text-bark-400 p-1 text-center font-mono">
+                                                                            No Cover
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                <div className="min-w-0 flex-1 space-y-1">
+                                                                    <h5 className="font-bold text-xs text-bark-900 line-clamp-1" title={r.book?.title}>
+                                                                        {r.book?.title || 'Book Title'}
+                                                                    </h5>
+                                                                    <p className="text-[11px] text-bark-500 truncate">By {r.book?.author || 'Author'}</p>
+                                                                    <p className="text-[10px] font-mono text-bark-400">
+                                                                        ISBN: {r.book?.isbn || 'N/A'}
+                                                                    </p>
+
+                                                                    <div className="pt-1 flex items-center gap-2 font-mono text-[10px]">
+                                                                        <span className="px-2 py-0.5 rounded bg-paper border border-bark-100 text-bark-700">
+                                                                            {allBookCopies.length} Copies Total
+                                                                        </span>
+                                                                        <span className={`px-2 py-0.5 rounded font-bold ${
+                                                                            availableCopies.length > 0
+                                                                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                                                                : 'bg-amber-100 text-amber-800 border border-amber-300'
+                                                                        }`}>
+                                                                            {availableCopies.length} Ready
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Circulation Actions */}
+                                                    {r.status === 'pending' && (
+                                                        <div className="pt-3 border-t border-bark-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                                                            {/* Barcode selection */}
+                                                            <div className="flex items-center gap-2 flex-1">
+                                                                <label className="text-xs font-semibold text-bark-700 font-mono whitespace-nowrap">
+                                                                    Copy Barcode:
+                                                                </label>
+                                                                {availableCopies.length > 0 ? (
+                                                                    <select
+                                                                        value={selectedBarcodes[r.id] || (availableCopies[0]?.barcode || '')}
+                                                                        onChange={(e) => setSelectedBarcodes({ ...selectedBarcodes, [r.id]: e.target.value })}
+                                                                        className="px-3 py-1.5 rounded-xl border border-bark-100 bg-paper text-bark-900 text-xs font-mono flex-1 focus:ring-1 focus:ring-tan-dark"
+                                                                    >
+                                                                        {availableCopies.map((c) => (
+                                                                            <option key={c.id} value={c.barcode}>
+                                                                                {c.barcode} ({c.location_rack || 'Rack-1'} · {c.condition})
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                ) : (
+                                                                    <span className="text-xs font-mono text-amber-700 bg-amber-50 dark:bg-amber-950/40 px-3 py-1.5 rounded-xl border border-amber-200">
+                                                                        No copies currently on shelf
+                                                                    </span>
+                                                                )}
+                                                            </div>
+
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleApproveReservation(r, selectedBarcodes[r.id] || (availableCopies[0]?.barcode || null))}
+                                                                    disabled={isApproving || isDenying || availableCopies.length === 0}
+                                                                    className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition disabled:opacity-50"
+                                                                >
+                                                                    {isApproving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                                                                    <span>Allow & Checkout Book</span>
+                                                                </button>
+
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleDenyReservation(r)}
+                                                                    disabled={isApproving || isDenying}
+                                                                    className="px-4 py-2 rounded-xl border border-rose-200 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 hover:bg-rose-100 font-bold text-xs flex items-center justify-center gap-1.5 transition"
+                                                                >
+                                                                    {isDenying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
+                                                                    <span>Deny Hold</span>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {r.status === 'fulfilled' && (
+                                                        <div className="pt-2 border-t border-bark-100 text-xs font-mono text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                                                            <CheckCircle2 className="w-4 h-4" />
+                                                            <span>Hold approved and loan successfully issued to borrower.</span>
+                                                        </div>
+                                                    )}
+
+                                                    {r.status === 'cancelled' && (
+                                                        <div className="pt-2 border-t border-bark-100 text-xs font-mono text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
+                                                            <XCircle className="w-4 h-4" />
+                                                            <span>Hold reservation was denied / cancelled.</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                );
+                            })()}
                         </div>
                     )}
 
