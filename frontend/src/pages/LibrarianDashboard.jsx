@@ -190,6 +190,42 @@ export default function LibrarianDashboard() {
     });
     const [subSubmitting, setSubSubmitting] = useState(false);
     const [editingSub, setEditingSub] = useState(null);
+    const [subSearchQuery, setSubSearchQuery] = useState('');
+    const [memberSearchInput, setMemberSearchInput] = useState('');
+    const [isMemberDropdownOpen, setIsMemberDropdownOpen] = useState(false);
+    const [subTabFilter, setSubTabFilter] = useState('active'); // 'active' | 'all'
+
+    const applySubPreset = (days, planType, price) => {
+        const expiry = new Date();
+        expiry.setDate(expiry.getDate() + days);
+        const yyyy = expiry.getFullYear();
+        const mm = String(expiry.getMonth() + 1).padStart(2, '0');
+        const dd = String(expiry.getDate()).padStart(2, '0');
+        setSubForm(prev => ({
+            ...prev,
+            plan_type: planType,
+            amount_paid: price,
+            expires_at: `${yyyy}-${mm}-${dd}`
+        }));
+    };
+
+    const getDurationInfo = (sub) => {
+        if (!sub.expires_at) {
+            return { text: 'Unlimited Pass', badgeClass: 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800', isExpired: false, days: Infinity };
+        }
+        const now = new Date();
+        const expiry = new Date(sub.expires_at);
+        const diffMs = expiry - now;
+        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+        if (diffDays <= 0) {
+            return { text: `Expired (${Math.abs(diffDays)}d ago)`, badgeClass: 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800', isExpired: true, days: diffDays };
+        }
+        if (diffDays <= 7) {
+            return { text: `${diffDays} days left`, badgeClass: 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800', isExpired: false, days: diffDays };
+        }
+        return { text: `${diffDays} days remaining`, badgeClass: 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800', isExpired: false, days: diffDays };
+    };
 
     // Search Query State
     const [searchQuery, setSearchQuery] = useState('');
@@ -470,7 +506,7 @@ export default function LibrarianDashboard() {
                     payment_status: subForm.payment_status,
                     expires_at: subForm.expires_at || null
                 });
-                setSuccessMsg('Subscription record updated.');
+                pushToast({ title: 'Subscription Updated', detail: `Plan "${subForm.plan_type}" updated successfully.`, tone: 'success' });
                 setEditingSub(null);
             } else {
                 await api.createLibrarianSubscription({
@@ -480,11 +516,14 @@ export default function LibrarianDashboard() {
                     payment_status: subForm.payment_status,
                     expires_at: subForm.expires_at || null
                 });
-                setSuccessMsg('Member perk subscription activated successfully.');
+                pushToast({ title: 'Subscription Granted', detail: `Member perk pass "${subForm.plan_type}" activated.`, tone: 'success' });
             }
             setSubForm({ member_id: '', plan_type: 'pro_perks_monthly', amount_paid: 500.00, payment_status: 'paid', expires_at: '' });
+            setMemberSearchInput('');
+            setIsMemberDropdownOpen(false);
             fetchAllData();
         } catch (err) {
+            pushToast({ title: 'Subscription Error', detail: err.message || 'Failed to save subscription.', tone: 'error' });
             setErrorMsg(err.message || 'Failed to save subscription.');
         } finally {
             setSubSubmitting(false);
@@ -495,9 +534,10 @@ export default function LibrarianDashboard() {
         if (!window.confirm('Cancel and delete this subscription record?')) return;
         try {
             await api.deleteLibrarianSubscription(id);
-            setSuccessMsg('Subscription record cancelled and removed.');
+            pushToast({ title: 'Subscription Cancelled', detail: 'Subscription pass cancelled and removed.', tone: 'info' });
             fetchAllData();
         } catch (err) {
+            pushToast({ title: 'Action Failed', detail: err.message || 'Failed to cancel subscription.', tone: 'error' });
             setErrorMsg(err.message || 'Failed to cancel subscription.');
         }
     };
@@ -2124,168 +2164,432 @@ export default function LibrarianDashboard() {
                         </div>
                     )}
 
-                    {/* TAB 5: Valid Subscriptions (CRUD Operations) */}
+                    {/* TAB 5: Valid Subscriptions (Active Directory & Hybrid Combobox Grant Desk) */}
                     {activeTab === 'subscriptions' && (
                         <div className="space-y-6">
-                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
-                                <h2 className="text-base font-bold text-bark-900 flex items-center gap-2 font-mono">
-                                    <CreditCard className="w-4 h-4 text-bark-700" /> {editingSub ? 'Edit Member Subscription' : 'Grant New Member Perk Subscription'}
-                                </h2>
+                            {/* Grant / Edit Subscription Form */}
+                            <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-5 shadow-sm">
+                                <div className="border-b border-bark-100 pb-4">
+                                    <h2 className="text-base font-bold text-bark-900 flex items-center gap-2 font-mono">
+                                        <CreditCard className="w-4 h-4 text-bark-700" />
+                                        <span>{editingSub ? 'Edit Member Subscription' : 'Grant Member Perk Subscription'}</span>
+                                    </h2>
+                                    <p className="text-xs text-bark-500 mt-0.5">
+                                        Search for any member by name, email, or member number below to allocate an active reading perk subscription pass.
+                                    </p>
+                                </div>
 
-                                <form onSubmit={handleSubSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                    <div>
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Select Member</label>
-                                        <select
-                                            value={subForm.member_id}
-                                            onChange={(e) => setSubForm({ ...subForm, member_id: e.target.value })}
-                                            required
-                                            disabled={!!editingSub}
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100"
-                                        >
-                                            <option value="">-- Choose Member --</option>
-                                            {members.map((m) => (
-                                                <option key={m.id} value={m.id}>{m.name} ({m.member_number})</option>
-                                            ))}
-                                        </select>
+                                <form onSubmit={handleSubSubmit} className="space-y-4">
+                                    {/* Member Combobox Selector */}
+                                    <div className="relative">
+                                        <label className="block text-xs font-semibold text-bark-700 mb-1.5 font-mono">
+                                            Select Member (Search by Name, Email, or Member #) <span className="text-red-500">*</span>
+                                        </label>
+
+                                        {subForm.member_id ? (
+                                            // Selected Member Preview Card
+                                            <div className="flex items-center justify-between p-3.5 rounded-xl bg-paper border border-bark-200 shadow-sm">
+                                                {(() => {
+                                                    const selected = members.find(m => m.id === parseInt(subForm.member_id, 10));
+                                                    return (
+                                                        <div className="flex items-center gap-3 min-w-0">
+                                                            <div className="w-9 h-9 rounded-full bg-bark-700 text-cream-light flex items-center justify-center font-bold text-sm flex-shrink-0">
+                                                                {selected?.name ? selected.name.charAt(0).toUpperCase() : 'M'}
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="font-bold text-xs text-bark-900 truncate">
+                                                                        {selected?.name || `Member #${subForm.member_id}`}
+                                                                    </span>
+                                                                    <span className="text-[10px] font-mono uppercase bg-cream-light px-2 py-0.5 rounded text-bark-600">
+                                                                        {selected?.membership_tier || 'standard'}
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-[11px] text-bark-500 font-mono truncate">
+                                                                    {selected?.email} · Card: {selected?.member_number || 'N/A'}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })()}
+
+                                                {!editingSub && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSubForm(prev => ({ ...prev, member_id: '' }));
+                                                            setMemberSearchInput('');
+                                                            setIsMemberDropdownOpen(true);
+                                                        }}
+                                                        className="px-3 py-1 rounded-lg border border-bark-200 text-xs font-semibold text-bark-600 hover:bg-cream-light transition ml-2 flex-shrink-0"
+                                                    >
+                                                        Change
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            // Combobox Search Input
+                                            <div className="relative">
+                                                <div className="relative">
+                                                    <Search className="w-4 h-4 absolute left-3 top-3 text-bark-500" />
+                                                    <input
+                                                        type="text"
+                                                        value={memberSearchInput}
+                                                        onChange={(e) => {
+                                                            setMemberSearchInput(e.target.value);
+                                                            setIsMemberDropdownOpen(true);
+                                                        }}
+                                                        onFocus={() => setIsMemberDropdownOpen(true)}
+                                                        placeholder="Type member name, email, or member card number (e.g. John, john@example.com, LIB-001)..."
+                                                        className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-bark-100 bg-paper text-bark-900 text-xs focus:ring-1 focus:ring-tan-dark"
+                                                    />
+                                                </div>
+
+                                                {/* Dropdown Results */}
+                                                {isMemberDropdownOpen && (
+                                                    <div className="absolute z-20 top-full left-0 right-0 mt-1 max-h-56 overflow-y-auto rounded-2xl bg-paper border border-bark-200 shadow-xl divide-y divide-bark-100">
+                                                        {(() => {
+                                                            const filtered = members.filter(m => {
+                                                                if (!memberSearchInput.trim()) return true;
+                                                                const q = memberSearchInput.toLowerCase();
+                                                                return (
+                                                                    (m.name || '').toLowerCase().includes(q) ||
+                                                                    (m.email || '').toLowerCase().includes(q) ||
+                                                                    (m.member_number || '').toLowerCase().includes(q) ||
+                                                                    String(m.id) === q
+                                                                );
+                                                            }).slice(0, 8);
+
+                                                            if (filtered.length === 0) {
+                                                                return (
+                                                                    <div className="p-4 text-center text-xs text-bark-500">
+                                                                        No library members found matching "{memberSearchInput}".
+                                                                    </div>
+                                                                );
+                                                            }
+
+                                                            return filtered.map((m) => (
+                                                                <button
+                                                                    key={m.id}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setSubForm(prev => ({ ...prev, member_id: m.id }));
+                                                                        setMemberSearchInput('');
+                                                                        setIsMemberDropdownOpen(false);
+                                                                    }}
+                                                                    className="w-full p-3 text-left flex items-center justify-between hover:bg-cream-light/60 transition group"
+                                                                >
+                                                                    <div className="flex items-center gap-3 min-w-0">
+                                                                        <div className="w-8 h-8 rounded-full bg-bark-100 text-bark-700 flex items-center justify-center font-bold text-xs flex-shrink-0 group-hover:bg-bark-700 group-hover:text-cream-light transition">
+                                                                            {m.name ? m.name.charAt(0).toUpperCase() : 'M'}
+                                                                        </div>
+                                                                        <div className="min-w-0">
+                                                                            <div className="font-bold text-xs text-bark-900 truncate">{m.name}</div>
+                                                                            <div className="text-[11px] text-bark-500 font-mono truncate">{m.email} · Card: {m.member_number}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-cream-light text-bark-600 flex-shrink-0 ml-2">
+                                                                        {m.membership_tier || 'standard'}
+                                                                    </span>
+                                                                </button>
+                                                            ));
+                                                        })()}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
 
-                                    <div>
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Subscription Plan Type</label>
-                                        <input
-                                            type="text"
-                                            value={subForm.plan_type}
-                                            onChange={(e) => setSubForm({ ...subForm, plan_type: e.target.value })}
-                                            placeholder="e.g. pro_perks_monthly, vip_annual"
-                                            required
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
-                                        />
+                                    {/* Quick Duration & Plan Presets */}
+                                    <div className="space-y-1.5">
+                                        <label className="block text-[11px] font-mono uppercase tracking-wider text-bark-500">
+                                            Quick Duration & Plan Presets
+                                        </label>
+                                        <div className="flex flex-wrap gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => applySubPreset(30, 'pro_perks_monthly', 500.00)}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                                                    subForm.plan_type === 'pro_perks_monthly'
+                                                        ? 'bg-bark-700 text-cream-light shadow-sm'
+                                                        : 'bg-paper border border-bark-100 text-bark-700 hover:bg-cream-light'
+                                                }`}
+                                            >
+                                                1 Month Pro (30 Days · KES 500)
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => applySubPreset(90, 'scholar_perks_quarterly', 1350.00)}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                                                    subForm.plan_type === 'scholar_perks_quarterly'
+                                                        ? 'bg-bark-700 text-cream-light shadow-sm'
+                                                        : 'bg-paper border border-bark-100 text-bark-700 hover:bg-cream-light'
+                                                }`}
+                                            >
+                                                3 Months Scholar (90 Days · KES 1,350)
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => applySubPreset(365, 'vip_annual_pass', 4500.00)}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                                                    subForm.plan_type === 'vip_annual_pass'
+                                                        ? 'bg-bark-700 text-cream-light shadow-sm'
+                                                        : 'bg-paper border border-bark-100 text-bark-700 hover:bg-cream-light'
+                                                }`}
+                                            >
+                                                1 Year VIP (365 Days · KES 4,500)
+                                            </button>
+                                        </div>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Payment Amount (KES)</label>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            value={subForm.amount_paid}
-                                            onChange={(e) => setSubForm({ ...subForm, amount_paid: e.target.value })}
-                                            required
-                                            disabled={!!editingSub}
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
-                                        />
+                                    {/* Detailed Form Inputs */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-1">
+                                        <div>
+                                            <label className="block text-xs font-semibold text-bark-700 mb-1">Plan Identifier</label>
+                                            <input
+                                                type="text"
+                                                value={subForm.plan_type}
+                                                onChange={(e) => setSubForm({ ...subForm, plan_type: e.target.value })}
+                                                placeholder="e.g. pro_perks_monthly"
+                                                required
+                                                className="w-full px-3 py-2 rounded-xl bg-paper border border-bark-100 text-xs text-bark-900 font-mono focus:ring-1 focus:ring-tan-dark"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-semibold text-bark-700 mb-1">Amount (KES)</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                value={subForm.amount_paid}
+                                                onChange={(e) => setSubForm({ ...subForm, amount_paid: e.target.value })}
+                                                required
+                                                disabled={!!editingSub}
+                                                className="w-full px-3 py-2 rounded-xl bg-paper border border-bark-100 text-xs text-bark-900 font-mono focus:ring-1 focus:ring-tan-dark disabled:opacity-60"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-semibold text-bark-700 mb-1">Payment Status</label>
+                                            <select
+                                                value={subForm.payment_status}
+                                                onChange={(e) => setSubForm({ ...subForm, payment_status: e.target.value })}
+                                                className="w-full px-3 py-2 rounded-xl bg-paper border border-bark-100 text-xs text-bark-900 font-mono focus:ring-1 focus:ring-tan-dark"
+                                            >
+                                                <option value="paid">paid (active)</option>
+                                                <option value="pending">pending</option>
+                                                <option value="failed">failed</option>
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-semibold text-bark-700 mb-1">Pass Expiration Date</label>
+                                            <input
+                                                type="date"
+                                                value={subForm.expires_at}
+                                                onChange={(e) => setSubForm({ ...subForm, expires_at: e.target.value })}
+                                                className="w-full px-3 py-2 rounded-xl bg-paper border border-bark-100 text-xs text-bark-900 font-mono focus:ring-1 focus:ring-tan-dark"
+                                            />
+                                        </div>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Payment Status</label>
-                                        <select
-                                            value={subForm.payment_status}
-                                            onChange={(e) => setSubForm({ ...subForm, payment_status: e.target.value })}
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
-                                        >
-                                            <option value="paid">paid</option>
-                                            <option value="pending">pending</option>
-                                            <option value="failed">failed</option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-semibold text-bark-700 mb-1">Expiration Date</label>
-                                        <input
-                                            type="date"
-                                            value={subForm.expires_at}
-                                            onChange={(e) => setSubForm({ ...subForm, expires_at: e.target.value })}
-                                            className="w-full px-3 py-2 rounded-lg bg-paper border border-bark-100 text-xs text-zinc-200 focus:outline-none focus:border-bark-100 font-mono"
-                                        />
-                                    </div>
-
-                                    <div className="flex items-end gap-2">
+                                    {/* Form Submit Actions */}
+                                    <div className="pt-2 flex items-center gap-2">
                                         <button
                                             type="submit"
-                                            disabled={subSubmitting}
-                                            className="flex-1 py-2 px-4 rounded-lg bg-zinc-100 hover:bg-paper text-zinc-950 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm h-9"
+                                            disabled={subSubmitting || !subForm.member_id}
+                                            className="px-6 py-2.5 rounded-xl bg-bark-700 hover:bg-bark-900 text-cream-light font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-50"
                                         >
                                             {subSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                                            <span>{editingSub ? 'Save Subscription' : 'Grant Subscription'}</span>
+                                            <span>{editingSub ? 'Update Subscription' : 'Grant Subscription Pass'}</span>
                                         </button>
+
                                         {editingSub && (
                                             <button
                                                 type="button"
-                                                onClick={() => { setEditingSub(null); setSubForm({ member_id: '', plan_type: 'pro_perks_monthly', amount_paid: 500.00, payment_status: 'paid', expires_at: '' }); }}
-                                                className="px-3 py-2 rounded-lg bg-cream text-bark-700 text-xs hover:bg-zinc-700 h-9"
+                                                onClick={() => {
+                                                    setEditingSub(null);
+                                                    setSubForm({ member_id: '', plan_type: 'pro_perks_monthly', amount_paid: 500.00, payment_status: 'paid', expires_at: '' });
+                                                    setMemberSearchInput('');
+                                                }}
+                                                className="px-4 py-2.5 rounded-xl border border-bark-100 text-xs font-semibold text-bark-600 hover:bg-cream-light transition"
                                             >
-                                                Cancel
+                                                Cancel Edit
                                             </button>
                                         )}
                                     </div>
                                 </form>
                             </div>
 
-                            {/* Subscriptions Table */}
+                            {/* Active Subscribers Directory */}
                             <div className="bg-cream-light/40 border border-bark-100 rounded-2xl p-6 space-y-4 shadow-sm">
-                                <h3 className="text-base font-bold text-bark-900 font-mono">Valid Member Perk Subscriptions ({subscriptions.length})</h3>
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-bark-100 pb-4">
+                                    <div>
+                                        <h3 className="text-base font-bold text-bark-900 flex items-center gap-2 font-mono">
+                                            <Users className="w-4 h-4 text-bark-700" />
+                                            <span>Active Subscribers Directory</span>
+                                        </h3>
+                                        <p className="text-xs text-bark-500 mt-0.5">
+                                            Current passholders with application timestamps and remaining duration countdowns.
+                                        </p>
+                                    </div>
 
+                                    {/* Filter Toggle */}
+                                    <div className="flex items-center gap-1.5 p-1 rounded-xl bg-paper border border-bark-100 font-mono text-xs">
+                                        <button
+                                            type="button"
+                                            onClick={() => setSubTabFilter('active')}
+                                            className={`px-3 py-1 rounded-lg font-semibold transition ${
+                                                subTabFilter === 'active'
+                                                    ? 'bg-bark-700 text-cream-light shadow-sm'
+                                                    : 'text-bark-600 hover:text-bark-900'
+                                            }`}
+                                        >
+                                            Active Passes ({subscriptions.filter(s => s.payment_status === 'paid' && (!s.expires_at || new Date(s.expires_at) >= new Date())).length})
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSubTabFilter('all')}
+                                            className={`px-3 py-1 rounded-lg font-semibold transition ${
+                                                subTabFilter === 'all'
+                                                    ? 'bg-bark-700 text-cream-light shadow-sm'
+                                                    : 'text-bark-600 hover:text-bark-900'
+                                            }`}
+                                        >
+                                            All History ({subscriptions.length})
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Search Bar */}
+                                <div className="relative">
+                                    <Search className="w-4 h-4 absolute left-3 top-3 text-bark-500" />
+                                    <input
+                                        type="text"
+                                        value={subSearchQuery}
+                                        onChange={(e) => setSubSearchQuery(e.target.value)}
+                                        placeholder="Search active subscribers by name, email, member number, or plan type..."
+                                        className="w-full pl-9 pr-4 py-2 rounded-xl border border-bark-100 bg-paper text-bark-900 text-xs focus:ring-1 focus:ring-tan-dark"
+                                    />
+                                </div>
+
+                                {/* Table */}
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left text-xs text-bark-700 border-collapse">
                                         <thead className="bg-paper text-bark-500 uppercase text-[10px] tracking-wider font-mono">
                                             <tr>
-                                                <th className="p-3 border-b border-bark-100">Sub ID / Reference</th>
-                                                <th className="p-3 border-b border-bark-100">Member</th>
-                                                <th className="p-3 border-b border-bark-100">Plan Type</th>
-                                                <th className="p-3 border-b border-bark-100 text-center">Discount</th>
+                                                <th className="p-3 border-b border-bark-100">Subscriber</th>
+                                                <th className="p-3 border-b border-bark-100">Plan & Reference</th>
+                                                <th className="p-3 border-b border-bark-100 font-mono">Date Applied</th>
+                                                <th className="p-3 border-b border-bark-100 text-center font-mono">Remaining Duration</th>
                                                 <th className="p-3 border-b border-bark-100 text-center">Amount Paid</th>
                                                 <th className="p-3 border-b border-bark-100 text-center">Status</th>
-                                                <th className="p-3 border-b border-bark-100 font-mono">Expires At</th>
                                                 <th className="p-3 border-b border-bark-100 text-right">Actions</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="divide-y divide-zinc-800/60 font-mono">
-                                            {subscriptions.map((s) => (
-                                                <tr key={s.id} className="hover:bg-paper/50">
-                                                    <td className="p-3 font-bold text-zinc-200">
-                                                        #{s.id}
-                                                        <div className="text-[10px] text-bark-500 font-mono">{s.transaction_reference || 'REF-N/A'}</div>
-                                                    </td>
-                                                    <td className="p-3 font-sans">
-                                                        <div className="font-semibold text-bark-900">{s.member?.user?.name || s.user?.name || `Member #${s.member_id}`}</div>
-                                                        <div className="text-[11px] font-mono text-bark-500">{s.member?.member_number}</div>
-                                                    </td>
-                                                    <td className="p-3 text-bark-700">{s.plan_type}</td>
-                                                    <td className="p-3 text-center text-bark-700">{s.discount_percentage}% OFF</td>
-                                                    <td className="p-3 text-center font-bold text-bark-900">KES {s.amount_paid}</td>
-                                                    <td className="p-3 text-center">
-                                                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
-                                                            s.payment_status === 'paid' ? 'bg-emerald-950 text-emerald-300 border border-emerald-800' : 'bg-cream text-bark-500 border border-bark-100'
-                                                        }`}>
-                                                            {s.payment_status}
-                                                        </span>
-                                                    </td>
-                                                    <td className="p-3 text-bark-500 text-[11px]">
-                                                        {s.expires_at ? s.expires_at.slice(0, 10) : 'Permanent'}
-                                                    </td>
-                                                    <td className="p-3 text-right space-x-1.5 font-sans">
-                                                        <button
-                                                            onClick={() => {
-                                                                setEditingSub(s);
-                                                                setSubForm({
-                                                                    member_id: s.member_id,
-                                                                    plan_type: s.plan_type,
-                                                                    amount_paid: s.amount_paid,
-                                                                    payment_status: s.payment_status,
-                                                                    expires_at: s.expires_at ? s.expires_at.slice(0, 10) : ''
-                                                                });
-                                                            }}
-                                                            className="p-1.5 rounded bg-cream text-bark-700 hover:bg-zinc-700"
-                                                        >
-                                                            <Edit2 className="w-3.5 h-3.5" />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeleteSub(s.id)}
-                                                            className="p-1.5 rounded bg-cream text-bark-500 hover:text-red-400 hover:bg-zinc-700"
-                                                        >
-                                                            <Trash2 className="w-3.5 h-3.5" />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                        <tbody className="divide-y divide-bark-100 font-mono">
+                                            {(() => {
+                                                const list = subscriptions.filter((s) => {
+                                                    const durationInfo = getDurationInfo(s);
+                                                    if (subTabFilter === 'active' && (durationInfo.isExpired || s.payment_status !== 'paid')) {
+                                                        return false;
+                                                    }
+                                                    if (!subSearchQuery.trim()) return true;
+                                                    const q = subSearchQuery.toLowerCase();
+                                                    const name = (s.member?.user?.name || s.user?.name || '').toLowerCase();
+                                                    const email = (s.member?.user?.email || s.user?.email || '').toLowerCase();
+                                                    const num = (s.member?.member_number || '').toLowerCase();
+                                                    const plan = (s.plan_type || '').toLowerCase();
+                                                    return name.includes(q) || email.includes(q) || num.includes(q) || plan.includes(q);
+                                                });
+
+                                                if (list.length === 0) {
+                                                    return (
+                                                        <tr>
+                                                            <td colSpan={7} className="py-12 text-center text-xs text-bark-500">
+                                                                <CreditCard className="w-8 h-8 text-bark-400 mx-auto opacity-50 mb-2" />
+                                                                <p className="font-semibold text-bark-800">No subscribers found.</p>
+                                                                <p>Grant a subscription pass above to see active members here.</p>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                }
+
+                                                return list.map((s) => {
+                                                    const durationInfo = getDurationInfo(s);
+                                                    const dateApplied = (s.starts_at || s.created_at || '').slice(0, 10) || 'Recent';
+
+                                                    return (
+                                                        <tr key={s.id} className="hover:bg-paper/50">
+                                                            <td className="p-3 font-sans">
+                                                                <div className="font-semibold text-bark-900">
+                                                                    {s.member?.user?.name || s.user?.name || `Member #${s.member_id}`}
+                                                                </div>
+                                                                <div className="text-[11px] font-mono text-bark-500">
+                                                                    {s.member?.user?.email || s.user?.email || s.member?.member_number}
+                                                                </div>
+                                                            </td>
+                                                            <td className="p-3 font-sans">
+                                                                <div className="font-semibold text-bark-800 capitalize">
+                                                                    {s.plan_type.replace(/_/g, ' ')}
+                                                                </div>
+                                                                <div className="text-[10px] text-bark-400 font-mono">
+                                                                    {s.transaction_reference || `SUB-${s.id}`}
+                                                                </div>
+                                                            </td>
+                                                            <td className="p-3 text-bark-700 text-xs font-mono">
+                                                                {dateApplied}
+                                                            </td>
+                                                            <td className="p-3 text-center">
+                                                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold font-mono uppercase inline-flex items-center gap-1 ${durationInfo.badgeClass}`}>
+                                                                    <Clock className="w-3 h-3" />
+                                                                    <span>{durationInfo.text}</span>
+                                                                </span>
+                                                            </td>
+                                                            <td className="p-3 text-center font-bold text-bark-900">
+                                                                KES {Number(s.amount_paid || 0).toFixed(2)}
+                                                            </td>
+                                                            <td className="p-3 text-center">
+                                                                <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
+                                                                    s.payment_status === 'paid'
+                                                                        ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
+                                                                        : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
+                                                                }`}>
+                                                                    {s.payment_status}
+                                                                </span>
+                                                            </td>
+                                                            <td className="p-3 text-right space-x-1.5 font-sans">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        setEditingSub(s);
+                                                                        setSubForm({
+                                                                            member_id: s.member_id,
+                                                                            plan_type: s.plan_type,
+                                                                            amount_paid: s.amount_paid,
+                                                                            payment_status: s.payment_status,
+                                                                            expires_at: s.expires_at ? s.expires_at.slice(0, 10) : ''
+                                                                        });
+                                                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                                    }}
+                                                                    className="p-1.5 rounded-lg border border-bark-100 text-bark-700 hover:bg-cream-light transition"
+                                                                    title="Edit subscription"
+                                                                >
+                                                                    <Edit2 className="w-3.5 h-3.5" />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleDeleteSub(s.id)}
+                                                                    className="p-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 transition"
+                                                                    title="Cancel subscription"
+                                                                >
+                                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                });
+                                            })()}
                                         </tbody>
                                     </table>
                                 </div>
