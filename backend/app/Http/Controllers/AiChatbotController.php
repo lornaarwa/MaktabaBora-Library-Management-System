@@ -39,7 +39,9 @@ class AiChatbotController extends Controller
 
         $session = null;
         if (!empty($validated['chat_session_id'])) {
-            $session = ChatSession::find($validated['chat_session_id']);
+            $session = ChatSession::where('id', $validated['chat_session_id'])
+                ->where('member_id', $member->id)
+                ->first();
         }
 
         if (!$session) {
@@ -76,5 +78,31 @@ class AiChatbotController extends Controller
             'books' => $result['books'] ?? [],
             'provider' => $providerName,
         ]);
+    }
+
+    /**
+     * Discard ephemeral AI chat session(s) on demand.
+     */
+    public function clearChat(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $sessionId = $request->input('chat_session_id');
+
+        if ($user) {
+            $member = Member::where('user_id', $user->id)->first();
+            if ($member) {
+                if ($sessionId) {
+                    ChatSession::where('id', $sessionId)
+                        ->where('member_id', $member->id)
+                        ->delete();
+                } else {
+                    ChatSession::where('member_id', $member->id)->delete();
+                }
+            }
+        } elseif ($sessionId) {
+            ChatSession::where('id', $sessionId)->delete();
+        }
+
+        return response()->json(['message' => 'Chat session cleared successfully']);
     }
 }
