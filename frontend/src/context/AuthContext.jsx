@@ -106,6 +106,8 @@ export const AuthProvider = ({ children }) => {
             localStorage.removeItem('smartlib_token');
             sessionStorage.removeItem('smartlib_user');
             sessionStorage.removeItem('smartlib_token');
+            sessionStorage.removeItem('smartlib_ai_chat_messages');
+            sessionStorage.removeItem('smartlib_ai_chat_session_id');
         }
     };
 
