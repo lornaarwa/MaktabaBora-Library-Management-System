@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -39,6 +39,11 @@ export function AppShell({ children, onOpenAiChat }) {
   const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Auto-close mobile menu on route changes
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   // Collapsible Sidebar State (persisted)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
@@ -352,90 +357,155 @@ export function AppShell({ children, onOpenAiChat }) {
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col min-w-0">
 
-        {/* Mobile Header Bar */}
+        {/* Mobile Sticky Header & Navigation Drawer */}
         {!isGuestHomepage && (
-          <header className="flex h-16 items-center justify-between border-b border-bark-100 bg-paper/95 px-4 md:hidden sticky top-0 z-30 backdrop-blur-md">
-            <Link to="/" className="flex items-center gap-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-tan-dark/60" aria-label="MaktabaBora home">
-              <Brand variant="mark" className="h-9 w-9 rounded-lg" />
-              <span className="text-base font-extrabold tracking-tight text-bark-900">
-                Maktaba<span className="text-tan-dark">Bora</span>
-              </span>
-            </Link>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={toggleTheme}
-                type="button"
-                className="p-2 rounded-lg border border-bark-100 bg-cream-light/40 hover:bg-cream text-bark-700 hover:text-bark-900 transition shadow-sm"
-                title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                aria-label="Toggle dark mode"
+          <div className="sticky top-0 z-40 md:hidden w-full">
+            <header className="flex h-16 items-center justify-between border-b border-bark-100 bg-paper/95 px-4 backdrop-blur-md">
+              <Link
+                to="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-tan-dark/60"
+                aria-label="MaktabaBora home"
               >
-                {isDark ? <SunIcon className="h-4 w-4 text-amber-400" /> : <MoonIcon className="h-4 w-4 text-bark-700" />}
-              </button>
-              <button
-                onClick={() => setMobileMenuOpen((open) => !open)}
-                aria-expanded={mobileMenuOpen}
-                aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-                className="rounded-lg border border-bark-100 p-2 text-bark-700 transition hover:bg-cream-light/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-tan-dark/60"
-              >
-                {mobileMenuOpen ? <XIcon className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
-              </button>
-            </div>
-          </header>
-        )}
-
-        {/* Mobile Menu Dropdown */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.22, ease: 'easeInOut' }}
-              className="overflow-hidden border-b border-bark-100 bg-paper md:hidden"
-            >
-              <nav className="space-y-1 p-4" aria-label="Mobile navigation">
-                {allowedNav.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`${navLinkBase} ${isActive(item.href) ? navLinkActive : navLinkIdle}`}
-                  >
-                    <item.icon className="h-4 w-4 text-bark-500" />
-                    <span className="flex-1">{item.name}</span>
-                    {item.badge > 0 && (
-                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-tan text-[9px] font-mono font-bold text-bark-900">
-                        {item.badge}
-                      </span>
-                    )}
-                  </Link>
-                ))}
-                {publicLinks.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`${navLinkBase} ${location.pathname === item.href ? navLinkActive : navLinkIdle}`}
-                  >
-                    <item.icon className="h-4 w-4 text-bark-500" />
-                    <span className="flex-1">{item.name}</span>
-                  </Link>
-                ))}
+                <Brand variant="mark" className="h-9 w-9 rounded-lg" />
+                <span className="text-base font-extrabold tracking-tight text-bark-900">
+                  Maktaba<span className="text-tan-dark">Bora</span>
+                </span>
+              </Link>
+              <div className="flex items-center gap-2">
                 <button
+                  onClick={toggleTheme}
                   type="button"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onOpenAiChat();
-                  }}
-                  className={`${navLinkBase} w-full border border-bark-100 bg-cream-light/40 text-left`}
+                  className="p-2 rounded-lg border border-bark-100 bg-cream-light/40 hover:bg-cream text-bark-700 hover:text-bark-900 transition shadow-sm"
+                  title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                  aria-label="Toggle dark mode"
                 >
-                  <BotIcon className="h-4 w-4 text-bark-700" />
-                  <span className="flex-1">Library Assistant</span>
+                  {isDark ? <SunIcon className="h-4 w-4 text-amber-400" /> : <MoonIcon className="h-4 w-4 text-bark-700" />}
                 </button>
-              </nav>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                <button
+                  onClick={() => setMobileMenuOpen((open) => !open)}
+                  aria-expanded={mobileMenuOpen}
+                  aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                  className="rounded-lg border border-bark-100 p-2 text-bark-700 transition hover:bg-cream-light/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-tan-dark/60"
+                >
+                  {mobileMenuOpen ? <XIcon className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
+                </button>
+              </div>
+            </header>
+
+            {/* Mobile Menu Dropdown */}
+            <AnimatePresence>
+              {mobileMenuOpen && (
+                <>
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.22, ease: 'easeInOut' }}
+                    className="relative z-40 overflow-hidden border-b border-bark-100 bg-paper/98 backdrop-blur-lg shadow-lift max-h-[calc(100vh-4rem)] overflow-y-auto"
+                  >
+                    <nav className="space-y-1 p-4" aria-label="Mobile navigation">
+                      {allowedNav.map((item) => (
+                        <Link
+                          key={item.name}
+                          to={item.href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={`${navLinkBase} ${isActive(item.href) ? navLinkActive : navLinkIdle}`}
+                        >
+                          <item.icon className="h-4 w-4 text-bark-500" />
+                          <span className="flex-1">{item.name}</span>
+                          {item.badge > 0 && (
+                            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-tan text-[9px] font-mono font-bold text-bark-900">
+                              {item.badge}
+                            </span>
+                          )}
+                        </Link>
+                      ))}
+                      {publicLinks.map((item) => (
+                        <Link
+                          key={item.name}
+                          to={item.href}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={`${navLinkBase} ${location.pathname === item.href ? navLinkActive : navLinkIdle}`}
+                        >
+                          <item.icon className="h-4 w-4 text-bark-500" />
+                          <span className="flex-1">{item.name}</span>
+                        </Link>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          onOpenAiChat();
+                        }}
+                        className={`${navLinkBase} w-full border border-bark-100 bg-cream-light/40 text-left`}
+                      >
+                        <BotIcon className="h-4 w-4 text-bark-700" />
+                        <span className="flex-1">Library Assistant</span>
+                      </button>
+
+                      {/* User Account / Auth Actions */}
+                      <div className="border-t border-bark-100 pt-3 mt-2">
+                        {auth.user ? (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-3 px-1 py-1">
+                              {auth.user.avatar_base64 ? (
+                                <img
+                                  src={auth.user.avatar_base64}
+                                  alt={auth.user.name}
+                                  className="h-8 w-8 rounded-xl object-cover border border-tan-dark/40 shadow-sm flex-shrink-0"
+                                />
+                              ) : (
+                                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-bark-700 text-cream-light font-extrabold text-xs shadow-sm flex-shrink-0">
+                                  {auth.user.name ? auth.user.name.charAt(0).toUpperCase() : 'U'}
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-xs font-bold text-bark-900">{auth.user.name}</p>
+                                <p className="truncate font-mono text-[9px] text-bark-500 capitalize">{auth.user.role} Account</p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMobileMenuOpen(false);
+                                auth.logout();
+                              }}
+                              className={`${navLinkBase} w-full border border-bark-100 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-left`}
+                            >
+                              <LogOutIcon className="h-4 w-4 text-rose-600" />
+                              <span className="flex-1">Sign Out</span>
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-2 pt-1">
+                            <Link to="/login?mode=signin" onClick={() => setMobileMenuOpen(false)}>
+                              <Button variant="primary" className="w-full justify-center text-xs">
+                                <LogInIcon className="h-3.5 w-3.5" /> Log In
+                              </Button>
+                            </Link>
+                            <Link to="/login?mode=signup" onClick={() => setMobileMenuOpen(false)}>
+                              <Button variant="secondary" className="w-full justify-center text-xs">
+                                <UserPlusIcon className="h-3.5 w-3.5" /> Register
+                              </Button>
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+                    </nav>
+                  </motion.div>
+
+                  {/* Backdrop overlay to close menu on click */}
+                  <div
+                    className="fixed inset-0 top-16 bg-bark-900/40 backdrop-blur-[2px] z-30"
+                    onClick={() => setMobileMenuOpen(false)}
+                    aria-hidden="true"
+                  />
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
         {/* Page Content (animated on route change) */}
         <motion.main
