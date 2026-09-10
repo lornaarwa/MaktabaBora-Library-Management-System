@@ -183,7 +183,8 @@ export const api = {
     fetchAiProviderModels: (data) => apiClient.post('/admin/ai-settings/fetch-models', data),
 
     // AI Assistant
-    sendAiMessage: (prompt) => apiClient.post('/ai/chat', { prompt }),
+    sendAiMessage: (prompt, chat_session_id = null) => apiClient.post('/ai/chat', { prompt, chat_session_id }),
+    clearAiChat: (chat_session_id = null) => apiClient.post('/ai/chat/clear', { chat_session_id }),
 };
 
 export default api;
