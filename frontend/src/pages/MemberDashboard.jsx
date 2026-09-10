@@ -123,7 +123,7 @@ export default function MemberDashboard() {
                     </Link>
                 </div>
             )}
-            
+
             {/* User Greeting & Member Banner */}
             <div className="rounded-2xl border border-bark-100 bg-cream-light/60 p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-card">
                 <div className="space-y-1.5">
@@ -173,10 +173,10 @@ export default function MemberDashboard() {
                             delay={0.05}
                         />
                         <StatCard
-                            label="Digital Entitlements"
+                            label="e-books"
                             value={digitalLibrary.length}
                             icon={ShoppingBag}
-                            hint="Purchased lifetime e-books"
+                            hint="Purchased  e-books"
                             delay={0.10}
                         />
                         <StatCard
