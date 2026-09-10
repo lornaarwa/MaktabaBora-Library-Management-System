@@ -30,6 +30,9 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
     Route::get('/books', [BookInventoryController::class, 'index']);
     Route::get('/books/{book}', [BookInventoryController::class, 'show']);
 
+    // Dynamic Membership Tiers (Accessible to all guests & members)
+    Route::get('/membership-tiers', [\App\Http\Controllers\MembershipTierController::class, 'index']);
+
     // M-Pesa Callback (Public hook)
     Route::post('/fines/daraja/callback', [FineController::class, 'darajaCallback']);
 
