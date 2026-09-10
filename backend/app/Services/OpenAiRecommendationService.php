@@ -62,15 +62,12 @@ class OpenAiRecommendationService implements OpenAiRecommendationServiceInterfac
     {
         $this->storeMessage($session->id, 'user', $userPrompt);
 
-        // 1. Retrieve relevant books from the real catalog.
+        // 1. Retrieve relevant books from the real catalog for payload
         $retrieved = app(CatalogRetrievalService::class)->retrieve($userPrompt, 6);
         $booksPayload = $retrieved->map(fn (Book $book) => $this->bookPayload($book))->values()->all();
 
-        // 2. Pull the member's live account context.
-        $member = $session->member;
-        $memberContext = $this->buildMemberContext($member);
-
-        [$aiText, $tokensUsed] = $this->answer($userPrompt, $retrieved, $memberContext);
+        // 2. Answer strictly grounded in catalog database records (excluding sensitive user accounts)
+        [$aiText, $tokensUsed] = $this->answer($userPrompt, $retrieved);
 
         $this->storeMessage($session->id, 'ai', $aiText, $tokensUsed);
         $session->increment('total_tokens_used', $tokensUsed);
@@ -86,7 +83,7 @@ class OpenAiRecommendationService implements OpenAiRecommendationServiceInterfac
     {
         $retrieved = app(CatalogRetrievalService::class)->retrieve($prompt, 5);
 
-        [$message, $tokens] = $this->answer($prompt, $retrieved, '');
+        [$message, $tokens] = $this->answer($prompt, $retrieved);
 
         return [
             'message' => $message,
@@ -97,24 +94,25 @@ class OpenAiRecommendationService implements OpenAiRecommendationServiceInterfac
 
     /**
      * Decide the answer: LLM phrasing via AiLibrarianManagerService when an active provider/key exists, grounded fallback otherwise.
+     * Strictly limits context to catalog records from database, excluding sensitive user accounts.
      *
      * @param  \Illuminate\Database\Eloquent\Collection<int, Book>  $retrieved
      * @return array{0: string, 1: int}  [text, tokens]
      */
-    protected function answer(string $userPrompt, $retrieved, string $memberContext): array
+    protected function answer(string $userPrompt, $retrieved): array
     {
-        $catalogText = $this->formatCatalog($retrieved);
+        /** @var AiLibrarianManagerService $aiManager */
+        $aiManager = app(AiLibrarianManagerService::class);
+        $catalogText = $aiManager->buildCatalogDatabaseContext($userPrompt, $retrieved);
 
         try {
-            /** @var AiLibrarianManagerService $aiManager */
-            $aiManager = app(AiLibrarianManagerService::class);
             $settings = $aiManager->getSettings();
             $activeProvider = $settings['active_provider'] ?? 'gemini';
             $providerConfig = $settings['providers'][$activeProvider] ?? null;
             $activeKey = trim((string) ($providerConfig['api_key'] ?? ''));
 
             if ($activeProvider !== 'offline' && $activeKey !== '') {
-                $response = $aiManager->generateLibrarianResponse($userPrompt, $catalogText, $memberContext);
+                $response = $aiManager->generateLibrarianResponse($userPrompt, $catalogText);
                 if (!empty($response['text']) && ($response['provider'] ?? '') !== 'offline-fallback') {
                     return [
                         $response['text'],
@@ -126,26 +124,28 @@ class OpenAiRecommendationService implements OpenAiRecommendationServiceInterfac
             Log::warning('Multi-provider AI call failed in OpenAiRecommendationService', ['error' => $e->getMessage()]);
         }
 
-        return $this->groundedFallback($userPrompt, $retrieved, $memberContext);
+        return $this->groundedFallback($userPrompt, $retrieved);
     }
 
     /**
-     * Offline, truthful answer composed strictly from retrieved facts, navigation rules, and member context.
+     * Offline, truthful answer composed strictly from catalog database records and platform navigation.
+     * Strictly protects sensitive user accounts.
      *
      * @param  \Illuminate\Database\Eloquent\Collection<int, Book>  $retrieved
      * @return array{0: string, 1: int}
      */
-    protected function groundedFallback(string $userPrompt, $retrieved, string $memberContext): array
+    protected function groundedFallback(string $userPrompt, $retrieved): array
     {
         $normalized = strtolower($userPrompt);
-        $mentionsAccount = (bool) preg_match('/due|return|overdue|fine|loan|renew|penalty/i', $normalized);
+        $mentionsAccount = (bool) preg_match('/due|return|overdue|fine|loan|renew|penalty|account|borrowed/i', $normalized);
         $mentionsAvailability = (bool) preg_match('/available|in stock|on shelf|ready to borrow|copy\b|copies\b/i', $normalized);
         $mentionsNavigation = (bool) preg_match('/navigate|where|how to|find|page|cart|checkout|mpesa|m-pesa|membership|tier|subscribe/i', $normalized);
 
-        // Account questions take priority when the member has active context.
-        if ($mentionsAccount && $memberContext !== '') {
+        // Account questions protect patron privacy and direct to Member Dashboard
+        if ($mentionsAccount) {
             return [
-                $this->memberContextAnswer($memberContext, $mentionsAccount),
+                "For your privacy and security, personal account details, active loans, and fines are kept strictly confidential and are not accessed by the Library Assistant.\n\n"
+                . "You can view your active loans, return due dates, and fine balances directly on your **[Member Dashboard](/member)**.",
                 60,
             ];
         }
@@ -182,12 +182,6 @@ class OpenAiRecommendationService implements OpenAiRecommendationServiceInterfac
             "Based on your request, here are the closest titles in our catalog:\n\n{$lines}\n\nWould you like more details about any of these, or shall I search another topic?",
             70,
         ];
-    }
-
-    protected function memberContextAnswer(string $memberContext, bool $accountQuestion): string
-    {
-        return "Here's what I found on your MaktabaBora account:\n\n{$memberContext}\n\n"
-            . 'Need anything else — a title recommendation, availability check, or help with a reservation?';
     }
 
     protected function navigationAnswer(string $userPrompt): string
@@ -247,85 +241,17 @@ class OpenAiRecommendationService implements OpenAiRecommendationServiceInterfac
      */
     protected function formatCatalog($retrieved): string
     {
-        if ($retrieved->isEmpty()) {
-            return 'No close matches were found in the catalog for this request.';
-        }
-
-        $lines = $retrieved->map(function (Book $book) {
-            $status = $book->is_blocked
-                ? 'RESTRICTED'
-                : ($book->available_copies > 0
-                    ? "{$book->available_copies} of {$book->total_copies} copies available"
-                    : 'all copies on loan');
-
-            return "- [{$book->title}] by {$book->author} | genre: {$book->genre} | ISBN: {$book->isbn}"
-                ." | year: {$book->publication_year} | availability: {$status} | description: {$book->description}";
-        })->implode("\n");
-
-        return "Retrieved catalog results (ranked by relevance to the user's request):\n{$lines}";
+        return app(AiLibrarianManagerService::class)->buildCatalogDatabaseContext('', $retrieved);
     }
 
-    protected function systemPrompt(string $catalogText, string $memberContext): string
+    protected function systemPrompt(string $catalogText): string
     {
-        $accountBlock = $memberContext !== ''
-            ? "The user's verified MaktabaBora account context:\n{$memberContext}\n"
-            : '';
-
-        return "You are SmartLib AI, the official librarian of the MaktabaBora library management system.\n\n"
-            ."You must answer using ONLY the facts provided below. Never invent, guess, or mention books that are not in the catalog facts.\n"
-            ."If the retrieved catalog results are empty or clearly irrelevant, say so and offer to browse the catalog.\n"
-            ."If the question concerns the user's own loans, fines, due dates or membership, use the account context and be precise about dates and amounts.\n"
+        return "You are the official Library Assistant of the MaktabaBora library management system.\n\n"
+            ."You must answer using ONLY the catalog database records provided below. Never invent, guess, or mention books that are not in the catalog facts.\n"
+            ."You have access ONLY to the public book catalog and website navigation directory. You DO NOT have access to sensitive user accounts, passwords, member profiles, or private personal borrowing histories.\n"
+            ."If a user asks about their personal account details, active loans, return due dates, or fine balances, instruct them to check their secure private Member Dashboard (/member).\n"
             ."Format answers with short markdown bullets. Be concise, friendly and professional.\n\n"
-            .$catalogText."\n\n"
-            .$accountBlock;
-    }
-
-    protected function buildMemberContext(?Member $member): string
-    {
-        if (! $member) {
-            return '';
-        }
-
-        $parts = [];
-
-        $loans = Loan::with('bookCopy.book')
-            ->where('member_id', $member->id)
-            ->whereIn('status', ['active', 'overdue'])
-            ->get();
-
-        if ($loans->isNotEmpty()) {
-            $loanLines = $loans->map(function (Loan $loan) {
-                $bookTitle = $loan->bookCopy->book->title ?? 'a library book';
-                $daysLeft = $loan->due_date ? now()->startOfDay()->diffInDays($loan->due_date, false) : null;
-                $overdue = $loan->status === 'overdue' || ($daysLeft !== null && $daysLeft < 0);
-                $dueText = $overdue
-                    ? "OVERDUE by ".abs($daysLeft)." day(s) (was due {$loan->due_date->format('Y-m-d')})"
-                    : "due {$loan->due_date->format('Y-m-d')} (".max($daysLeft, 0)." day(s) left)";
-
-                return "- \"{$bookTitle}\" — {$dueText}, renewal count: {$loan->renewal_count}";
-            })->implode("\n");
-
-            $parts[] = "Active loans:\n{$loanLines}";
-        } else {
-            $parts[] = 'Active loans: none.';
-        }
-
-        $unpaidFines = Fine::where('member_id', $member->id)
-            ->where('status', '!=', 'paid')
-            ->get();
-
-        if ($unpaidFines->isNotEmpty()) {
-            $total = $unpaidFines->sum('amount');
-            $parts[] = "Unpaid fines: KES ".number_format((float) $total, 2)." across {$unpaidFines->count()} fine(s).";
-        } else {
-            $parts[] = 'Unpaid fines: none.';
-        }
-
-        $parts[] = 'Membership: '.($member->membership_tier ?: 'general')
-            .($member->is_subscribed ? ' (active subscription)' : ' (no active subscription)')
-            .' | member number: '.($member->member_number ?: 'N/A');
-
-        return implode("\n", $parts);
+            .$catalogText;
     }
 
     protected function bookPayload(Book $book): array
