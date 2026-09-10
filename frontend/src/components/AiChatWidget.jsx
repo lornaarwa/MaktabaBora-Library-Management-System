@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bot, Send, X, User, Loader2, AlertCircle, Sparkles } from 'lucide-react';
+import { Bot, Send, X, User, Loader2, AlertCircle, RotateCcw } from 'lucide-react';
 import { api } from '../services/api';
 import { Button } from './ui/Button';
 import BookMiniCard from './BookMiniCard';
@@ -13,58 +13,367 @@ const SUGGESTED_QUESTIONS = [
     'Which books are available right now?',
 ];
 
-function FormattedMessageText({ text, onNavigate }) {
+function renderInline(text, onNavigate, isUser) {
     if (!text) return null;
 
-    // Parse [Label](/path) into interactive navigation buttons
+    // Pattern for inline tokens:
+    // 1. Bold link: **[Label](path)** or __[Label](path)__
+    // 2. Regular link: [Label](path)
+    // 3. Bold + Underline: **<u>text</u>**, <u>**text**</u>, **__text__**, __**text**__
+    // 4. Bold: **text** or <b>text</b>
+    // 5. Underline: <u>text</u> or __text__
+    // 6. Code: `text`
+    // 7. Italic: *text* or <i>text</i>
+    const pattern = /(\*\*\[[^\]]+\]\([^)]+\)\*\*|__\[[^\]]+\]\([^)]+\)__|\[[^\]]+\]\([^)]+\)|\*\*<u>.*?<\/u>\*\*|<u>\*\*.*?\*\*<\/u>|\*\*__.*?__\*\*|__\*\*.*?\*\*__|\*\*.*?\*\*|<b>.*?<\/b>|<u>.*?<\/u>|__.*?__|`[^`]+`|\*.*?\*|<i>.*?<\/i>)/g;
+
     const parts = [];
-    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-    let lastIdx = 0;
+    let lastIndex = 0;
     let match;
 
-    while ((match = linkRegex.exec(text)) !== null) {
-        if (match.index > lastIdx) {
-            parts.push(text.slice(lastIdx, match.index));
+    while ((match = pattern.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+            parts.push(text.slice(lastIndex, match.index));
         }
-        const label = match[1];
-        const path = match[2];
-        parts.push(
-            <button
-                key={`${path}-${match.index}`}
-                type="button"
-                onClick={() => onNavigate(path)}
-                className="inline-flex items-center text-primary-600 hover:text-primary-800 underline font-semibold transition px-1 py-0.5 rounded hover:bg-primary-50 text-xs"
-            >
-                {label}
-            </button>
-        );
-        lastIdx = linkRegex.lastIndex;
+
+        const raw = match[0];
+        const key = `inline-${match.index}`;
+
+        // 1. Bold Link: **[Label](path)** or __[Label](path)__
+        if ((raw.startsWith('**[') && raw.endsWith(')**')) || (raw.startsWith('__[') && raw.endsWith(')__'))) {
+            const innerLink = raw.slice(2, -2);
+            const linkMatch = innerLink.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+            if (linkMatch) {
+                const [, label, path] = linkMatch;
+                parts.push(
+                    <button
+                        key={key}
+                        type="button"
+                        onClick={() => onNavigate(path)}
+                        className={`inline-flex items-center underline underline-offset-2 font-bold transition px-1 py-0.5 rounded text-xs cursor-pointer ${
+                            isUser
+                                ? 'text-cream-light hover:text-white hover:bg-bark-800'
+                                : 'text-tan-dark hover:text-bark-900 hover:bg-cream-light/60'
+                        }`}
+                        title={`Navigate to ${path}`}
+                    >
+                        {label}
+                    </button>
+                );
+            } else {
+                parts.push(raw);
+            }
+        }
+        // 2. Regular Link: [Label](path)
+        else if (raw.startsWith('[') && raw.endsWith(')')) {
+            const linkMatch = raw.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+            if (linkMatch) {
+                const [, label, path] = linkMatch;
+                parts.push(
+                    <button
+                        key={key}
+                        type="button"
+                        onClick={() => onNavigate(path)}
+                        className={`inline-flex items-center underline underline-offset-2 font-semibold transition px-1 py-0.5 rounded text-xs cursor-pointer ${
+                            isUser
+                                ? 'text-cream-light hover:text-white hover:bg-bark-800'
+                                : 'text-tan-dark hover:text-bark-900 hover:bg-cream-light/60'
+                        }`}
+                        title={`Navigate to ${path}`}
+                    >
+                        {label}
+                    </button>
+                );
+            } else {
+                parts.push(raw);
+            }
+        }
+        // 3. Bold + Underline: **<u>text</u>**, <u>**text**</u>, **__text__**, __**text**__
+        else if (
+            (raw.startsWith('**<u>') && raw.endsWith('</u>**')) ||
+            (raw.startsWith('<u>**') && raw.endsWith('**</u>')) ||
+            (raw.startsWith('**__') && raw.endsWith('__**')) ||
+            (raw.startsWith('__**') && raw.endsWith('**__'))
+        ) {
+            const inner = raw
+                .replace(/^(\*\*<u>|<u>\*\*|\*\*__|__\*\*)/, '')
+                .replace(/(<\/u>\*\*|\*\*<\/u>|__\*\*|\*\*__)$/, '');
+            parts.push(
+                <strong
+                    key={key}
+                    className={`font-bold underline underline-offset-2 decoration-1 ${
+                        isUser
+                            ? 'text-white decoration-cream-light'
+                            : 'text-bark-900 decoration-tan-dark'
+                    }`}
+                >
+                    {inner}
+                </strong>
+            );
+        }
+        // 4. Bold: **text** or <b>text</b>
+        else if (raw.startsWith('**') && raw.endsWith('**')) {
+            const inner = raw.slice(2, -2);
+            parts.push(
+                <strong key={key} className={`font-bold ${isUser ? 'text-white' : 'text-bark-900'}`}>
+                    {inner}
+                </strong>
+            );
+        } else if (raw.startsWith('<b>') && raw.endsWith('</b>')) {
+            const inner = raw.slice(3, -4);
+            parts.push(
+                <strong key={key} className={`font-bold ${isUser ? 'text-white' : 'text-bark-900'}`}>
+                    {inner}
+                </strong>
+            );
+        }
+        // 5. Underline: <u>text</u> or __text__
+        else if (raw.startsWith('<u>') && raw.endsWith('</u>')) {
+            const inner = raw.slice(3, -4);
+            parts.push(
+                <span
+                    key={key}
+                    className={`underline underline-offset-2 decoration-1 font-medium ${
+                        isUser ? 'decoration-cream-light' : 'decoration-tan-dark'
+                    }`}
+                >
+                    {inner}
+                </span>
+            );
+        } else if (raw.startsWith('__') && raw.endsWith('__')) {
+            const inner = raw.slice(2, -2);
+            parts.push(
+                <span
+                    key={key}
+                    className={`underline underline-offset-2 decoration-1 font-medium ${
+                        isUser ? 'decoration-cream-light' : 'decoration-tan-dark'
+                    }`}
+                >
+                    {inner}
+                </span>
+            );
+        }
+        // 6. Inline Code: `text`
+        else if (raw.startsWith('`') && raw.endsWith('`')) {
+            const inner = raw.slice(1, -1);
+            parts.push(
+                <code
+                    key={key}
+                    className={`font-mono text-[11px] px-1 py-0.5 rounded font-semibold ${
+                        isUser
+                            ? 'bg-bark-800 text-cream-light border border-bark-600'
+                            : 'bg-cream-light/70 text-bark-800 border border-bark-200'
+                    }`}
+                >
+                    {inner}
+                </code>
+            );
+        }
+        // 7. Italic: *text* or <i>text</i>
+        else if (raw.startsWith('*') && raw.endsWith('*')) {
+            const inner = raw.slice(1, -1);
+            parts.push(
+                <em key={key} className="italic">
+                    {inner}
+                </em>
+            );
+        } else if (raw.startsWith('<i>') && raw.endsWith('</i>')) {
+            const inner = raw.slice(3, -4);
+            parts.push(
+                <em key={key} className="italic">
+                    {inner}
+                </em>
+            );
+        } else {
+            parts.push(raw);
+        }
+
+        lastIndex = pattern.lastIndex;
     }
 
-    if (lastIdx < text.length) {
-        parts.push(text.slice(lastIdx));
+    if (lastIndex < text.length) {
+        parts.push(text.slice(lastIndex));
     }
 
-    return <div className="whitespace-pre-line m-0">{parts}</div>;
+    return parts;
 }
+
+function FormattedMessageText({ text, onNavigate, isUser = false }) {
+    if (!text) return null;
+
+    // Normalize line breaks
+    const normalized = text.replace(/\r\n/g, '\n');
+    const rawBlocks = normalized.split(/\n{2,}/);
+
+    return (
+        <div className="space-y-2 text-xs leading-relaxed">
+            {rawBlocks.map((block, bIdx) => {
+                const lines = block.split('\n').map(l => l.trimEnd()).filter(l => l.length > 0);
+                if (lines.length === 0) return null;
+
+                // Horizontal rule (--- or ***)
+                if (lines.length === 1 && /^[-*_]{3,}$/.test(lines[0].trim())) {
+                    return <hr key={bIdx} className={`my-2 border-t ${isUser ? 'border-bark-600' : 'border-bark-100'}`} />;
+                }
+
+                // Check if heading (### or ## or #)
+                const firstLine = lines[0].trim();
+                if (/^#{1,4}\s+/.test(firstLine)) {
+                    const headingContent = firstLine.replace(/^#{1,4}\s+/, '');
+                    return (
+                        <div key={bIdx} className="space-y-1">
+                            <h4 className={`font-bold tracking-tight text-xs ${
+                                isUser ? 'text-white' : 'text-bark-900 border-b border-bark-100 pb-0.5'
+                            }`}>
+                                {renderInline(headingContent, onNavigate, isUser)}
+                            </h4>
+                            {lines.slice(1).map((subLine, sIdx) => (
+                                <p key={sIdx} className="m-0 leading-relaxed">
+                                    {renderInline(subLine, onNavigate, isUser)}
+                                </p>
+                            ))}
+                        </div>
+                    );
+                }
+
+                // Check if all lines are unordered bullet list items (- item, * item, • item)
+                const isUnorderedList = lines.every(l => /^[-*•]\s+/.test(l.trim()));
+                if (isUnorderedList) {
+                    return (
+                        <ul key={bIdx} className="space-y-1 my-1 pl-0.5 list-none">
+                            {lines.map((line, lIdx) => {
+                                const content = line.trim().replace(/^[-*•]\s+/, '');
+                                return (
+                                    <li key={lIdx} className="flex items-start gap-1.5">
+                                        <span className={`select-none text-xs leading-none mt-1 font-bold ${
+                                            isUser ? 'text-cream-light' : 'text-tan-dark'
+                                        }`}>•</span>
+                                        <span className="flex-1">{renderInline(content, onNavigate, isUser)}</span>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    );
+                }
+
+                // Check if all lines are numbered list items (1. item, 2. item)
+                const isOrderedList = lines.every(l => /^\d+\.\s+/.test(l.trim()));
+                if (isOrderedList) {
+                    return (
+                        <ol key={bIdx} className="space-y-1 my-1 pl-0.5 list-none">
+                            {lines.map((line, lIdx) => {
+                                const numMatch = line.trim().match(/^(\d+)\.\s+(.*)/);
+                                const num = numMatch ? numMatch[1] : (lIdx + 1);
+                                const content = numMatch ? numMatch[2] : line;
+                                return (
+                                    <li key={lIdx} className="flex items-start gap-1.5">
+                                        <span className={`select-none font-mono text-[10px] leading-relaxed font-bold ${
+                                            isUser ? 'text-cream-light' : 'text-tan-dark'
+                                        }`}>{num}.</span>
+                                        <span className="flex-1">{renderInline(content, onNavigate, isUser)}</span>
+                                    </li>
+                                );
+                            })}
+                        </ol>
+                    );
+                }
+
+                // Check if blockquote (> quote)
+                if (lines.every(l => /^>\s*/.test(l.trim()))) {
+                    const quoteContent = lines.map(l => l.trim().replace(/^>\s*/, '')).join(' ');
+                    return (
+                        <blockquote
+                            key={bIdx}
+                            className={`border-l-2 pl-2.5 py-0.5 my-1 italic rounded-r ${
+                                isUser
+                                    ? 'border-cream-light/60 bg-bark-800/40 text-cream-light'
+                                    : 'border-tan-dark/70 bg-cream-light/30 text-bark-800'
+                            }`}
+                        >
+                            {renderInline(quoteContent, onNavigate, isUser)}
+                        </blockquote>
+                    );
+                }
+
+                // Standard paragraph with lines joined by <br />
+                return (
+                    <p key={bIdx} className="m-0 leading-relaxed">
+                        {lines.map((line, lIdx) => (
+                            <React.Fragment key={lIdx}>
+                                {lIdx > 0 && <br />}
+                                {renderInline(line, onNavigate, isUser)}
+                            </React.Fragment>
+                        ))}
+                    </p>
+                );
+            })}
+        </div>
+    );
+}
+
+const STORAGE_KEY_MESSAGES = 'smartlib_ai_chat_messages';
+const STORAGE_KEY_SESSION_ID = 'smartlib_ai_chat_session_id';
+
+const DEFAULT_GREETING = {
+    id: 1,
+    sender: 'ai',
+    text: 'Hello! I am your MaktabaBora **Library Assistant**.\n\nI can search our catalog, recommend books, check shelf availability, and guide you across the platform (like purchasing digital e-books or upgrading membership plans).\n\n<u>How can I assist your reading journey today?</u>',
+    tokens: 0,
+    books: [],
+};
 
 export default function AiChatWidget({ isOpen, onClose }) {
     const navigate = useNavigate();
-    const [messages, setMessages] = useState([
-        {
-            id: 1,
-            sender: 'ai',
-            text: 'Hello! I am your SmartLib Library Assistant. I can search our catalog, recommend books, check your due dates, and guide you through the platform (like purchasing digital e-books or upgrading your pass). How can I assist you?',
-            tokens: 0,
-            books: [],
-            provider: 'SmartLib AI',
-        },
-    ]);
+
+    // Session storage hydration
+    const [messages, setMessages] = useState(() => {
+        try {
+            const saved = sessionStorage.getItem(STORAGE_KEY_MESSAGES);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    return parsed;
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load chat messages from sessionStorage', e);
+        }
+        return [DEFAULT_GREETING];
+    });
+
+    const [sessionId, setSessionId] = useState(() => {
+        try {
+            return sessionStorage.getItem(STORAGE_KEY_SESSION_ID) || null;
+        } catch (e) {
+            return null;
+        }
+    });
+
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [quotaError, setQuotaError] = useState(null);
-    const [currentProvider, setCurrentProvider] = useState('SmartLib AI');
     const chatEndRef = useRef(null);
+
+    // Save messages to sessionStorage across the user's session
+    useEffect(() => {
+        try {
+            sessionStorage.setItem(STORAGE_KEY_MESSAGES, JSON.stringify(messages));
+        } catch (e) {
+            console.error('Failed to save chat messages to sessionStorage', e);
+        }
+    }, [messages]);
+
+    // Save active chat_session_id to sessionStorage
+    useEffect(() => {
+        try {
+            if (sessionId) {
+                sessionStorage.setItem(STORAGE_KEY_SESSION_ID, sessionId);
+            } else {
+                sessionStorage.removeItem(STORAGE_KEY_SESSION_ID);
+            }
+        } catch (e) {
+            console.error('Failed to save sessionId to sessionStorage', e);
+        }
+    }, [sessionId]);
 
     useEffect(() => {
         if (isOpen) {
@@ -83,6 +392,24 @@ export default function AiChatWidget({ isOpen, onClose }) {
         }
     };
 
+    const handleClearChat = async () => {
+        if (loading) return;
+        const currentSession = sessionId;
+        setMessages([DEFAULT_GREETING]);
+        setSessionId(null);
+        setQuotaError(null);
+
+        try {
+            sessionStorage.removeItem(STORAGE_KEY_MESSAGES);
+            sessionStorage.removeItem(STORAGE_KEY_SESSION_ID);
+            if (currentSession) {
+                await api.clearAiChat(currentSession);
+            }
+        } catch (e) {
+            // Ignore clear chat network errors
+        }
+    };
+
     const handleSend = async (e) => {
         e.preventDefault();
         if (!input.trim() || loading) return;
@@ -95,17 +422,18 @@ export default function AiChatWidget({ isOpen, onClose }) {
         setQuotaError(null);
 
         try {
-            const res = await api.sendAiMessage(promptText);
+            const res = await api.sendAiMessage(promptText, sessionId);
             const aiMsgText = res.message || res.response || 'I searched the catalog but could not compose an answer. Please try again.';
             const tokens = res.tokens_used || 0;
             const books = Array.isArray(res.books) ? res.books : [];
-            const provider = res.provider || 'SmartLib AI';
 
-            setCurrentProvider(provider);
+            if (res.session_id) {
+                setSessionId(res.session_id);
+            }
 
             setMessages((prev) => [
                 ...prev,
-                { id: Date.now() + 1, sender: 'ai', text: aiMsgText, tokens, books, provider },
+                { id: Date.now() + 1, sender: 'ai', text: aiMsgText, tokens, books },
             ]);
         } catch (err) {
             if (err.status === 429) {
@@ -130,18 +458,30 @@ export default function AiChatWidget({ isOpen, onClose }) {
                         <Bot size={16} />
                     </div>
                     <div>
-                        <div className="flex items-center gap-1.5">
-                            <h3 className="text-xs font-bold text-bark-900 m-0">Library Assistant</h3>
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full bg-primary-50 text-[9px] font-medium text-primary-700 border border-primary-200">
-                                <Sparkles size={9} /> {currentProvider}
-                            </span>
-                        </div>
+                        <h3 className="text-xs font-bold text-bark-900 m-0">Library Assistant</h3>
                         <p className="font-mono text-[10px] text-bark-500 m-0">Live catalog & navigation guide</p>
                     </div>
                 </div>
-                <button onClick={onClose} className="p-1 rounded-lg text-bark-500 hover:text-bark-900 hover:bg-cream" title="Close" aria-label="Close assistant">
-                    <X size={16} />
-                </button>
+                <div className="flex items-center gap-1">
+                    <button
+                        type="button"
+                        onClick={handleClearChat}
+                        className="p-1.5 rounded-lg text-bark-500 hover:text-bark-900 hover:bg-cream-light/60 transition"
+                        title="Clear conversation"
+                        aria-label="Clear conversation"
+                    >
+                        <RotateCcw size={14} />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="p-1.5 rounded-lg text-bark-500 hover:text-bark-900 hover:bg-cream-light/60 transition"
+                        title="Close"
+                        aria-label="Close assistant"
+                    >
+                        <X size={15} />
+                    </button>
+                </div>
             </div>
 
             {/* Suggested questions */}
@@ -184,7 +524,7 @@ export default function AiChatWidget({ isOpen, onClose }) {
                                         : 'bg-paper border border-bark-100 text-bark-900 rounded-tl-none'
                                 }`}
                             >
-                                <FormattedMessageText text={msg.text} onNavigate={handleNavigate} />
+                                <FormattedMessageText text={msg.text} onNavigate={handleNavigate} isUser={msg.sender === 'user'} />
                             </div>
                         </div>
 
