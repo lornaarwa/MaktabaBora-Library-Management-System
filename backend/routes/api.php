@@ -77,6 +77,7 @@ Route::prefix('v1')->middleware(['api', \App\Http\Middleware\CorsMiddleware::cla
             // AI Assistant Chatbot (all authenticated roles — the widget is shown to members, librarians and admins)
             Route::post('/ai/chat', [AiChatbotController::class, 'chat'])
                 ->middleware(['chatbot.cost_limiter']);
+            Route::post('/ai/chat/clear', [AiChatbotController::class, 'clearChat']);
 
         // Librarian Portal Routes
         Route::middleware(['ensure.librarian'])->prefix('librarian')->group(function () {
