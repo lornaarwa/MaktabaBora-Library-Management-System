@@ -60,6 +60,18 @@ class DigitalRentalService implements DigitalRentalServiceInterface
 
         $expiresAt = now()->addYear();
 
+        // Automatically unsubscribe and expire any existing active subscriptions for this member/user
+        Subscription::where(function ($query) use ($user, $member) {
+            $query->where('member_id', $member->id);
+            if ($user->id) {
+                $query->orWhere('user_id', $user->id);
+            }
+        })
+        ->where('expires_at', '>', now())
+        ->update([
+            'expires_at' => now(),
+        ]);
+
         $subscription = Subscription::create([
             'member_id' => $member->id,
             'user_id' => $user->id,
