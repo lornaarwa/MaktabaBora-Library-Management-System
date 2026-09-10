@@ -173,7 +173,7 @@ export const api = {
     updateAdminRecord: (table, id, data) => apiClient.put(`/admin/tables/${table}/${id}`, data),
     deleteAdminRecord: (table, id) => apiClient.delete(`/admin/tables/${table}/${id}`),
     // Membership Tiers Customization
-    getMembershipTiers: () => apiClient.get('/admin/membership-tiers'),
+    getMembershipTiers: () => apiClient.get('/membership-tiers'),
     updateMembershipTiers: (tiers) => apiClient.put('/admin/membership-tiers', { tiers }),
 
     // AI Settings & Multi-Provider Configuration
