@@ -77,16 +77,45 @@ class MembershipTierController extends Controller
     public function index(): JsonResponse
     {
         $path = $this->getTiersFilePath();
+        $defaultMap = collect($this->getDefaultTiers())->keyBy('id');
+
         if (!file_exists($path)) {
             $tiers = $this->getDefaultTiers();
             file_put_contents($path, json_encode($tiers, JSON_PRETTY_PRINT));
         } else {
-            $tiers = json_decode(file_get_contents($path), true) ?: $this->getDefaultTiers();
+            $raw = json_decode(file_get_contents($path), true);
+            if (is_array($raw) && !empty($raw)) {
+                $tiers = array_map(function ($tier) use ($defaultMap) {
+                    $default = $defaultMap->get($tier['id'] ?? '') ?: [];
+                    $merged = array_merge([
+                        'currency' => 'KES',
+                        'billingPeriod' => 'per year',
+                        'description' => '',
+                        'borrowLimit' => '3 Books at a time',
+                        'perks' => [],
+                        'recommended' => false,
+                        'accent' => 'tan',
+                        'active' => true,
+                    ], $default, $tier);
+
+                    // Ensure perks is always an array
+                    if (!isset($merged['perks']) || !is_array($merged['perks']) || empty($merged['perks'])) {
+                        $merged['perks'] = $default['perks'] ?? [
+                            'Access to full catalog & digital e-reader',
+                            'Standard borrowing privileges',
+                        ];
+                    }
+
+                    return $merged;
+                }, $raw);
+            } else {
+                $tiers = $this->getDefaultTiers();
+            }
         }
 
         return response()->json([
             'status' => 'success',
-            'data' => $tiers,
+            'data' => array_values($tiers),
         ]);
     }
 
