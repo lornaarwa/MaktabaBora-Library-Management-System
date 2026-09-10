@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Contracts\Services\AuthSessionServiceInterface;
+use App\Models\ChatSession;
 use App\Models\Member;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -178,6 +179,15 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
+        $user = $request->user();
+        if ($user) {
+            $member = Member::where('user_id', $user->id)->first();
+            if ($member) {
+                // Discard ephemeral AI chat session records and messages on logout
+                ChatSession::where('member_id', $member->id)->delete();
+            }
+        }
+
         return response()->json(['message' => 'Logged out successfully']);
     }
 
