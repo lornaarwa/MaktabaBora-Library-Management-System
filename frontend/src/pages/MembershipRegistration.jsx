@@ -239,6 +239,9 @@ export default function MembershipRegistration() {
         localStorage.setItem('smartlib_user', JSON.stringify(updatedUser));
       }
 
+      const wasUnsubscribed = Boolean(response?.unsubscribed_previous || response?.data?.unsubscribed_previous);
+      const prevTier = response?.previous_tier || response?.data?.previous_tier || '';
+
       setTimeout(() => {
         const finalMemberNum = updatedUser?.member?.member_number || user?.member?.member_number || `MB-${Math.floor(100000 + Math.random() * 900000)}`;
 
@@ -248,6 +251,8 @@ export default function MembershipRegistration() {
           tierName: activePlan.name,
           amountPaid: activePlan.price,
           borrowLimit: activePlan.borrowLimit,
+          unsubscribedPrevious: wasUnsubscribed,
+          previousTier: prevTier,
           expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('en-KE', {
             year: 'numeric',
             month: 'long',
@@ -288,6 +293,14 @@ export default function MembershipRegistration() {
 
           {/* Activated Membership Card */}
           <div className="rounded-2xl border border-bark-100 bg-cream-light/40 p-6 text-left space-y-4 shadow-card">
+            {activatedData.unsubscribedPrevious && (
+              <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-3 text-xs text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                <span className="text-[11px]">
+                  Your previous <strong>{activatedData.previousTier || 'active'}</strong> subscription has been automatically unsubscribed and switched.
+                </span>
+              </div>
+            )}
             <div className="flex items-center justify-between border-b border-bark-100 pb-3">
               <div>
                 <p className="text-[10px] font-mono uppercase tracking-widest text-bark-500">Member ID</p>
@@ -717,6 +730,15 @@ export default function MembershipRegistration() {
                 <span className="font-mono text-base font-extrabold text-bark-900">KES {activePlan.price.toLocaleString()}</span>
               </div>
             </div>
+
+            {isSubscribed && (
+              <div className="rounded-xl bg-amber-500/10 border border-amber-500/30 p-3 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                <p className="leading-snug text-[11px]">
+                  <strong>Automatic Unsubscription:</strong> Changing to the <strong>{activePlan.name}</strong> will automatically unsubscribe you from your current <strong>{currentActiveTier?.name || user?.member?.membership_tier || 'active'}</strong> pass and activate your new plan.
+                </p>
+              </div>
+            )}
 
             {stage === 'mpesa_modal' && (
               <form onSubmit={handleInitiateStkPush} className="space-y-4">
