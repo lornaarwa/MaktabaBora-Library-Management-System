@@ -409,7 +409,7 @@ export default function Profile() {
               <div>
                 <h2 className="text-lg font-extrabold text-bark-900">{user?.name}</h2>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="rounded-md bg-bark-100 text-bark-800 px-2 py-0.5 font-mono text-[10px] font-bold capitalize">
+                  <span className="rounded-md bg-bark-100 dark:bg-bark-800/80 text-bark-800 dark:text-cream-light border border-bark-200/50 dark:border-bark-700/60 px-2 py-0.5 font-mono text-[10px] font-bold capitalize">
                     Role: {user?.role || 'Member'}
                   </span>
                   <span className="text-xs text-bark-500 font-mono">
