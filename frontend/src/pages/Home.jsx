@@ -79,7 +79,7 @@ export default function Home() {
     <div className="min-h-screen flex flex-col bg-paper text-bark-900">
       
       {/* Simple Top Navigation Header */}
-      <header className="border-b border-bark-100 dark:border-bark-800 bg-paper/95 px-4 py-4 sm:px-8">
+      <header className="sticky top-0 z-30 border-b border-bark-100 dark:border-bark-800 bg-paper/95 px-4 py-4 sm:px-8 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <div className="flex items-center gap-3">
             <Brand variant="mark" className="h-9 w-9 rounded-xl shadow-sm" />
