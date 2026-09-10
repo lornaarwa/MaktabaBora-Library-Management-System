@@ -34,10 +34,13 @@ class SubscriptionController extends Controller
         $planType = $validated['membership_tier'] ?? $validated['plan_type'] ?? 'standard';
         $amount = isset($validated['amount']) ? (float)$validated['amount'] : 1500.00;
 
+        $previousTier = $member->membership_tier;
+        $wasSubscribed = (bool)$member->is_subscribed;
+
         // Initiate Daraja M-Pesa STK Push
         $stkResponse = $this->darajaService->initiateStkPush(null, $validated['phone_number'], $amount, "MEMBERSHIP-{$planType}");
 
-        // Activate subscription pass
+        // Activate subscription pass (automatically unsubscribes any prior active subscription)
         $subscription = $this->digitalService->activatePerkSubscription(
             $user,
             $member,
@@ -48,9 +51,15 @@ class SubscriptionController extends Controller
 
         $user->load('member');
 
+        $message = $wasSubscribed
+            ? "Your previous {$previousTier} subscription was automatically unsubscribed and your new {$planType} pass is now active."
+            : 'Membership checkout completed successfully.';
+
         return response()->json([
             'status' => 'success',
-            'message' => 'Membership checkout completed successfully.',
+            'message' => $message,
+            'unsubscribed_previous' => $wasSubscribed,
+            'previous_tier' => $previousTier,
             'user' => $user,
             'subscription' => $subscription,
             'stk_push' => $stkResponse,
@@ -58,6 +67,8 @@ class SubscriptionController extends Controller
                 'user' => $user,
                 'subscription' => $subscription,
                 'stk_push' => $stkResponse,
+                'unsubscribed_previous' => $wasSubscribed,
+                'previous_tier' => $previousTier,
             ]
         ], 201);
     }
