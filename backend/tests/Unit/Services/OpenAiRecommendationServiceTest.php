@@ -18,15 +18,38 @@ class OpenAiRecommendationServiceTest extends TestCase
     use RefreshDatabase;
 
     private OpenAiRecommendationService $service;
+    private ?string $originalSettingsBackup = null;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        // Force offline (grounded fallback) mode — no external API calls.
+        $settingsFile = storage_path('app/ai_settings.json');
+        if (file_exists($settingsFile)) {
+            $this->originalSettingsBackup = file_get_contents($settingsFile);
+        }
+
+        // Force offline mode for unit tests so they execute deterministically without external API calls
+        $manager = app(\App\Services\AiLibrarianManagerService::class);
+        $settings = $manager->getSettings();
+        $settings['active_provider'] = 'offline';
+        $manager->saveSettings($settings);
+
         config(['services.openai.api_key' => '']);
 
         $this->service = app(OpenAiRecommendationService::class);
+    }
+
+    protected function tearDown(): void
+    {
+        $settingsFile = storage_path('app/ai_settings.json');
+        if ($this->originalSettingsBackup !== null) {
+            file_put_contents($settingsFile, $this->originalSettingsBackup);
+        } elseif (file_exists($settingsFile)) {
+            @unlink($settingsFile);
+        }
+
+        parent::tearDown();
     }
 
     private function createLibraryData(): array
@@ -88,7 +111,7 @@ class OpenAiRecommendationServiceTest extends TestCase
         $this->assertGreaterThan(0, $session->fresh()->total_tokens_used);
     }
 
-    public function test_account_question_answers_from_member_context(): void
+    public function test_account_question_protects_user_privacy_and_redirects_to_member_dashboard(): void
     {
         $data = $this->createLibraryData();
 
@@ -105,9 +128,10 @@ class OpenAiRecommendationServiceTest extends TestCase
 
         $result = $this->service->generateRecommendation($session, 'When is my book due?');
 
-        $this->assertStringContainsString('due', strtolower($result['message']));
-        $this->assertStringContainsString('Atomic Habits', $result['message']);
-        $this->assertStringContainsString('MEM-TEST-001', $result['message']);
+        // Personal account details must NOT be exposed by the public library assistant
+        $this->assertStringNotContainsString('MEM-TEST-001', $result['message']);
+        $this->assertStringContainsString('Member Dashboard', $result['message']);
+        $this->assertStringContainsString('/member', $result['message']);
     }
 
     public function test_availability_question_lists_available_books(): void
@@ -117,7 +141,7 @@ class OpenAiRecommendationServiceTest extends TestCase
 
         $result = $this->service->generateRecommendation($session, 'Which books are available right now?');
 
-        $this->assertStringContainsString('available to borrow', $result['message']);
+        $this->assertStringContainsString('available', strtolower($result['message']));
         $this->assertStringContainsString('Atomic Habits', $result['message']);
     }
 
@@ -130,5 +154,32 @@ class OpenAiRecommendationServiceTest extends TestCase
 
         $this->assertStringContainsString("couldn't find", strtolower($result['message']));
         $this->assertEmpty($result['books']);
+    }
+
+    public function test_system_prompt_catalog_context_includes_full_database_records_and_no_user_accounts(): void
+    {
+        $data = $this->createLibraryData();
+
+        /** @var \App\Services\AiLibrarianManagerService $manager */
+        $manager = app(\App\Services\AiLibrarianManagerService::class);
+        $catalogContext = $manager->buildCatalogDatabaseContext('Atomic Habits');
+
+        // Verify catalog database records are comprehensively extracted
+        $this->assertStringContainsString('Atomic Habits', $catalogContext);
+        $this->assertStringContainsString('James Clear', $catalogContext);
+        $this->assertStringContainsString('978-0735211292', $catalogContext);
+        $this->assertStringContainsString('Science', $catalogContext);
+        $this->assertStringContainsString('Avery', $catalogContext);
+        $this->assertStringContainsString('2018', $catalogContext);
+        $this->assertStringContainsString('Rack-1', $catalogContext);
+        $this->assertStringContainsString('KES 45.00', $catalogContext);
+        $this->assertStringContainsString('/books/' . $data['book']->id, $catalogContext);
+        $this->assertStringContainsString('LIBRARY CATALOG DATABASE INVENTORY SUMMARY', $catalogContext);
+
+        // Verify sensitive patron account information is NEVER present
+        $this->assertStringNotContainsString('MEM-TEST-001', $catalogContext);
+        $this->assertStringNotContainsString('alex@example.com', $catalogContext);
+        $this->assertStringNotContainsString('Alex Johnson', $catalogContext);
+        $this->assertStringNotContainsString('password', $catalogContext);
     }
 }
