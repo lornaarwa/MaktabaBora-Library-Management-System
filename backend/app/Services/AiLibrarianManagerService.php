@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Book;
+use App\Models\BookCopy;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -21,12 +23,22 @@ class AiLibrarianManagerService
     public function getDefaultSystemPrompt(): string
     {
         return <<<PROMPT
-You are SmartLib AI, the official intelligent librarian and interactive guide for the MaktabaBora Smart Library Management System.
+You are the official intelligent Library Assistant and interactive guide for the MaktabaBora Smart Library Management System.
 
-### MISSION & BEHAVIOR
-1. Grounded Accuracy: Answer book queries using ONLY the live catalog records and the authenticated member's account details provided in the context. Never invent books, authors, ISBNs, or fake links.
-2. Friendly & Professional: Be welcoming, concise, well-structured, and helpful to students, scholars, and library patrons.
-3. Interactive Navigation Guide: Help users navigate the Smart Library web platform smoothly.
+### MISSION & CATALOG-FOCUSED BEHAVIOR
+1. Comprehensive Catalog Knowledge: Answer book, author, genre, and reading inquiries using the rich database catalog records provided in your context. You have access to real-time information on all books, authors, publishers, genres, publication years, ISBNs, shelf rack locations, physical copy availability, and digital e-book reading prices.
+2. Grounded Accuracy: Answer strictly using facts from the catalog database records. Never invent, hallucinate, or recommend books that do not exist in the MaktabaBora catalog.
+3. Privacy & Sensitive Data Protection: You have access ONLY to the public book catalog and website navigation directory. You DO NOT have access to sensitive user accounts, passwords, patron identities, member profiles, or private personal borrowing histories.
+4. Clean Rich-Text Output: Present all information with clean, polished rich text:
+   - **Bold** all book titles, authors, and key highlights with `**Title**`.
+   - <u>Underline</u> important action steps, notices, or status callouts with `<u>term</u>` or `__term__`.
+   - Use clean markdown bullet lists (`- item`) for catalog books and copy status.
+   - Use interactive links for platform navigation, e.g. `**[Browse Catalog](/catalog)**`, `**[Shopping Cart](/cart)**`, `**[Member Dashboard](/member)**`.
+5. Friendly & Professional: Be welcoming, concise, well-structured with markdown, and helpful to students, scholars, and library patrons.
+
+### PRIVACY BOUNDARY (USER ACCOUNTS)
+- If a user asks about their personal account details, active loans, return due dates, fine balances, or passwords, DO NOT invent or guess any account data.
+- Instruct them to check their secure private **[Member Dashboard](/member)** where their active loans, due dates, fine balances, and digital reader shelf are safely displayed.
 
 ### WEBSITE NAVIGATION DIRECTORY
 When users ask about website navigation, account features, or how to perform actions, provide exact links and steps:
@@ -37,12 +49,9 @@ When users ask about website navigation, account features, or how to perform act
 - **Book Details Page**: `/books/:id` (Inspect book synopsis, view available shelf copies, check digital price, or place a hold reservation).
 
 ### BOOK RECOMMENDATION & AVAILABILITY RULES
-- When a user asks for recommendations, analyze their query or interest, recommend 2-4 real titles from the catalog context.
+- When a user asks for recommendations, analyze their query or interest and recommend real titles from the catalog database context.
 - Clearly state whether copies are **available to borrow physically** on the shelf, or if the user can **buy lifetime digital reading access** to read online immediately.
-- If a book has 0 available physical copies, explain that they can place a hold reservation or purchase the digital e-book version.
-
-### ACCOUNT & LOANS CONTEXT
-- If the user asks about their due dates, fines, or active loans, use the authenticated account context provided below and specify exact dates and KES fine amounts.
+- If a book has 0 available physical copies, explain that they can place a hold reservation on its details page (`/books/:id`) or purchase the digital e-book version.
 PROMPT;
     }
 
@@ -404,7 +413,109 @@ PROMPT;
     }
 
     /**
-     * Dispatch prompt to the active provider with grounded catalog and account context.
+     * Build comprehensive catalog context directly from database records,
+     * strictly excluding any sensitive user account data.
+     *
+     * @param  string  $userPrompt
+     * @param  \Illuminate\Database\Eloquent\Collection|null  $retrieved
+     * @return string
+     */
+    public function buildCatalogDatabaseContext(string $userPrompt = '', $retrieved = null): string
+    {
+        try {
+            // 1. Live database catalog summary metrics
+            $totalTitles = Book::count();
+            $totalPhysicalCopies = (int) Book::sum('total_copies');
+            $availableCopies = (int) Book::sum('available_copies');
+            $distinctGenres = Book::whereNotNull('genre')
+                ->where('genre', '!=', '')
+                ->distinct()
+                ->pluck('genre')
+                ->filter()
+                ->values()
+                ->all();
+            $genresStr = !empty($distinctGenres) ? implode(', ', $distinctGenres) : 'General';
+
+            $header = "=== LIBRARY CATALOG DATABASE INVENTORY SUMMARY ===\n"
+                . "- Total Catalog Titles: {$totalTitles}\n"
+                . "- Total Physical Copies in Inventory: {$totalPhysicalCopies} ({$availableCopies} copies currently on shelf ready to borrow)\n"
+                . "- Active Genres in Library: {$genresStr}\n";
+
+            // 2. Fetch specific matching books or general catalog records
+            $booksCollection = $retrieved;
+            if (!$booksCollection || $booksCollection->isEmpty()) {
+                if (!empty(trim($userPrompt))) {
+                    try {
+                        $booksCollection = app(CatalogRetrievalService::class)->retrieve($userPrompt, 8);
+                    } catch (\Throwable $e) {
+                        $booksCollection = collect();
+                    }
+                }
+            }
+
+            // Always ensure the assistant has rich book records from the database
+            if (!$booksCollection || $booksCollection->count() < 4) {
+                $supplemental = Book::with('copies')
+                    ->where('is_blocked', false)
+                    ->orderByDesc('available_copies')
+                    ->limit(10)
+                    ->get();
+                $booksCollection = $booksCollection ? $booksCollection->merge($supplemental)->unique('id')->take(10) : $supplemental;
+            } else {
+                $booksCollection->loadMissing('copies');
+            }
+
+            if ($booksCollection->isEmpty()) {
+                return $header . "\nNo books currently found in the catalog database.";
+            }
+
+            $bookLines = [];
+            foreach ($booksCollection as $book) {
+                // Shelf Rack Locations from book copies
+                $racks = $book->copies
+                    ? $book->copies->pluck('location_rack')->filter()->unique()->values()->all()
+                    : [];
+                $rackStr = !empty($racks) ? implode(', ', $racks) : 'Main Stack';
+
+                // Physical shelf availability status
+                if ($book->is_blocked) {
+                    $shelfStatus = 'RESTRICTED (Administrative hold, currently unavailable)';
+                } elseif ($book->available_copies > 0) {
+                    $shelfStatus = "IN STOCK: {$book->available_copies} of {$book->total_copies} physical copies ready to borrow";
+                } else {
+                    $shelfStatus = "CHECKED OUT: 0 of {$book->total_copies} copies on shelf (Hold reservation available)";
+                }
+
+                // Digital reading access & pricing
+                if ($book->digital_purchase_price > 0) {
+                    $digitalAccess = "Digital E-Book available for instant reading online at KES " . number_format((float) $book->digital_purchase_price, 2) . " via M-Pesa";
+                } elseif (!empty($book->file_path)) {
+                    $digitalAccess = "Digital E-Book available for online reading";
+                } else {
+                    $digitalAccess = "Physical borrow only";
+                }
+
+                $tier = $book->is_exclusive ? 'Pro / Scholar Exclusive' : 'All Tiers (Standard & Scholar)';
+                $synopsis = !empty($book->description) ? trim($book->description) : 'No synopsis recorded.';
+
+                $bookLines[] = "- [Book #{$book->id}] \"{$book->title}\" by {$book->author}\n"
+                    . "  * Genre: {$book->genre} | Year: {$book->publication_year} | Publisher: " . ($book->publisher ?: 'N/A') . " | ISBN: {$book->isbn}\n"
+                    . "  * Physical Status: {$shelfStatus} | Shelf Rack Location: {$rackStr}\n"
+                    . "  * Digital Reading: {$digitalAccess} | Access Tier: {$tier}\n"
+                    . "  * Direct URL: /books/{$book->id}\n"
+                    . "  * Synopsis: {$synopsis}";
+            }
+
+            return $header . "\n=== CATALOG DATABASE RECORDS (LIVE REAL-TIME DATA) ===\n" . implode("\n\n", $bookLines);
+        } catch (\Throwable $e) {
+            Log::warning('Failed building catalog database context for AI prompt', ['error' => $e->getMessage()]);
+            return "Catalog database context currently unavailable.";
+        }
+    }
+
+    /**
+     * Dispatch prompt to the active provider with grounded catalog context.
+     * Strictly excludes sensitive user accounts from the prompt.
      *
      * @return array{text: string, tokens: int, provider: string, model: string}
      */
@@ -417,11 +528,15 @@ PROMPT;
         $key = $providerConfig['api_key'] ?? '';
         $model = $providerConfig['model'] ?? '';
 
-        // Compose full system prompt with dynamic runtime context
+        // If catalogContext is empty, automatically build it from database records
+        if (empty(trim($catalogContext))) {
+            $catalogContext = $this->buildCatalogDatabaseContext($userPrompt);
+        }
+
+        // Compose full system prompt with dynamic runtime catalog context (strictly excluding sensitive user accounts)
         $basePrompt = $settings['system_prompt'] ?? $this->getDefaultSystemPrompt();
         $fullSystemPrompt = $basePrompt . "\n\n"
-            . "### LIVE CATALOG CONTEXT\n" . ($catalogContext ?: "No specific catalog records matched.") . "\n\n"
-            . "### AUTHENTICATED PATRON CONTEXT\n" . ($memberContext ?: "Patron account details: none active or not signed in.");
+            . "### LIVE CATALOG DATABASE RECORDS CONTEXT\n" . $catalogContext;
 
         // If offline is selected or no API key exists, use grounded fallback
         if ($activeProvider === 'offline' || empty(trim($key))) {
@@ -643,7 +758,7 @@ PROMPT;
     /**
      * Deterministic Grounded Offline Answer Engine
      */
-    protected function groundedOfflineAnswer(string $userPrompt, string $catalogContext, string $memberContext): string
+    protected function groundedOfflineAnswer(string $userPrompt, string $catalogContext, string $memberContext = ''): string
     {
         $lower = strtolower($userPrompt);
 
@@ -657,11 +772,6 @@ PROMPT;
                     . "- Instantly read your book on your **[Member Dashboard](/member)**!";
             }
 
-            if (str_contains($lower, 'loan') || str_contains($lower, 'due') || str_contains($lower, 'fine') || str_contains($lower, 'my books') || str_contains($lower, 'reader')) {
-                return "You can manage all your active loans, overdue fines, and purchased digital e-books on your **[Member Dashboard](/member)**.\n\n"
-                    . "Here you can renew borrowed books, pay penalties using M-Pesa STK push, or open the online interactive reader.";
-            }
-
             if (str_contains($lower, 'tier') || str_contains($lower, 'membership') || str_contains($lower, 'upgrade') || str_contains($lower, 'subscribe')) {
                 return "Explore our membership tiers and perk packages at **[Membership Plans](/membership)**.\n\n"
                     . "Choose from Student Pass, Standard Reader, or Scholar tiers to unlock higher borrowing limits and extended loan durations.";
@@ -672,20 +782,34 @@ PROMPT;
             }
         }
 
-        // 2. Member account queries
-        if ($memberContext && (str_contains($lower, 'due') || str_contains($lower, 'fine') || str_contains($lower, 'loan') || str_contains($lower, 'account'))) {
-            return "Here is your current MaktabaBora account summary:\n\n{$memberContext}\n\n"
-                . "You can manage loans and pay fines directly from your **[Member Dashboard](/member)**.";
+        // 2. Member account queries (Strict privacy boundary: protect personal user accounts)
+        if (str_contains($lower, 'due') || str_contains($lower, 'fine') || str_contains($lower, 'loan') || str_contains($lower, 'account') || str_contains($lower, 'renew') || str_contains($lower, 'overdue')) {
+            return "For your privacy and security, personal account details, active loans, and fines are kept strictly confidential and are not accessed by the Library Assistant.\n\n"
+                . "You can securely view your active loans, return due dates, and fine balances directly on your **[Member Dashboard](/member)**.";
         }
 
-        // 3. Catalog recommendations
-        if ($catalogContext && !str_contains($catalogContext, 'No specific catalog records matched.')) {
-            return "Based on your interest, here are top matching titles from our library catalog:\n\n"
+        // 3. Availability queries
+        if (str_contains($lower, 'available') || str_contains($lower, 'in stock') || str_contains($lower, 'on shelf')) {
+            $available = Book::where('is_blocked', false)
+                ->where('available_copies', '>', 0)
+                ->orderByDesc('available_copies')
+                ->limit(6)
+                ->get(['title', 'author', 'genre', 'available_copies']);
+
+            if ($available->isNotEmpty()) {
+                $lines = $available->map(fn (Book $b) => "- **{$b->title}** by {$b->author} ({$b->genre}) — {$b->available_copies} copy/copies available to borrow now.")->implode("\n");
+                return "Here is what is available to borrow right now:\n\n{$lines}\n\nWant more details or a reservation on any of these? Visit the **[Book Catalog](/catalog)**!";
+            }
+        }
+
+        // 4. Catalog recommendations
+        if ($catalogContext && !str_contains($catalogContext, 'No books currently found')) {
+            return "Based on our library catalog records, here are titles from our collection:\n\n"
                 . "{$catalogContext}\n\n"
-                . "You can borrow physical copies on shelf or buy digital access to read online. Visit the **[Book Catalog](/catalog)** for more options!";
+                . "You can borrow physical copies on shelf or buy digital editions to read online. Visit the **[Book Catalog](/catalog)** for more options!";
         }
 
-        return "Hello! I am your SmartLib AI Librarian. I can help you find books in our catalog, recommend great reads, check your loan due dates, and guide you through the library platform.\n\n"
-            . "How can I assist your reading journey today?";
+        return "Hello! I am your Library Assistant. I can help you search our catalog, recommend great reads, check shelf availability, and guide you through the library platform.\n\n"
+            . "How can I assist you today?";
     }
 }
