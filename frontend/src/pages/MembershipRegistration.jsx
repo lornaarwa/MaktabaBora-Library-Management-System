@@ -139,7 +139,22 @@ export default function MembershipRegistration() {
         const res = await api.getMembershipTiers();
         const data = res.data || res;
         if (Array.isArray(data) && data.length > 0) {
-          setTiers(data.filter(t => t.active !== false));
+          const normalized = data.map((t) => {
+            const fallback = MEMBERSHIP_TIERS.find((d) => d.id === t.id) || {};
+            const perks = Array.isArray(t.perks) && t.perks.length > 0 ? t.perks : (fallback.perks || []);
+            return {
+              currency: 'KES',
+              billingPeriod: 'per year',
+              description: '',
+              borrowLimit: '3 Books at a time',
+              recommended: false,
+              accent: 'tan',
+              ...fallback,
+              ...t,
+              perks,
+            };
+          });
+          setTiers(normalized.filter(t => t.active !== false));
         }
       } catch (err) {
         // Fall back to default tiers silently
@@ -218,10 +233,11 @@ export default function MembershipRegistration() {
       let updatedUser = null;
       let subscriptionObj = null;
       let stkObj = null;
+      let response = null;
 
       if (user) {
         // Authenticated user checkout endpoint
-        const response = await api.checkoutSubscription({
+        response = await api.checkoutSubscription({
           membership_tier: selectedTier,
           phone_number: phone,
           amount: activePlan.price,
@@ -344,13 +360,7 @@ export default function MembershipRegistration() {
             </div>
           </div>
 
-          {/* Database Persistence Badge */}
-          <div className="flex items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-3.5 text-xs text-emerald-900">
-            <Database className="h-4 w-4 text-emerald-700" />
-            <span className="font-semibold">
-              Membership record & subscription receipt successfully saved to PostgreSQL/MySQL database.
-            </span>
-          </div>
+
 
           <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
             <button
@@ -373,7 +383,7 @@ export default function MembershipRegistration() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8 space-y-10">
-      
+
       {/* ░░░ HERO HEADER ░░░ */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -381,21 +391,6 @@ export default function MembershipRegistration() {
         transition={{ duration: 0.35, ease: 'easeOut' }}
         className="text-center max-w-2xl mx-auto space-y-4"
       >
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-bark-700 text-cream-light text-[11px] font-bold uppercase tracking-widest shadow-sm">
-          {isAuthRoute ? <LogIn className="w-3.5 h-3.5 text-tan" /> : <Crown className="w-3.5 h-3.5 text-tan" />}
-          <span>{isAuthRoute ? 'MaktabaBora Account Portal' : 'MaktabaBora Membership Tiers'}</span>
-        </div>
-        <Brand variant="icon" className="mx-auto h-24 w-24 sm:h-28 sm:w-28 rounded-2xl border border-bark-100 bg-paper shadow-card" />
-        <h1 className="text-3xl sm:text-5xl font-extrabold text-bark-900 tracking-tight leading-tight">
-          {isAuthRoute ? 'Sign In or Register Account' : (isSubscribed ? 'Manage & Upgrade Membership' : 'Select Your Membership Tier')}
-        </h1>
-        <p className="text-bark-500 text-xs sm:text-sm leading-relaxed">
-          {isAuthRoute
-            ? 'Sign in to access your active library account or register a new member profile.'
-            : (isSubscribed
-              ? 'View your active membership status or upgrade to a higher privilege tier via instant M-Pesa STK Push.'
-              : 'Choose a pass tailored to your reading goals. Complete instant activation via M-Pesa STK Push.')}
-        </p>
       </motion.div>
 
       {/* ░░░ LOGGED-IN MEMBER ACCOUNT BADGE ░░░ */}
@@ -408,11 +403,10 @@ export default function MembershipRegistration() {
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-extrabold text-bark-900">{user.name}</h3>
-                <span className={`rounded-md px-2 py-0.5 font-mono text-[10px] font-extrabold uppercase border ${
-                  isSubscribed
-                    ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
-                    : 'bg-olive/30 text-olive-dark border-olive/40'
-                }`}>
+                <span className={`rounded-md px-2 py-0.5 font-mono text-[10px] font-extrabold uppercase border ${isSubscribed
+                  ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                  : 'bg-olive/30 text-olive-dark border-olive/40'
+                  }`}>
                   {isSubscribed ? `Active (${user.member?.membership_tier || 'Subscriber'})` : 'Registered Member'}
                 </span>
               </div>
@@ -446,22 +440,20 @@ export default function MembershipRegistration() {
             <button
               type="button"
               onClick={() => { setGuestAuthMode('signup'); setGuestAuthError(null); }}
-              className={`flex-1 py-2.5 rounded-lg transition-all ${
-                guestAuthMode === 'signup'
-                  ? 'bg-bark-700 text-cream-light font-bold shadow-sm'
-                  : 'text-bark-700 hover:bg-cream-light'
-              }`}
+              className={`flex-1 py-2.5 rounded-lg transition-all ${guestAuthMode === 'signup'
+                ? 'bg-bark-700 text-cream-light font-bold shadow-sm'
+                : 'text-bark-700 hover:bg-cream-light'
+                }`}
             >
               Register Account
             </button>
             <button
               type="button"
               onClick={() => { setGuestAuthMode('signin'); setGuestAuthError(null); }}
-              className={`flex-1 py-2.5 rounded-lg transition-all ${
-                guestAuthMode === 'signin'
-                  ? 'bg-bark-700 text-cream-light font-bold shadow-sm'
-                  : 'text-bark-700 hover:bg-cream-light'
-              }`}
+              className={`flex-1 py-2.5 rounded-lg transition-all ${guestAuthMode === 'signin'
+                ? 'bg-bark-700 text-cream-light font-bold shadow-sm'
+                : 'text-bark-700 hover:bg-cream-light'
+                }`}
             >
               Sign In
             </button>
@@ -565,7 +557,7 @@ export default function MembershipRegistration() {
             <div>
               <p className="text-bark-500 font-semibold mb-1">Tier Perks Included:</p>
               <ul className="space-y-1.5">
-                {currentActiveTier.perks.map((perk, i) => (
+                {(currentActiveTier.perks || []).map((perk, i) => (
                   <li key={i} className="flex items-center gap-2 text-bark-800 font-medium">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 flex-shrink-0" />
                     <span>{perk}</span>
@@ -576,7 +568,7 @@ export default function MembershipRegistration() {
             <div className="rounded-2xl bg-paper/80 border border-emerald-200 p-4 space-y-2 flex flex-col justify-between">
               <div>
                 <p className="text-bark-500 font-semibold text-[11px]">Membership Price Paid</p>
-                <p className="text-xl font-black text-bark-900">{currentActiveTier.currency} {currentActiveTier.price.toLocaleString()} <span className="text-xs text-bark-500 font-normal">/ year</span></p>
+                <p className="text-xl font-black text-bark-900">{currentActiveTier.currency || 'KES'} {(currentActiveTier.price || 0).toLocaleString()} <span className="text-xs text-bark-500 font-normal">/ year</span></p>
               </div>
               <p className="text-[11px] text-emerald-800 font-medium bg-emerald-100/60 p-2 rounded-xl">
                 This is your currently active tier. It is excluded from purchase options below to prevent double payment.
@@ -614,11 +606,10 @@ export default function MembershipRegistration() {
                   <div
                     key={tier.id}
                     onClick={() => setSelectedTier(tier.id)}
-                    className={`relative flex flex-col justify-between rounded-2xl border p-6 cursor-pointer transition-all duration-200 ${
-                      isSelected
-                        ? 'border-bark-700 bg-paper shadow-lift ring-2 ring-bark-700/20'
-                        : 'border-bark-100 bg-paper/60 hover:border-bark-300 hover:bg-paper shadow-card'
-                    }`}
+                    className={`relative flex flex-col justify-between rounded-2xl border p-6 cursor-pointer transition-all duration-200 ${isSelected
+                      ? 'border-bark-700 bg-paper shadow-lift ring-2 ring-bark-700/20'
+                      : 'border-bark-100 bg-paper/60 hover:border-bark-300 hover:bg-paper shadow-card'
+                      }`}
                   >
                     {tier.recommended && (
                       <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-tan-dark px-3 py-0.5 text-[10px] font-extrabold uppercase tracking-widest text-paper shadow-sm">
@@ -630,9 +621,8 @@ export default function MembershipRegistration() {
                       <div className="flex items-center justify-between">
                         <h3 className="text-sm font-extrabold text-bark-900">{tier.name}</h3>
                         <div
-                          className={`h-4 w-4 rounded-full border flex items-center justify-center ${
-                            isSelected ? 'border-bark-700 bg-bark-700' : 'border-bark-300'
-                          }`}
+                          className={`h-4 w-4 rounded-full border flex items-center justify-center ${isSelected ? 'border-bark-700 bg-bark-700' : 'border-bark-300'
+                            }`}
                         >
                           {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-paper" />}
                         </div>
@@ -644,7 +634,7 @@ export default function MembershipRegistration() {
 
                       <div className="border-t border-b border-bark-100 py-3">
                         <div className="flex items-baseline gap-1">
-                          <span className="text-2xl font-black text-bark-900">{tier.currency} {tier.price.toLocaleString()}</span>
+                          <span className="text-2xl font-black text-bark-900">{tier.currency || 'KES'} {(tier.price || 0).toLocaleString()}</span>
                           <span className="text-[11px] font-semibold text-bark-500">/ year</span>
                         </div>
                         <p className="mt-1 text-[11px] font-mono text-tan-dark font-bold">
@@ -653,7 +643,7 @@ export default function MembershipRegistration() {
                       </div>
 
                       <ul className="space-y-2 pt-1">
-                        {tier.perks.map((perk, i) => (
+                        {(tier.perks || []).map((perk, i) => (
                           <li key={i} className="flex items-start gap-2 text-xs text-bark-700">
                             <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0 text-olive-dark mt-0.5" />
                             <span>{perk}</span>
@@ -670,11 +660,10 @@ export default function MembershipRegistration() {
                             e.stopPropagation();
                             handleSelectTierForPayment(tier.id);
                           }}
-                          className={`w-full py-3 rounded-xl font-bold text-xs shadow-card transition-all flex items-center justify-center gap-2 ${
-                            isSelected
-                              ? 'bg-bark-700 hover:bg-bark-900 text-cream-light'
-                              : 'bg-cream-light hover:bg-tan/20 text-bark-900 border border-bark-100'
-                          }`}
+                          className={`w-full py-3 rounded-xl font-bold text-xs shadow-card transition-all flex items-center justify-center gap-2 ${isSelected
+                            ? 'bg-bark-700 hover:bg-bark-900 text-cream-light'
+                            : 'bg-cream-light hover:bg-tan/20 text-bark-900 border border-bark-100'
+                            }`}
                         >
                           <Smartphone className="w-4 h-4" />
                           <span>{isSubscribed ? 'Upgrade / Switch Tier' : `Select & Pay KES ${tier.price.toLocaleString()}`}</span>
