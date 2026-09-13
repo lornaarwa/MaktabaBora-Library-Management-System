@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { 
-    BookOpen, Download, ExternalLink, Plus, Minus, Maximize2, 
+    BookOpen, Download, ExternalLink, Plus, Minus, Maximize2, Minimize2,
     FileText, Sparkles, ChevronLeft, ChevronRight, Sun, Moon, 
     Coffee, Search, Bookmark, List, CheckCircle2, ShieldCheck, X,
     Columns, AlignJustify
@@ -24,6 +24,60 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
     const [searchQuery, setSearchQuery] = useState('');
     const [showToc, setShowToc] = useState(false);
     const [blobPdfUrl, setBlobPdfUrl] = useState(null);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    // Fullscreen toggler with mobile viewport & browser API fallback
+    const toggleFullscreen = useCallback(async () => {
+        setShowToc(false);
+        try {
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                if (document.documentElement.requestFullscreen) {
+                    await document.documentElement.requestFullscreen();
+                } else if (document.documentElement.webkitRequestFullscreen) {
+                    await document.documentElement.webkitRequestFullscreen();
+                }
+                setIsFullscreen(true);
+            } else {
+                if (document.exitFullscreen) {
+                    await document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    await document.webkitExitFullscreen();
+                }
+                setIsFullscreen(false);
+            }
+        } catch (e) {
+            // Graceful fallback for mobile browsers (e.g. iOS Safari) where requestFullscreen is restricted
+            setIsFullscreen(prev => !prev);
+        }
+    }, []);
+
+    // Sync fullscreen state if user exits via ESC key or mobile browser controls
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            const isNativeFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+            if (!isNativeFs && isFullscreen) {
+                setIsFullscreen(false);
+            }
+        };
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+        };
+    }, [isFullscreen]);
+
+    // Handle modal closure and clean up active native fullscreen
+    const handleCloseReader = useCallback(() => {
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+            try {
+                if (document.exitFullscreen) document.exitFullscreen();
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            } catch (e) {}
+        }
+        setIsFullscreen(false);
+        if (onClose) onClose();
+    }, [onClose]);
 
     useEffect(() => {
         if (isDark && theme === 'day') {
@@ -59,57 +113,25 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
         ];
     }, [activeBook]);
 
-    // Handle Blob creation for base64 PDF data URIs
+    // Format & metadata derivations
+    const totalChapters = chapters.length;
+    const currentChapter = chapters[currentChapterIndex] || chapters[0] || null;
+    const title = activeBook?.title || 'Digital Reader';
+    const author = activeBook?.author || activeBook?.author_name || 'Authorized Author';
+    const rawFileUrl = activeBook?.file_url || activeBook?.file_path || '';
+    const isExternalEmbed = Boolean(rawFileUrl && (rawFileUrl.includes('archive.org') || rawFileUrl.includes('google.com/books')));
+    const isBlobStorage = Boolean(rawFileUrl && (rawFileUrl.includes('blob.core.windows.net') || rawFileUrl.endsWith('.pdf')));
+
+    // Automatically determine initial view mode based on book assets
     useEffect(() => {
-        let objectUrl = null;
-        const fileUrl = activeBook?.file_url || activeBook?.file_path;
-        
-        if (fileUrl && typeof fileUrl === 'string' && fileUrl.startsWith('data:application/pdf')) {
-            try {
-                const parts = fileUrl.split(',');
-                if (parts.length > 1) {
-                    const binaryString = window.atob(parts[1]);
-                    const bytes = new Uint8Array(binaryString.length);
-                    for (let i = 0; i < binaryString.length; i++) {
-                        bytes[i] = binaryString.charCodeAt(i);
-                    }
-                    const blob = new Blob([bytes], { type: 'application/pdf' });
-                    objectUrl = URL.createObjectURL(blob);
-                    setBlobPdfUrl(objectUrl);
-                }
-            } catch (e) {
-                console.error('Error generating PDF blob URL:', e);
-            }
+        if (isBlobStorage) {
+            setBlobPdfUrl(rawFileUrl);
         } else {
             setBlobPdfUrl(null);
         }
+    }, [rawFileUrl, isBlobStorage]);
 
-        if (chapters.length > 0) {
-            setViewMode('reader');
-        } else if (fileUrl && (fileUrl.startsWith('http') || fileUrl.includes('archive.org'))) {
-            setViewMode('embed');
-        } else {
-            setViewMode('reader');
-        }
-
-        setCurrentChapterIndex(0);
-        setCurrentPageInChapter(0);
-
-        return () => {
-            if (objectUrl) {
-                URL.revokeObjectURL(objectUrl);
-            }
-        };
-    }, [activeBook, chapters]);
-
-    const title = activeBook?.title || 'Digital E-Book';
-    const author = activeBook?.author || 'Library Catalog';
-    const totalChapters = chapters.length;
-    const currentChapter = chapters[currentChapterIndex] || chapters[0];
-    const rawFileUrl = activeBook?.file_url || activeBook?.file_path;
-    const isExternalEmbed = rawFileUrl && typeof rawFileUrl === 'string' && (rawFileUrl.startsWith('http://') || rawFileUrl.startsWith('https://'));
-
-    // Pagination algorithm: chunk current chapter content into standard pages (~350 words / ~2000 chars)
+    // Pagination algorithm: chunk current chapter content into standard pages (~350 words / ~2200 chars)
     const chapterPages = useMemo(() => {
         const rawContent = currentChapter?.content || '';
         if (!rawContent.trim()) return [''];
@@ -200,24 +222,33 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
         }
     }, [currentChapterIndex]);
 
-    // Keyboard arrow listener for smooth reading
+    // Keyboard arrow and escape listener for smooth reading
     useEffect(() => {
-        if (!isOpenState || viewMode !== 'reader') return;
+        if (!isOpenState) return;
 
         const handleKeyDown = (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-            if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+            if (e.key === 'Escape' && isFullscreen) {
                 e.preventDefault();
-                handleNextPage();
+                e.stopPropagation();
+                toggleFullscreen();
+                return;
+            }
+            if (viewMode !== 'reader') return;
+            if (e.key === 'ArrowRight' || e.key === 'PageDown' || (e.key === ' ' && isFullscreen)) {
+                e.preventDefault();
+                if (readingLayout === 'scroll') handleNextChapter();
+                else handleNextPage();
             } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
                 e.preventDefault();
-                handlePrevPage();
+                if (readingLayout === 'scroll') handlePrevChapter();
+                else handlePrevPage();
             }
         };
 
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isOpenState, viewMode, handleNextPage, handlePrevPage]);
+        window.addEventListener('keydown', handleKeyDown, true);
+        return () => window.removeEventListener('keydown', handleKeyDown, true);
+    }, [isOpenState, viewMode, isFullscreen, readingLayout, toggleFullscreen, handleNextPage, handlePrevPage, handleNextChapter, handlePrevChapter]);
 
     // Scroll Observer: track visible page sheet in scroll reading layout
     useEffect(() => {
@@ -250,6 +281,13 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
         pageCards.forEach(card => observer.observe(card));
         return () => observer.disconnect();
     }, [isOpenState, viewMode, readingLayout, currentChapterIndex, chapterPages.length]);
+
+    // Reset scroll position to top when turning pages in paginated mode
+    useEffect(() => {
+        if (readingLayout === 'paginated' && scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = 0;
+        }
+    }, [currentPageInChapter, currentChapterIndex, readingLayout]);
 
     if (!isOpenState || !activeBook) return null;
 
@@ -298,22 +336,23 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
 
     const renderParagraph = (para, pIdx) => {
         const isCodeBlock = para.startsWith('```');
-        const isBullet = para.startsWith('•') || para.startsWith('- ') || /^\d+\.\s/.test(para);
-        const isHeading = para.startsWith('###');
+        const isDialogue = para.startsWith('“') || para.startsWith('"');
+        const isBullet = para.startsWith('•') || para.startsWith('- ');
 
-        if (isHeading) {
+        if (isCodeBlock) {
+            const cleanCode = para.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '');
             return (
-                <h3 key={pIdx} className="text-lg font-bold font-sans pt-4 border-b border-bark-100/40 pb-1">
-                    {para.replace(/^###\s*/, '')}
-                </h3>
+                <div key={pIdx} className="my-4 p-4 rounded-xl bg-black/10 dark:bg-black/40 font-mono text-xs overflow-x-auto border border-bark-100">
+                    <pre>{cleanCode}</pre>
+                </div>
             );
         }
 
-        if (isCodeBlock) {
+        if (isDialogue) {
             return (
-                <pre key={pIdx} className="p-4 rounded-xl bg-paper/90 border border-bark-200 font-mono text-xs overflow-x-auto my-4 text-bark-900">
-                    {para.replace(/```[a-z]*\n?/g, '')}
-                </pre>
+                <p key={pIdx} className="pl-3 border-l-2 border-tan-dark/50 italic my-2">
+                    {para}
+                </p>
             );
         }
 
@@ -335,11 +374,27 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
     return (
         <Modal
             open={isOpenState}
-            onClose={onClose}
+            onClose={handleCloseReader}
             title={title}
             subtitle={`By ${author} · Verified Digital Reader (${totalBookPages} Total Pages)`}
             size="xl"
+            fullScreen={isFullscreen}
+            hideHeader={isFullscreen}
+            hideFooter={isFullscreen}
+            className={isFullscreen ? currentTheme.container : ''}
+            headerActions={
+                <button
+                    type="button"
+                    onClick={toggleFullscreen}
+                    aria-label={isFullscreen ? 'Exit Full Screen' : 'Enter Full Screen'}
+                    title={isFullscreen ? 'Exit Full Screen (Esc)' : 'Enter Full Screen'}
+                    className="rounded-lg border border-bark-100 bg-paper p-1.5 text-bark-700 transition hover:bg-cream focus:outline-none focus-visible:ring-2 focus-visible:ring-bark-700"
+                >
+                    {isFullscreen ? <Minimize2 className="h-4 w-4 text-tan-dark" /> : <Maximize2 className="h-4 w-4" />}
+                </button>
+            }
             footer={
+                isFullscreen ? null : (
                 <div className="flex flex-wrap items-center justify-between gap-3 w-full">
                     {/* View Mode Switching */}
                     <div className="flex items-center gap-2">
@@ -405,6 +460,21 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
 
                     {/* Right Action Tools */}
                     <div className="flex items-center gap-2">
+                        {/* Full Screen Toggle in Reader Footer */}
+                        <button
+                            type="button"
+                            onClick={toggleFullscreen}
+                            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 shadow-sm transition ${
+                                isFullscreen
+                                    ? 'bg-tan-dark text-white border-tan-dark'
+                                    : 'border-bark-100 bg-paper hover:bg-cream text-bark-900'
+                            }`}
+                            title={isFullscreen ? 'Exit Full Screen (Esc)' : 'Enter Full Screen'}
+                        >
+                            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                            <span className="hidden sm:inline">{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
+                        </button>
+
                         {blobPdfUrl && (
                             <a
                                 href={blobPdfUrl}
@@ -429,200 +499,223 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                         )}
                     </div>
                 </div>
+                )
             }
         >
-            <div className="space-y-3">
-                {/* Control Ribbon: Table of Contents, Layout Mode, Search, Themes, Typography */}
-                <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border border-bark-100 bg-cream-light/40">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setShowToc(!showToc)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 border transition ${
-                                showToc ? 'bg-bark-700 text-cream-light border-bark-700' : 'bg-paper text-bark-800 border-bark-100 hover:bg-cream'
-                            }`}
-                        >
-                            <List className="w-3.5 h-3.5" />
-                            <span>Contents ({totalChapters} Ch.)</span>
-                        </button>
-
-                        {/* Top-Bar Chapter Navigation Alongside Toggles */}
-                        <div className="flex items-center rounded-lg border border-bark-100 bg-paper p-0.5 text-xs shadow-sm">
+            <div className={isFullscreen ? "relative w-full h-full overflow-hidden" : "space-y-3"}>
+                {/* Control Ribbon: Table of Contents, Layout Mode, Search, Themes, Typography (Hidden in fullscreen mode) */}
+                {!isFullscreen && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl border border-bark-100 bg-cream-light/40">
+                        <div className="flex flex-wrap items-center gap-2">
                             <button
                                 type="button"
-                                onClick={handlePrevChapter}
-                                disabled={currentChapterIndex === 0}
-                                className="px-2 py-1 rounded-md text-bark-700 hover:bg-cream disabled:opacity-30 transition flex items-center gap-0.5"
-                                title="Previous Chapter"
+                                onClick={() => setShowToc(!showToc)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 border transition ${
+                                    showToc ? 'bg-bark-700 text-cream-light border-bark-700' : 'bg-paper text-bark-800 border-bark-100 hover:bg-cream'
+                                }`}
                             >
-                                <ChevronLeft className="w-3.5 h-3.5" />
-                                <span className="hidden sm:inline font-semibold">Prev Ch</span>
+                                <List className="w-3.5 h-3.5" />
+                                <span>Contents ({totalChapters} Ch.)</span>
                             </button>
 
-                            <select
-                                value={currentChapterIndex}
-                                onChange={(e) => {
-                                    setCurrentChapterIndex(Number(e.target.value));
-                                    setCurrentPageInChapter(0);
-                                }}
-                                className="bg-transparent text-bark-900 font-bold text-xs px-1.5 py-1 focus:outline-none cursor-pointer max-w-[120px] sm:max-w-[170px] truncate"
-                                title="Jump to Chapter"
-                            >
-                                {chapters.map((ch, idx) => (
-                                    <option key={ch.number || idx} value={idx}>
-                                        Ch. {ch.number || idx + 1}: {ch.title || `Chapter ${idx + 1}`}
-                                    </option>
-                                ))}
-                            </select>
-
-                            <button
-                                type="button"
-                                onClick={handleNextChapter}
-                                disabled={currentChapterIndex >= totalChapters - 1}
-                                className="px-2 py-1 rounded-md text-bark-700 hover:bg-cream disabled:opacity-30 transition flex items-center gap-0.5"
-                                title="Next Chapter"
-                            >
-                                <span className="hidden sm:inline font-semibold">Next Ch</span>
-                                <ChevronRight className="w-3.5 h-3.5" />
-                            </button>
-                        </div>
-
-                        {/* Layout Mode (Paginated vs Scroll) */}
-                        <div className="flex items-center rounded-lg border border-bark-100 bg-paper p-0.5 text-xs">
-                            <button
-                                type="button"
-                                onClick={() => setReadingLayout('paginated')}
-                                className={`px-2 py-1 rounded-md flex items-center gap-1 font-semibold ${readingLayout === 'paginated' ? 'bg-bark-700 text-cream-light' : 'text-bark-600 hover:text-bark-900'}`}
-                                title="Page Flip Mode"
-                            >
-                                <Columns className="w-3.5 h-3.5" />
-                                <span className="hidden sm:inline">Flip Pages</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setReadingLayout('scroll')}
-                                className={`px-2 py-1 rounded-md flex items-center gap-1 font-semibold ${readingLayout === 'scroll' ? 'bg-bark-700 text-cream-light' : 'text-bark-600 hover:text-bark-900'}`}
-                                title="Continuous Scroll Mode"
-                            >
-                                <AlignJustify className="w-3.5 h-3.5" />
-                                <span className="hidden sm:inline">Scroll</span>
-                            </button>
-                        </div>
-
-                        {/* In-Book Search */}
-                        <div className="relative">
-                            <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-bark-400" />
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search in book..."
-                                className="pl-7 pr-6 py-1 rounded-lg border border-bark-100 bg-paper text-xs text-bark-900 placeholder:text-bark-400 w-28 sm:w-36 focus:outline-none focus:border-bark-300"
-                            />
-                            {searchQuery && (
+                            {/* Top-Bar Chapter Navigation Alongside Toggles */}
+                            <div className="flex items-center rounded-lg border border-bark-100 bg-paper p-0.5 text-xs shadow-sm">
                                 <button
                                     type="button"
-                                    onClick={() => setSearchQuery('')}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-bark-400 hover:text-bark-700"
+                                    onClick={handlePrevChapter}
+                                    disabled={currentChapterIndex === 0}
+                                    className="px-2 py-1 rounded-md text-bark-700 hover:bg-cream disabled:opacity-30 transition flex items-center gap-0.5"
+                                    title="Previous Chapter"
                                 >
-                                    <X className="w-3 h-3" />
+                                    <ChevronLeft className="w-3.5 h-3.5" />
+                                    <span className="hidden sm:inline font-semibold">Prev Ch</span>
                                 </button>
-                            )}
+
+                                <select
+                                    value={currentChapterIndex}
+                                    onChange={(e) => {
+                                        setCurrentChapterIndex(Number(e.target.value));
+                                        setCurrentPageInChapter(0);
+                                    }}
+                                    className="bg-transparent text-bark-900 font-bold text-xs px-1.5 py-1 focus:outline-none cursor-pointer max-w-[120px] sm:max-w-[170px] truncate"
+                                    title="Jump to Chapter"
+                                >
+                                    {chapters.map((ch, idx) => (
+                                        <option key={ch.number || idx} value={idx}>
+                                            Ch. {ch.number || idx + 1}: {ch.title || `Chapter ${idx + 1}`}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <button
+                                    type="button"
+                                    onClick={handleNextChapter}
+                                    disabled={currentChapterIndex >= totalChapters - 1}
+                                    className="px-2 py-1 rounded-md text-bark-700 hover:bg-cream disabled:opacity-30 transition flex items-center gap-0.5"
+                                    title="Next Chapter"
+                                >
+                                    <span className="hidden sm:inline font-semibold">Next Ch</span>
+                                    <ChevronRight className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+
+                            {/* Layout Mode (Paginated vs Scroll) */}
+                            <div className="flex items-center rounded-lg border border-bark-100 bg-paper p-0.5 text-xs">
+                                <button
+                                    type="button"
+                                    onClick={() => setReadingLayout('paginated')}
+                                    className={`px-2 py-1 rounded-md flex items-center gap-1 font-semibold ${readingLayout === 'paginated' ? 'bg-bark-700 text-cream-light' : 'text-bark-600 hover:text-bark-900'}`}
+                                    title="Page Flip Mode"
+                                >
+                                    <Columns className="w-3.5 h-3.5" />
+                                    <span className="hidden sm:inline">Flip Pages</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setReadingLayout('scroll')}
+                                    className={`px-2 py-1 rounded-md flex items-center gap-1 font-semibold ${readingLayout === 'scroll' ? 'bg-bark-700 text-cream-light' : 'text-bark-600 hover:text-bark-900'}`}
+                                    title="Continuous Scroll Mode"
+                                >
+                                    <AlignJustify className="w-3.5 h-3.5" />
+                                    <span className="hidden sm:inline">Scroll</span>
+                                </button>
+                            </div>
+
+                            {/* In-Book Search */}
+                            <div className="relative">
+                                <Search className="w-3 h-3 absolute left-2.5 top-1/2 -translate-y-1/2 text-bark-400" />
+                                <input
+                                    type="text"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Search in book..."
+                                    className="pl-7 pr-6 py-1 rounded-lg border border-bark-100 bg-paper text-xs text-bark-900 placeholder:text-bark-400 w-28 sm:w-36 focus:outline-none focus:border-bark-300"
+                                />
+                                {searchQuery && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearchQuery('')}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-bark-400 hover:text-bark-700"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Reading Preferences (Theme, Font Style, Font Size) */}
+                        <div className="flex items-center gap-3">
+                            {/* Themes */}
+                            <div className="flex items-center rounded-lg border border-bark-100 bg-paper p-0.5">
+                                <button
+                                    type="button"
+                                    onClick={() => setTheme('day')}
+                                    className={`p-1.5 rounded-md transition ${theme === 'day' ? 'bg-zinc-200 text-zinc-950' : 'text-bark-500 hover:text-bark-800'}`}
+                                    title="Day mode (clean paper)"
+                                >
+                                    <Sun className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setTheme('sepia')}
+                                    className={`p-1.5 rounded-md transition ${theme === 'sepia' ? 'bg-[#E4D5BE] text-[#433422]' : 'text-bark-500 hover:text-bark-800'}`}
+                                    title="Sepia mode (warm reading)"
+                                >
+                                    <Coffee className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setTheme('night')}
+                                    className={`p-1.5 rounded-md transition ${theme === 'night' ? 'bg-zinc-800 text-zinc-100' : 'text-bark-500 hover:text-bark-800'}`}
+                                    title="Night mode (obsidian dark)"
+                                >
+                                    <Moon className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+
+                            {/* Font Family Toggle */}
+                            <div className="flex items-center rounded-lg border border-bark-100 bg-paper p-0.5 text-xs font-bold">
+                                <button
+                                    type="button"
+                                    onClick={() => setFontFamily('serif')}
+                                    className={`px-2 py-1 rounded-md font-serif ${fontFamily === 'serif' ? 'bg-bark-700 text-cream-light' : 'text-bark-600 hover:text-bark-900'}`}
+                                    title="Book Serif Font"
+                                >
+                                    Serif
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setFontFamily('sans')}
+                                    className={`px-2 py-1 rounded-md font-sans ${fontFamily === 'sans' ? 'bg-bark-700 text-cream-light' : 'text-bark-600 hover:text-bark-900'}`}
+                                    title="Modern Sans Font"
+                                >
+                                    Sans
+                                </button>
+                            </div>
+
+                            {/* Font Size Zoom */}
+                            <div className="flex items-center gap-1">
+                                <button
+                                    type="button"
+                                    onClick={() => setFontSize(s => Math.max(12, s - 1))}
+                                    className="p-1.5 rounded-lg border border-bark-100 bg-paper hover:bg-cream text-bark-700"
+                                    title="Decrease font size"
+                                >
+                                    <Minus className="w-3 h-3" />
+                                </button>
+                                <span className="font-mono text-xs text-bark-600 w-8 text-center">{fontSize}px</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setFontSize(s => Math.min(28, s + 1))}
+                                    className="p-1.5 rounded-lg border border-bark-100 bg-paper hover:bg-cream text-bark-700"
+                                    title="Increase font size"
+                                >
+                                    <Plus className="w-3 h-3" />
+                                </button>
+                            </div>
+
+                            {/* Fullscreen Toggle in Ribbon */}
+                            <button
+                                type="button"
+                                onClick={toggleFullscreen}
+                                className={`px-2.5 py-1.5 rounded-lg border text-xs font-bold transition flex items-center gap-1.5 shadow-sm ${
+                                    isFullscreen
+                                        ? 'bg-tan-dark text-white border-tan-dark'
+                                        : 'bg-paper text-bark-800 border-bark-100 hover:bg-cream'
+                                }`}
+                                title={isFullscreen ? 'Exit Full Screen' : 'Toggle Full Screen for distraction-free reading (especially on mobile)'}
+                                aria-label={isFullscreen ? 'Exit Full Screen' : 'Toggle Full Screen'}
+                            >
+                                {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                                <span className="text-[11px] font-bold">{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
+                            </button>
                         </div>
                     </div>
+                )}
 
-                    {/* Reading Preferences (Theme, Font Style, Font Size) */}
-                    <div className="flex items-center gap-3">
-                        {/* Themes */}
-                        <div className="flex items-center rounded-lg border border-bark-100 bg-paper p-0.5">
-                            <button
-                                type="button"
-                                onClick={() => setTheme('day')}
-                                className={`p-1.5 rounded-md transition ${theme === 'day' ? 'bg-zinc-200 text-zinc-950' : 'text-bark-500 hover:text-bark-800'}`}
-                                title="Day mode (clean paper)"
-                            >
-                                <Sun className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setTheme('sepia')}
-                                className={`p-1.5 rounded-md transition ${theme === 'sepia' ? 'bg-[#E4D5BE] text-[#433422]' : 'text-bark-500 hover:text-bark-800'}`}
-                                title="Sepia mode (warm reading)"
-                            >
-                                <Coffee className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setTheme('night')}
-                                className={`p-1.5 rounded-md transition ${theme === 'night' ? 'bg-zinc-800 text-zinc-100' : 'text-bark-500 hover:text-bark-800'}`}
-                                title="Night mode (obsidian dark)"
-                            >
-                                <Moon className="w-3.5 h-3.5" />
-                            </button>
+                {/* Progress Bar & Status Header (Hidden in fullscreen mode) */}
+                {!isFullscreen && (
+                    <>
+                        <div className="flex items-center justify-between px-2 text-[11px] font-mono text-bark-500">
+                            <div className="flex items-center gap-1.5 text-emerald-700 font-semibold">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>VERIFIED LIFETIME DIGITAL ACCESS</span>
+                            </div>
+                            <span>
+                                BOOK PAGE {currentGlobalPage} OF {totalBookPages} · CH. {currentChapterIndex + 1} (PG {currentPageInChapter + 1}/{chapterPages.length}) · {readingProgressPercent}% READ
+                            </span>
                         </div>
-
-                        {/* Font Family Toggle */}
-                        <div className="flex items-center rounded-lg border border-bark-100 bg-paper p-0.5 text-xs font-bold">
-                            <button
-                                type="button"
-                                onClick={() => setFontFamily('serif')}
-                                className={`px-2 py-1 rounded-md font-serif ${fontFamily === 'serif' ? 'bg-bark-700 text-cream-light' : 'text-bark-600 hover:text-bark-900'}`}
-                                title="Book Serif Font"
-                            >
-                                Serif
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setFontFamily('sans')}
-                                className={`px-2 py-1 rounded-md font-sans ${fontFamily === 'sans' ? 'bg-bark-700 text-cream-light' : 'text-bark-600 hover:text-bark-900'}`}
-                                title="Modern Sans Font"
-                            >
-                                Sans
-                            </button>
+                        <div className="w-full bg-cream-light/60 rounded-full h-1.5 overflow-hidden">
+                            <div 
+                                className="bg-tan-dark h-full transition-all duration-300"
+                                style={{ width: `${readingProgressPercent}%` }}
+                            />
                         </div>
-
-                        {/* Font Size Zoom */}
-                        <div className="flex items-center gap-1">
-                            <button
-                                type="button"
-                                onClick={() => setFontSize(s => Math.max(12, s - 1))}
-                                className="p-1.5 rounded-lg border border-bark-100 bg-paper hover:bg-cream text-bark-700"
-                                title="Decrease font size"
-                            >
-                                <Minus className="w-3 h-3" />
-                            </button>
-                            <span className="font-mono text-xs text-bark-600 w-8 text-center">{fontSize}px</span>
-                            <button
-                                type="button"
-                                onClick={() => setFontSize(s => Math.min(28, s + 1))}
-                                className="p-1.5 rounded-lg border border-bark-100 bg-paper hover:bg-cream text-bark-700"
-                                title="Increase font size"
-                            >
-                                <Plus className="w-3 h-3" />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Progress Bar & Status Header */}
-                <div className="flex items-center justify-between px-2 text-[11px] font-mono text-bark-500">
-                    <div className="flex items-center gap-1.5 text-emerald-700 font-semibold">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>VERIFIED LIFETIME DIGITAL ACCESS</span>
-                    </div>
-                    <span>
-                        BOOK PAGE {currentGlobalPage} OF {totalBookPages} · CH. {currentChapterIndex + 1} (PG {currentPageInChapter + 1}/{chapterPages.length}) · {readingProgressPercent}% READ
-                    </span>
-                </div>
-                <div className="w-full bg-cream-light/60 rounded-full h-1.5 overflow-hidden">
-                    <div 
-                        className="bg-tan-dark h-full transition-all duration-300"
-                        style={{ width: `${readingProgressPercent}%` }}
-                    />
-                </div>
+                    </>
+                )}
 
                 {/* Main Content Pane */}
-                <div className="relative rounded-2xl overflow-hidden border border-bark-100 shadow-inner">
+                <div className={isFullscreen ? "relative w-full h-full overflow-hidden rounded-none border-none shadow-none" : "relative rounded-2xl overflow-hidden border border-bark-100 shadow-inner"}>
                     {/* Table of Contents Drawer */}
                     {showToc && (
                         <div className="absolute inset-y-0 left-0 w-80 bg-paper border-r border-bark-200 z-20 shadow-2xl p-4 overflow-y-auto animate-in slide-in-from-left duration-200">
@@ -674,7 +767,11 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                     {viewMode === 'reader' && (
                         <div 
                             ref={scrollContainerRef}
-                            className={`p-6 sm:p-10 max-h-[640px] overflow-y-auto transition-colors duration-200 ${currentTheme.container} ${
+                            className={`overflow-y-auto transition-colors duration-200 ${
+                                isFullscreen
+                                    ? 'h-full w-full max-h-none pt-6 sm:pt-10 pb-36 px-4 sm:px-12 md:px-20'
+                                    : 'p-6 sm:p-10 max-h-[640px]'
+                            } ${currentTheme.container} ${
                                 fontFamily === 'serif' ? 'font-serif' : 'font-sans'
                             }`}
                             style={{ fontSize: `${fontSize}px` }}
@@ -780,38 +877,42 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                                 </div>
                             )}
 
-                            {/* Chapter Bottom Navigation Footer */}
-                            <div className={`mt-10 pt-6 border-t ${currentTheme.chapterHeader} flex items-center justify-between font-sans text-xs`}>
-                                <button
-                                    type="button"
-                                    onClick={readingLayout === 'scroll' ? handlePrevChapter : handlePrevPage}
-                                    disabled={currentChapterIndex === 0 && (readingLayout === 'scroll' || currentPageInChapter === 0)}
-                                    className={`px-4 py-2 rounded-xl border ${currentTheme.border} ${currentTheme.accent} font-bold flex items-center gap-1.5 disabled:opacity-30`}
-                                >
-                                    <ChevronLeft className="w-4 h-4" /> Previous {readingLayout === 'scroll' ? 'Chapter' : 'Page'}
-                                </button>
+                            {/* Chapter Bottom Navigation Footer (Hidden in fullscreen mode so only floating next page controls show) */}
+                            {!isFullscreen && (
+                                <div className={`mt-10 pt-6 border-t ${currentTheme.chapterHeader} flex items-center justify-between font-sans text-xs`}>
+                                    <button
+                                        type="button"
+                                        onClick={readingLayout === 'scroll' ? handlePrevChapter : handlePrevPage}
+                                        disabled={currentChapterIndex === 0 && (readingLayout === 'scroll' || currentPageInChapter === 0)}
+                                        className={`px-4 py-2 rounded-xl border ${currentTheme.border} ${currentTheme.accent} font-bold flex items-center gap-1.5 disabled:opacity-30`}
+                                    >
+                                        <ChevronLeft className="w-4 h-4" /> Previous {readingLayout === 'scroll' ? 'Chapter' : 'Page'}
+                                    </button>
 
-                                <span className={`font-mono text-center ${currentTheme.subtext}`}>
-                                    {readingLayout === 'scroll'
-                                        ? `Chapter ${currentChapterIndex + 1} of ${totalChapters} (${chapterPages.length} Pages)`
-                                        : `Page ${currentGlobalPage} of ${totalBookPages} · Ch. ${currentChapterIndex + 1}`}
-                                </span>
+                                    <span className={`font-mono text-center ${currentTheme.subtext}`}>
+                                        {readingLayout === 'scroll'
+                                            ? `Chapter ${currentChapterIndex + 1} of ${totalChapters} (${chapterPages.length} Pages)`
+                                            : `Page ${currentGlobalPage} of ${totalBookPages} · Ch. ${currentChapterIndex + 1}`}
+                                    </span>
 
-                                <button
-                                    type="button"
-                                    onClick={readingLayout === 'scroll' ? handleNextChapter : handleNextPage}
-                                    disabled={currentChapterIndex >= totalChapters - 1 && (readingLayout === 'scroll' || currentPageInChapter >= chapterPages.length - 1)}
-                                    className={`px-4 py-2 rounded-xl border ${currentTheme.border} ${currentTheme.accent} font-bold flex items-center gap-1.5 disabled:opacity-30`}
-                                >
-                                    Next {readingLayout === 'scroll' ? 'Chapter' : 'Page'} <ChevronRight className="w-4 h-4" />
-                                </button>
-                            </div>
+                                    <button
+                                        type="button"
+                                        onClick={readingLayout === 'scroll' ? handleNextChapter : handleNextPage}
+                                        disabled={currentChapterIndex >= totalChapters - 1 && (readingLayout === 'scroll' || currentPageInChapter >= chapterPages.length - 1)}
+                                        className={`px-4 py-2 rounded-xl border ${currentTheme.border} ${currentTheme.accent} font-bold flex items-center gap-1.5 disabled:opacity-30`}
+                                    >
+                                        Next {readingLayout === 'scroll' ? 'Chapter' : 'Page'} <ChevronRight className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {/* View Mode: Blob PDF Document Viewer */}
                     {viewMode === 'pdf' && blobPdfUrl && (
-                        <div className="w-full h-[640px] bg-zinc-900 relative">
+                        <div className={`w-full bg-zinc-900 relative ${
+                            isFullscreen ? 'h-full' : 'h-[640px]'
+                        }`}>
                             <object
                                 data={blobPdfUrl}
                                 type="application/pdf"
@@ -833,7 +934,9 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
 
                     {/* View Mode: External Archive.org Theater Embed */}
                     {viewMode === 'embed' && isExternalEmbed && (
-                        <div className="w-full h-[640px] bg-zinc-900 relative">
+                        <div className={`w-full bg-zinc-900 relative ${
+                            isFullscreen ? 'h-full' : 'h-[640px]'
+                        }`}>
                             <iframe
                                 src={rawFileUrl}
                                 title={`Digital stream for ${title}`}
@@ -841,19 +944,94 @@ export default function DigitalReaderModal({ isOpen, open, onClose, bookData, bo
                                 allowFullScreen
                             />
                             {/* Overlay fallback badge */}
-                            <div className="absolute bottom-4 right-4 bg-paper/90 backdrop-blur-md border border-bark-100 rounded-xl px-3 py-2 text-xs flex items-center gap-2 shadow-lg">
-                                <span className="text-bark-700">Having trouble loading external scan?</span>
-                                <button
-                                    type="button"
-                                    onClick={() => setViewMode('reader')}
-                                    className="text-tan-dark font-bold underline"
-                                >
-                                    Switch to In-Browser Reader
-                                </button>
-                            </div>
+                            {!isFullscreen && (
+                                <div className="absolute bottom-4 right-4 bg-paper/90 backdrop-blur-md border border-bark-100 rounded-xl px-3 py-2 text-xs flex items-center gap-2 shadow-lg">
+                                    <span className="text-bark-700">Having trouble loading external scan?</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setViewMode('reader')}
+                                        className="text-tan-dark font-bold underline"
+                                    >
+                                        Switch to In-Browser Reader
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
+
+                {/* Floating Controls in Fullscreen Mode: Only Next Page Controls & Discreet Exit */}
+                {isFullscreen && (
+                    <>
+                        {/* Discreet Top-Right Exit Fullscreen Trigger */}
+                        <button
+                            type="button"
+                            onClick={toggleFullscreen}
+                            aria-label="Exit Fullscreen"
+                            title="Exit Fullscreen (Esc)"
+                            className="fixed top-3 right-3 sm:top-5 sm:right-5 z-40 p-2 sm:px-3 sm:py-1.5 rounded-full bg-bark-900/60 hover:bg-bark-900/90 text-cream-light/80 hover:text-white backdrop-blur-md border border-white/10 shadow-lg text-xs font-semibold flex items-center gap-1.5 transition select-none"
+                        >
+                            <Minimize2 className="w-4 h-4" />
+                            <span className="hidden sm:inline text-[11px]">Exit</span>
+                        </button>
+
+                        {/* Floating Bottom Navigation Bar (Centered, pill shaped) */}
+                        {viewMode === 'reader' && (
+                            <div className="fixed bottom-5 sm:bottom-8 inset-x-0 z-40 flex items-center justify-center pointer-events-none px-4">
+                                <div className="pointer-events-auto flex items-center gap-1.5 sm:gap-2.5 bg-bark-900/90 hover:bg-bark-900 text-cream-light backdrop-blur-md px-3 sm:px-4 py-2 rounded-full shadow-2xl border border-white/15 transition-all duration-200">
+                                    {/* Previous Page */}
+                                    <button
+                                        type="button"
+                                        onClick={readingLayout === 'scroll' ? handlePrevChapter : handlePrevPage}
+                                        disabled={currentChapterIndex === 0 && (readingLayout === 'scroll' || currentPageInChapter === 0)}
+                                        className="p-1.5 sm:p-2 rounded-full hover:bg-white/10 disabled:opacity-25 disabled:hover:bg-transparent transition text-cream-light"
+                                        title={readingLayout === 'scroll' ? 'Previous Chapter' : 'Previous Page (Left Arrow)'}
+                                        aria-label="Previous Page"
+                                    >
+                                        <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                                    </button>
+
+                                    {/* Page / Chapter Counter */}
+                                    <span className="font-mono text-[11px] sm:text-xs font-semibold px-2 text-cream-light/80 select-none whitespace-nowrap">
+                                        {readingLayout === 'scroll'
+                                            ? `Ch. ${currentChapterIndex + 1} / ${totalChapters}`
+                                            : `Page ${currentGlobalPage} of ${totalBookPages}`}
+                                    </span>
+
+                                    {/* Prominent Next Page Button */}
+                                    <button
+                                        type="button"
+                                        onClick={readingLayout === 'scroll' ? handleNextChapter : handleNextPage}
+                                        disabled={currentChapterIndex >= totalChapters - 1 && (readingLayout === 'scroll' || currentPageInChapter >= chapterPages.length - 1)}
+                                        className="flex items-center gap-2 px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-tan-dark hover:bg-tan-dark/90 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-md transition disabled:opacity-40 disabled:hover:bg-tan-dark disabled:active:scale-100 cursor-pointer disabled:cursor-not-allowed"
+                                        title={readingLayout === 'scroll' ? 'Next Chapter' : 'Next Page (Right Arrow or Space)'}
+                                        aria-label="Next Page"
+                                    >
+                                        <span>
+                                            {currentChapterIndex >= totalChapters - 1 && (readingLayout === 'scroll' || currentPageInChapter >= chapterPages.length - 1)
+                                                ? 'End of Book'
+                                                : readingLayout === 'scroll' ? 'Next Chapter' : 'Next Page'}
+                                        </span>
+                                        <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                                    </button>
+
+                                    <div className="h-4 w-px bg-white/20 mx-0.5" />
+
+                                    {/* Exit Fullscreen Icon in Bar */}
+                                    <button
+                                        type="button"
+                                        onClick={toggleFullscreen}
+                                        className="p-1.5 sm:p-2 rounded-full hover:bg-white/10 text-cream-light/70 hover:text-white transition"
+                                        title="Exit Fullscreen (Esc)"
+                                        aria-label="Exit Fullscreen"
+                                    >
+                                        <Minimize2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </>
+                )}
             </div>
         </Modal>
     );
