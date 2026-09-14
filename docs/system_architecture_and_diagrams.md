@@ -1436,3 +1436,4 @@ Context-aware AI Librarian conversation sessions and cost audit logs.
 | **`chat_sessions`** | `id`, `member_id` (FK), `title`, `total_tokens_used`, `timestamps` | Chat container per patron session. |
 | **`chat_messages`** | `id`, `chat_session_id` (FK), `sender` (`user`/`ai`), `message`, `tokens_used`, `timestamps` | Conversation turn messages. |
 | **`ai_usage_logs`** | `id`, `member_id` (FK), `chat_session_id` (FK), `tokens_consumed`, `cost_estimate`, `request_type`, `ip_address`, `timestamps` | Cost and token consumption ledger. |
+

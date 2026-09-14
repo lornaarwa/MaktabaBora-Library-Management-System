@@ -335,3 +335,4 @@ sequenceDiagram
         ChatWidget-->>Patron: Render rich markdown response with interactive book links
     end
 ```
+

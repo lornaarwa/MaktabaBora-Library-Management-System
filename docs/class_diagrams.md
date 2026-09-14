@@ -540,3 +540,4 @@ classDiagram
     DarajaPaymentServiceInterface <|.. DarajaPaymentService
     OpenLibraryServiceInterface <|.. OpenLibraryService
 ```
+
