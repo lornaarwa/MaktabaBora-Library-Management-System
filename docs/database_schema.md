@@ -1,12 +1,15 @@
-# Relational Database Schema & Data Dictionary
+# MaktabaBora - Relational Database Schema & Data Dictionary
 
-This document details the complete database schema for the **Smart Library Management System** running on PostgreSQL (Neon Cloud / Local).
+This document details the complete database schema for the **MaktabaBora Library Management System** running on PostgreSQL (Neon Cloud / Local), formatted for **Horizontal A4** presentation.
 
 ---
 
 ## 1. Entity-Relationship (ER) Diagram
 
 ```mermaid
+---
+title: MAKTABABORA - RELATIONAL DATABASE SCHEMA & ENTITY RELATIONSHIPS
+---
 erDiagram
     USERS ||--o| MEMBERS : "profile for"
     USERS ||--o| LIBRARIANS : "staff profile for"

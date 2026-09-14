@@ -1,11 +1,11 @@
-# Smart Library System (SmartLib) - Visual Diagrams Gallery
+# MaktabaBora - Visual Diagrams Gallery (Horizontal A4)
 
-This directory contains standalone, high-resolution PNG image exports of all architectural and UML diagrams for the **Smart Library Management System**.
+This directory contains standalone, high-resolution PNG image exports of all architectural and UML diagrams for the **MaktabaBora Library Management System**, formatted in **Horizontal A4 (297 x 210 mm)** landscape layout with complete title headers and metadata banners.
 
 ---
 
 ## 1. Use Case Diagram
-### Actor Interactions & Functional Scope
+### Actor Interactions & System Boundary
 ![Use Case Diagram](use_case_diagram.png)
 
 ---
@@ -49,7 +49,7 @@ This directory contains standalone, high-resolution PNG image exports of all arc
 
 ---
 
-### Class Diagram 2: REST Controllers Layer (15 Controllers)
+### Class Diagram 2: REST Controllers Layer (15 Controllers in 4 Subsystems)
 ![REST Controllers Layer](class_diagram_02_controllers.png)
 
 ---

@@ -1,7 +1,7 @@
-# Smart Library Management System (SmartLib / MaktabaBora)
+# MaktabaBora Library Management System
 ## Complete Architecture, Diagrams & Database Schema Specification
 
-This document provides the complete, authoritative software engineering specifications and UML diagrams for the **Smart Library Management System**, covering actors, operational lifecycles, full object-oriented classes with all attributes and methods, and the relational database schema.
+This document provides the complete, authoritative software engineering specifications and UML diagrams for the **MaktabaBora Library Management System**, formatted for **Horizontal A4** presentation and architectural evaluation.
 
 ---
 
@@ -29,103 +29,95 @@ This document provides the complete, authoritative software engineering specific
 The system serves four primary actors: **Guest / Public Visitor**, **Member (Patron)**, **Librarian (Staff)**, and **Administrator (Superuser)**, alongside external payment and AI gateways.
 
 ```mermaid
+---
+title: MAKTABABORA - SYSTEM USE CASE & ACTOR INTERACTION DIAGRAM
+---
 flowchart TD
-    %% Actors
-    Guest["👤 Guest / Public Patron"]
-    Member["🎓 Registered Member"]
-    Librarian["📚 Librarian Staff"]
-    Admin["⚙️ System Administrator"]
-    Daraja["💳 Safaricom Daraja M-Pesa Gateway"]
-    AiProvider["🤖 AI Provider (Gemini / OpenAI / Claude)"]
+    subgraph SYSTEM_BOUNDARY ["MaktabaBora System Boundary - Functional Architecture"]
+        direction LR
 
-    %% Guest Use Cases
-    subgraph Guest_Use_Cases ["Public & Guest Operations"]
-        UC1(["Browse & Search OPAC Catalog"])
-        UC2(["View Book Synopsis & Shelf Availability"])
-        UC3(["View Dynamic Membership Tiers"])
-        UC4(["Register Member Account / Login"])
-    end
+        subgraph ACTORS ["Primary Actors"]
+            direction TB
+            Guest["👤 Guest Patron"]
+            Member["🎓 Registered Member"]
+            Librarian["📚 Librarian Staff"]
+            Admin["⚙️ Administrator"]
+        end
 
-    %% Member Use Cases
-    subgraph Member_Use_Cases ["Member Operations"]
-        UC5(["Borrow Physical Books (View Active Loans & Due Dates)"])
-        UC6(["Place & Cancel Hold Reservations"])
-        UC7(["Subscribe / Upgrade Membership Pass (M-Pesa STK)"])
-        UC8(["Request Subscription Refund & Check Status"])
-        UC9(["Purchase Digital Books with Lifetime Access"])
-        UC10(["Read E-Books in Native Chapter Reader / PDF Stream"])
-        UC11(["Pay Overdue Fines via M-Pesa STK Push"])
-        UC12(["View & Print Purchase / Reservation Receipts"])
-        UC13(["Query Smart AI Librarian Assistant"])
-    end
+        subgraph PATRON_SERVICES ["Patron & Public Operations"]
+            direction TB
+            subgraph GUEST_OPS ["Public Operations"]
+                UC1(["Browse & Search Catalog"])
+                UC2(["View Book Details & Stock"])
+                UC3(["View Dynamic Membership Tiers"])
+                UC4(["Register Member / Login"])
+                UC1 ~~~ UC2 ~~~ UC3 ~~~ UC4
+            end
+            subgraph MEMBER_OPS ["Member Operations"]
+                UC5(["Borrow Physical Books"])
+                UC6(["Place & Cancel Holds"])
+                UC7(["Subscribe Pass (M-Pesa)"])
+                UC8(["Request Subscription Refund"])
+                UC9(["Purchase Digital Books"])
+                UC10(["Read in In-App Reader"])
+                UC11(["Pay Overdue Fines"])
+                UC12(["View & Print Receipts"])
+                UC13(["Query AI Librarian"])
+                UC5 ~~~ UC7 ~~~ UC9 ~~~ UC11 ~~~ UC13
+                UC6 ~~~ UC8 ~~~ UC10 ~~~ UC12
+            end
+        end
 
-    %% Librarian Use Cases
-    subgraph Librarian_Use_Cases ["Librarian Circulation & Catalog Operations"]
-        UC14(["Check Out Physical Book Copy (Barcode BC-...)"])
-        UC15(["Process Return & Auto-Calculate Overdue Fines"])
-        UC16(["Waive Patron Fines"])
-        UC17(["Approve / Deny Hold Reservations & Queue"])
-        UC18(["Manage Catalog (Add, Edit, Block Books)"])
-        UC19(["Manage Physical Copies (Racks, Barcodes, Maintenance)"])
-        UC20(["Search & 1-Click Import from Open Library"])
-        UC21(["Configure Member Custom Borrow Limits"])
-        UC22(["Review & Process Subscription Refund Requests"])
-    end
+        subgraph STAFF_SERVICES ["Staff & Administrative Operations"]
+            direction TB
+            subgraph LIB_OPS ["Librarian Circulation"]
+                UC14(["Check Out Barcode Copies"])
+                UC15(["Return & Auto-Calculate Fines"])
+                UC16(["Waive Patron Fines"])
+                UC17(["Approve / Deny Hold Queue"])
+                UC18(["Manage Catalog Books"])
+                UC19(["Manage Physical Inventory"])
+                UC20(["1-Click Import from Open Library"])
+                UC21(["Set Member Borrow Limits"])
+                UC22(["Process Subscription Refunds"])
+                UC14 ~~~ UC16 ~~~ UC18 ~~~ UC20 ~~~ UC22
+                UC15 ~~~ UC17 ~~~ UC19 ~~~ UC21
+            end
+            subgraph ADMIN_OPS ["System Administration"]
+                UC23(["Manage System Users & Bans"])
+                UC24(["Register & Assign Librarians"])
+                UC25(["Customize Membership Tiers"])
+                UC26(["Configure AI Provider & Keys"])
+                UC27(["Dynamic Model Discovery"])
+                UC28(["View Platform Analytics"])
+                UC29(["Direct Dynamic CRUD Tables"])
+                UC23 ~~~ UC25 ~~~ UC27 ~~~ UC29
+                UC24 ~~~ UC26 ~~~ UC28
+            end
+        end
 
-    %% Administrator Use Cases
-    subgraph Admin_Use_Cases ["Administrator & Governance Operations"]
-        UC23(["Manage System Users & Ban/Unban Members"])
-        UC24(["Register & Assign Librarians"])
-        UC25(["Customize Membership Tiers (Limits, Prices, Perks)"])
-        UC26(["Configure AI Providers, Models & System Guidelines"])
-        UC27(["Dynamic Model Discovery (Live API Fetch)"])
-        UC28(["View Platform Analytics, Revenue & API Traffic Logs"])
-        UC29(["Direct Dynamic Table CRUD Management"])
+        subgraph EXTERNAL_SERVICES ["External Gateways"]
+            direction TB
+            Daraja["💳 Safaricom Daraja M-Pesa"]
+            AiProvider["🤖 Cloud AI Provider"]
+        end
     end
 
     %% Guest Associations
-    Guest --> UC1
-    Guest --> UC2
-    Guest --> UC3
-    Guest --> UC4
+    Guest --> UC1 & UC2 & UC3 & UC4
 
     %% Member Associations
-    Member --> UC1
-    Member --> UC5
-    Member --> UC6
-    Member --> UC7
-    Member --> UC8
-    Member --> UC9
-    Member --> UC10
-    Member --> UC11
-    Member --> UC12
-    Member --> UC13
+    Member --> UC1 & UC5 & UC6 & UC7 & UC8 & UC9 & UC10 & UC11 & UC12 & UC13
 
     %% Librarian Associations
-    Librarian --> UC14
-    Librarian --> UC15
-    Librarian --> UC16
-    Librarian --> UC17
-    Librarian --> UC18
-    Librarian --> UC19
-    Librarian --> UC20
-    Librarian --> UC21
-    Librarian --> UC22
+    Librarian --> UC14 & UC15 & UC16 & UC17 & UC18 & UC19 & UC20 & UC21 & UC22
 
     %% Admin Associations
-    Admin --> UC23
-    Admin --> UC24
-    Admin --> UC25
-    Admin --> UC26
-    Admin --> UC27
-    Admin --> UC28
-    Admin --> UC29
-    Admin -.->|Inherits Permissions| Librarian
+    Admin --> UC23 & UC24 & UC25 & UC26 & UC27 & UC28 & UC29
+    Admin -.->|Inherits Staff Privileges| Librarian
 
-    %% External Systems
-    UC7 -.->|STK Push| Daraja
-    UC9 -.->|STK Push| Daraja
-    UC11 -.->|STK Push| Daraja
+    %% External System Connections
+    UC7 & UC9 & UC11 -.->|STK Push| Daraja
     UC13 -.->|Prompt & Context| AiProvider
 ```
 
@@ -137,6 +129,9 @@ flowchart TD
 Illustrates patron registration, login verification, stateless HS256 JWT minting, and cache-backed logout blacklisting.
 
 ```mermaid
+---
+title: MAKTABABORA - AUTHENTICATION & JWT TOKEN LIFECYCLE
+---
 sequenceDiagram
     autonumber
     actor User as Patron / Client
@@ -195,6 +190,9 @@ sequenceDiagram
 Illustrates the physical borrowing lifecycle, barcode verification, custom borrow limits, return handling, and overdue fine generation.
 
 ```mermaid
+---
+title: MAKTABABORA - PHYSICAL CIRCULATION, CHECKOUT & OVERDUE FINES
+---
 sequenceDiagram
     autonumber
     actor Patron as Member Patron
@@ -256,6 +254,9 @@ sequenceDiagram
 Illustrates how patrons place holds when physical copies are exhausted, queue advancement, and staff fulfillment.
 
 ```mermaid
+---
+title: MAKTABABORA - HOLD RESERVATION QUEUE & STAFF FULFILLMENT
+---
 sequenceDiagram
     autonumber
     actor Patron as Member Patron
@@ -310,6 +311,9 @@ sequenceDiagram
 Illustrates cart checkout, Daraja STK Push prompt to mobile phone, automated callback webhook, lifetime access entitlement, and native reader streaming.
 
 ```mermaid
+---
+title: MAKTABABORA - DIGITAL BOOK PURCHASE & LIFETIME READER ACCESS
+---
 sequenceDiagram
     autonumber
     actor Patron as Member Patron
@@ -336,7 +340,7 @@ sequenceDiagram
     Browser-->>Patron: Show Daraja Modal: "Check your phone and enter M-Pesa PIN"
 
     %% Mobile Money Interaction
-    Safaricom->>Patron: SIM STK Prompt: "Do you want to pay KES 80 to SmartLib?"
+    Safaricom->>Patron: SIM STK Prompt: "Do you want to pay KES 80 to MaktabaBora?"
     Patron->>Safaricom: Enter M-Pesa Secret PIN
 
     %% Daraja Callback Hook
@@ -366,6 +370,9 @@ sequenceDiagram
 Illustrates member tier upgrading, 20% discount perk activation, refund submission, and staff reimbursement approval.
 
 ```mermaid
+---
+title: MAKTABABORA - MEMBERSHIP PASS SUBSCRIPTION & REFUND FLOW
+---
 sequenceDiagram
     autonumber
     actor Patron as Member Patron
@@ -419,6 +426,9 @@ sequenceDiagram
 Illustrates contextual catalog retrieval, token bucket throttling, multi-provider execution (Gemini/OpenAI/Claude/Offline), and session persistence.
 
 ```mermaid
+---
+title: MAKTABABORA - AI LIBRARIAN ASSISTANT (RAG & RATE LIMITING)
+---
 sequenceDiagram
     autonumber
     actor Patron as Member / Patron
@@ -479,6 +489,9 @@ sequenceDiagram
 Contains all 14 data models, their attributes, column types, relationship accessors, mutators, and business logic methods.
 
 ```mermaid
+---
+title: MAKTABABORA - ELOQUENT DATA MODELS ARCHITECTURE
+---
 classDiagram
     class User {
         +int id
@@ -746,7 +759,25 @@ classDiagram
 Contains controllers managing REST API endpoints, request validation, authorizations, and service delegation.
 
 ```mermaid
+---
+title: MAKTABABORA - REST API CONTROLLERS ARCHITECTURE
+---
 classDiagram
+    direction TB
+
+    class AuthModule {
+        <<subsystem: Auth & Membership Tiers>>
+    }
+    class CirculationModule {
+        <<subsystem: Circulation & Catalog Management>>
+    }
+    class CommerceModule {
+        <<subsystem: Digital Commerce & M-Pesa Payments>>
+    }
+    class GovernanceModule {
+        <<subsystem: AI Librarian & System Administration>>
+    }
+
     class AuthController {
         -AuthSessionServiceInterface authService
         +register(Request request) JsonResponse
@@ -756,6 +787,13 @@ classDiagram
         +updateProfile(Request request) JsonResponse
         +refresh(Request request) JsonResponse
         +logout(Request request) JsonResponse
+    }
+
+    class MembershipTierController {
+        +index() JsonResponse
+        +update(Request request) JsonResponse
+        -getDefaultTiers() array
+        -getSettingsFilePath() string
     }
 
     class BookInventoryController {
@@ -823,17 +861,11 @@ classDiagram
         +refundStatus(Request request) JsonResponse
     }
 
-    class MembershipTierController {
-        +index() JsonResponse
-        +update(Request request) JsonResponse
-        -getDefaultTiers() array
-        -getSettingsFilePath() string
-    }
-
     class AiChatbotController {
         -AiLibrarianManagerService aiManager
         +chat(Request request) JsonResponse
-        +clearChat(Request request) JsonResponse
+        +history(Request request) JsonResponse
+        +clearHistory(Request request) JsonResponse
     }
 
     class AiSettingsController {
@@ -845,30 +877,14 @@ classDiagram
     }
 
     class LibrarianDashboardController {
-        -OpenLibraryServiceInterface openLibrary
         +metrics() JsonResponse
-        +members(Request request) JsonResponse
-        +configureBorrowLimit(Member member, Request request) JsonResponse
-        +toggleBookRestriction(Book book) JsonResponse
         +bookCopies(Request request) JsonResponse
         +storeBookCopy(Request request) JsonResponse
         +updateBookCopy(BookCopy copy, Request request) JsonResponse
         +deleteBookCopy(BookCopy copy) JsonResponse
-        +activeLoans(Request request) JsonResponse
-        +subscriptions(Request request) JsonResponse
-        +storeSubscription(Request request) JsonResponse
-        +updateSubscription(Subscription sub, Request request) JsonResponse
-        +deleteSubscription(Subscription sub) JsonResponse
-        +reimbursements() JsonResponse
-        +reviewReimbursement(int id, Request request) JsonResponse
-        +getRefundRequests() JsonResponse
-        +approveRefund(int id) JsonResponse
-        +rejectRefund(int id, Request request) JsonResponse
         +searchOpenLibrary(Request request) JsonResponse
         +importOpenLibrary(Request request) JsonResponse
-        +reservations(Request request) JsonResponse
-        +approveReservation(Reservation res) JsonResponse
-        +denyReservation(Reservation res) JsonResponse
+        +approveRefund(int id) JsonResponse
     }
 
     class AdminAnalyticsController {
@@ -885,6 +901,29 @@ classDiagram
         +updateRecord(string table, int id, Request request) JsonResponse
         +destroyRecord(string table, int id) JsonResponse
     }
+
+    AuthModule <|-- AuthController
+    AuthModule <|-- MembershipTierController
+
+    CirculationModule <|-- BookInventoryController
+    CirculationModule <|-- CatalogSearchController
+    CirculationModule <|-- BookRecommendationController
+    CirculationModule <|-- LoanController
+    CirculationModule <|-- ReservationController
+
+    CommerceModule <|-- FineController
+    CommerceModule <|-- DigitalRentalController
+    CommerceModule <|-- SubscriptionController
+
+    GovernanceModule <|-- AiChatbotController
+    GovernanceModule <|-- AiSettingsController
+    GovernanceModule <|-- LibrarianDashboardController
+    GovernanceModule <|-- AdminAnalyticsController
+    GovernanceModule <|-- AdminCrudController
+
+    AuthModule -- CirculationModule : member profile & permissions
+    CirculationModule -- CommerceModule : triggers overdue fines & rentals
+    CommerceModule -- GovernanceModule : reports revenue & audit logs
 ```
 
 ---
@@ -893,7 +932,12 @@ classDiagram
 Contains interfaces, domain business services, rate limiters, payment handlers, and external AI orchestrators.
 
 ```mermaid
+---
+title: MAKTABABORA - DOMAIN SERVICES & INTERFACE CONTRACTS
+---
 classDiagram
+    direction TB
+
     class AuthSessionServiceInterface {
         <<interface>>
         +createSessionToken(User user, bool remember) string
@@ -1009,10 +1053,19 @@ classDiagram
         +fulfillReservation(Reservation reservation) Loan
     }
 
+    %% Interface Implementations
     AuthSessionServiceInterface <|.. AuthSessionService
     DigitalRentalServiceInterface <|.. DigitalRentalService
     DarajaPaymentServiceInterface <|.. DarajaPaymentService
     OpenLibraryServiceInterface <|.. OpenLibraryService
+
+    %% Domain Service Dependencies
+    DigitalRentalService ..> DarajaPaymentServiceInterface : triggers STK payment
+    DigitalRentalService ..> CurrencyConverterService : converts USD book prices
+    QueueReservationService ..> BorrowLimitService : validates member quota
+    AiLibrarianManagerService ..> TokenBucketRateLimiter : enforces tier token limits
+    AiLibrarianManagerService ..> BookRecommendationService : fetches grounded recommendations
+    BookRecommendationService ..> OpenLibraryServiceInterface : catalog enrichment
 ```
 
 ---
@@ -1022,6 +1075,9 @@ classDiagram
 ### 4.1. Entity-Relationship (ER) Diagram
 
 ```mermaid
+---
+title: MAKTABABORA - RELATIONAL DATABASE SCHEMA & ENTITY RELATIONSHIPS
+---
 erDiagram
     USERS ||--o| MEMBERS : "profile for"
     USERS ||--o| LIBRARIANS : "staff profile for"

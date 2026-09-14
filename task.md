@@ -11,6 +11,7 @@ Track implementation progress across phases and subphases with strict accountabi
 - **Phase 5: Scroll Mode Distinctive Sheets, Top Chapter Nav & 20-Book Multi-Genre Expansion** — 🟢 **COMPLETED** (Commits `8fd9a8b`, `87d22bc`, `6f2b40c`)
 - **Phase 6: UI Revamp, Global Dark Mode & Accountability Receipts** — 🟢 **COMPLETED** (Commits `efbbb2d`, `3d8057e`, `3b2fa1f`, `ed3fd18`)
 - **Phase 7: Cloud Database Migration to Neon Serverless PostgreSQL** — 🟢 **COMPLETED**
+- **Phase 8: Architectural Documentation & Standalone PNG Diagram Exports** — 🟢 **COMPLETED** (Commits `1605a01`, `1ba3be4`)
 
 ---
 
@@ -429,5 +430,67 @@ Track implementation progress across phases and subphases with strict accountabi
     - Verified `POST /api/v1/auth/login` authenticates System Admin with HTTP 200.
     - Executed full PHPUnit test suite: **127 passed (397 assertions)** in 7.45s.
 
+---
 
+## Phase 8: Architectural Documentation & Standalone PNG Diagram Exports
+- [x] **Sub-phase 8.1: Master Markdown Architecture Specifications**
+  - **Goal**: Document complete system architecture, actors, workflows, classes, and schema in Markdown.
+  - **Key Files**:
+    - `docs/system_architecture_and_diagrams.md` (56 KB consolidated architecture specification)
+    - `docs/use_case_diagram.md` (4 actors: Member, Librarian, Admin, Scheduled Cron/System; 29 use cases)
+    - `docs/sequence_diagrams.md` (6 detailed sequence diagrams for Auth, Circulation, Holds, M-Pesa, Subscriptions, AI)
+    - `docs/class_diagrams.md` (14 Eloquent Models, 15 REST Controllers, Domain Services & Contracts)
+    - `docs/database_schema.md` (Relational ER diagram & data dictionary for all 12+ PostgreSQL tables)
+    - `docs/README.md` (Documentation index)
+  - **Commit Hook 22**: `1605a01`
+    ```bash
+    git add docs/
+    git commit -m "docs: add comprehensive UML diagrams and database schema documentation"
+    ```
+
+- [x] **Sub-phase 8.2: Standalone High-Resolution PNG Diagram Rendering**
+  - **Goal**: Generate high-resolution, individual PNG files for every diagram and save them separately into `docs/diagrams/`.
+  - **Key Files & Tools**:
+    - Created `docs/scripts/generate_images.py` with zlib/pako compression and mermaid.ink rendering pipeline.
+    - Rendered all 11 diagrams into `docs/diagrams/`:
+      - `docs/diagrams/use_case_diagram.png` (36 KB)
+      - `docs/diagrams/sequence_01_auth_jwt_lifecycle.png` (226 KB)
+      - `docs/diagrams/sequence_02_physical_circulation_fines.png` (220 KB)
+      - `docs/diagrams/sequence_03_hold_reservation_queue.png` (209 KB)
+      - `docs/diagrams/sequence_04_digital_purchase_mpesa_reader.png` (141 KB)
+      - `docs/diagrams/sequence_05_membership_perks_refund.png` (177 KB)
+      - `docs/diagrams/sequence_06_ai_librarian_rag_assistant.png` (189 KB)
+      - `docs/diagrams/class_diagram_01_models.png` (275 KB)
+      - `docs/diagrams/class_diagram_02_controllers.png` (46 KB)
+      - `docs/diagrams/class_diagram_03_services.png` (71 KB)
+      - `docs/diagrams/database_schema_er_diagram.png` (356 KB)
+    - Created `docs/diagrams/README.md` serving as an image preview gallery.
+  - **Commit Hook 23**: `1ba3be4`
+    ```bash
+    git add docs/diagrams/ docs/scripts/ docs/README.md
+    git commit -m "docs(diagrams): add standalone PNG image exports for all 11 system diagrams and visual gallery"
+    ```
+
+- [x] **Sub-phase 8.3: Horizontal A4 Layout Optimization, Titled Canvases & MaktabaBora Rebranding**
+  - **Goal**: Rebrand all diagrams and specifications strictly to **MaktabaBora**, optimize Mermaid layout structures for horizontal A4, add titles to every diagram, and render all 11 images onto high-resolution Landscape A4 canvases ($2970 \times 2100$ px, aspect ratio 1.414).
+  - **Key Changes**:
+    - Replaced all legacy "Smart Library" and "SmartLib" naming with **MaktabaBora**.
+    - Redesigned `docs/use_case_diagram.md` with a balanced 4-column landscape flowchart grid with invisible rank ties ($1904 \times 1303$ px, ratio 1.46).
+    - Structured `docs/class_diagrams.md`:
+      - Controllers organized into 4 domain subsystems (`AuthModule`, `CirculationModule`, `CommerceModule`, `GovernanceModule`) transforming the ribbon layout into a 2D grid.
+      - Services connected with domain dependencies (`..>`).
+    - Added Mermaid frontmatter titles (`title: MAKTABABORA - ...`) across all diagrams in `use_case_diagram.md`, `sequence_diagrams.md`, `class_diagrams.md`, `database_schema.md`, and `system_architecture_and_diagrams.md`.
+    - Upgraded `docs/scripts/generate_images.py` to composite every diagram onto a crisp **Horizontal A4 Canvas (2970 x 2100 px)** with brand header, diagram title, subtitle metadata badge, and footer.
+    - Successfully regenerated all 11 PNG diagram files in `docs/diagrams/`:
+      - `docs/diagrams/use_case_diagram.png` (2970x2100, 1,009 KB)
+      - `docs/diagrams/sequence_01_auth_jwt_lifecycle.png` (2970x2100, 586 KB)
+      - `docs/diagrams/sequence_02_physical_circulation_fines.png` (2970x2100, 939 KB)
+      - `docs/diagrams/sequence_03_hold_reservation_queue.png` (2970x2100, 877 KB)
+      - `docs/diagrams/sequence_04_digital_purchase_mpesa_reader.png` (2970x2100, 737 KB)
+      - `docs/diagrams/sequence_05_membership_perks_refund.png` (2970x2100, 876 KB)
+      - `docs/diagrams/sequence_06_ai_librarian_rag_assistant.png` (2970x2100, 1,152 KB)
+      - `docs/diagrams/class_diagram_01_models.png` (2970x2100, 1,348 KB)
+      - `docs/diagrams/class_diagram_02_controllers.png` (2970x2100, 1,216 KB)
+      - `docs/diagrams/class_diagram_03_services.png` (2970x2100, 1,421 KB)
+      - `docs/diagrams/database_schema_er_diagram.png` (2970x2100, 1,038 KB)
 

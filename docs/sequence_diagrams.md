@@ -1,12 +1,15 @@
-# Sequence Diagrams Specification
+# MaktabaBora - Sequence Diagrams Specification
 
-This document details the 6 core operational workflows of the **Smart Library Management System** using UML sequence diagrams.
+This document details the 6 core operational workflows of the **MaktabaBora Library Management System** using UML sequence diagrams formatted for **Horizontal A4** presentation.
 
 ---
 
 ## 1. Authentication & JWT Token Lifecycle
 
 ```mermaid
+---
+title: MAKTABABORA - AUTHENTICATION & JWT TOKEN LIFECYCLE
+---
 sequenceDiagram
     autonumber
     actor User as Patron / Client
@@ -64,6 +67,9 @@ sequenceDiagram
 ## 2. Physical Book Circulation: Checkout, Return & Overdue Fines
 
 ```mermaid
+---
+title: MAKTABABORA - PHYSICAL CIRCULATION, CHECKOUT & OVERDUE FINES
+---
 sequenceDiagram
     autonumber
     actor Patron as Member Patron
@@ -124,6 +130,9 @@ sequenceDiagram
 ## 3. Hold Reservation Queue Lifecycle
 
 ```mermaid
+---
+title: MAKTABABORA - HOLD RESERVATION QUEUE & STAFF FULFILLMENT
+---
 sequenceDiagram
     autonumber
     actor Patron as Member Patron
@@ -177,6 +186,9 @@ sequenceDiagram
 ## 4. One-Time Digital Book Purchase via M-Pesa STK Push & Lifetime Access Reader
 
 ```mermaid
+---
+title: MAKTABABORA - DIGITAL BOOK PURCHASE & LIFETIME READER ACCESS
+---
 sequenceDiagram
     autonumber
     actor Patron as Member Patron
@@ -203,7 +215,7 @@ sequenceDiagram
     Browser-->>Patron: Show Daraja Modal: "Check your phone and enter M-Pesa PIN"
 
     %% Mobile Money Interaction
-    Safaricom->>Patron: SIM STK Prompt: "Do you want to pay KES 80 to SmartLib?"
+    Safaricom->>Patron: SIM STK Prompt: "Do you want to pay KES 80 to MaktabaBora?"
     Patron->>Safaricom: Enter M-Pesa Secret PIN
 
     %% Daraja Callback Hook
@@ -232,6 +244,9 @@ sequenceDiagram
 ## 5. Membership Perk Pass Subscription & Refund Flow
 
 ```mermaid
+---
+title: MAKTABABORA - MEMBERSHIP PASS SUBSCRIPTION & REFUND FLOW
+---
 sequenceDiagram
     autonumber
     actor Patron as Member Patron
@@ -284,6 +299,9 @@ sequenceDiagram
 ## 6. Smart AI Librarian Assistant: Rate-Limited RAG Query Flow
 
 ```mermaid
+---
+title: MAKTABABORA - AI LIBRARIAN ASSISTANT (RAG & RATE LIMITING)
+---
 sequenceDiagram
     autonumber
     actor Patron as Member / Patron
@@ -335,4 +353,3 @@ sequenceDiagram
         ChatWidget-->>Patron: Render rich markdown response with interactive book links
     end
 ```
-

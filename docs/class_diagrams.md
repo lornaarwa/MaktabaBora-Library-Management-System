@@ -1,13 +1,17 @@
-# Class Diagrams Specification
+# MaktabaBora - Class Diagrams Specification
 
-This document details the object-oriented structure of the **Smart Library Management System** across Models, Controllers, and Services with all methods and attributes.
+This document details the object-oriented structure of the **MaktabaBora Library Management System** across Models, Controllers, and Services with all methods, attributes, and relationships formatted for **Horizontal A4** presentation.
 
 ---
 
-## 1. Eloquent Models Architecture
+## 1. Eloquent Models Architecture (Domain Data Layer)
 
 ```mermaid
+---
+title: MAKTABABORA - ELOQUENT DATA MODELS ARCHITECTURE
+---
 classDiagram
+    direction TB
     class User {
         +int id
         +string name
@@ -270,10 +274,28 @@ classDiagram
 
 ---
 
-## 2. REST Controllers Layer
+## 2. REST Controllers Layer (HTTP API Routing & Handlers)
 
 ```mermaid
+---
+title: MAKTABABORA - REST API CONTROLLERS ARCHITECTURE
+---
 classDiagram
+    direction TB
+
+    class AuthModule {
+        <<subsystem: Auth & Membership Tiers>>
+    }
+    class CirculationModule {
+        <<subsystem: Circulation & Catalog Management>>
+    }
+    class CommerceModule {
+        <<subsystem: Digital Commerce & M-Pesa Payments>>
+    }
+    class GovernanceModule {
+        <<subsystem: AI Librarian & System Administration>>
+    }
+
     class AuthController {
         -AuthSessionServiceInterface authService
         +register(Request request) JsonResponse
@@ -283,6 +305,13 @@ classDiagram
         +updateProfile(Request request) JsonResponse
         +refresh(Request request) JsonResponse
         +logout(Request request) JsonResponse
+    }
+
+    class MembershipTierController {
+        +index() JsonResponse
+        +update(Request request) JsonResponse
+        -getDefaultTiers() array
+        -getSettingsFilePath() string
     }
 
     class BookInventoryController {
@@ -315,6 +344,13 @@ classDiagram
         +returnBook(Loan loan) JsonResponse
     }
 
+    class ReservationController {
+        -QueueReservationServiceInterface queueService
+        +index(Request request) JsonResponse
+        +store(Request request) JsonResponse
+        +destroy(Reservation reservation) JsonResponse
+    }
+
     class FineController {
         -DarajaPaymentServiceInterface darajaService
         -NotificationDispatcherServiceInterface notifyService
@@ -322,13 +358,6 @@ classDiagram
         +payWithDaraja(Fine fine, Request request) JsonResponse
         +darajaCallback(Request request) JsonResponse
         +waive(Fine fine) JsonResponse
-    }
-
-    class ReservationController {
-        -QueueReservationServiceInterface queueService
-        +index(Request request) JsonResponse
-        +store(Request request) JsonResponse
-        +destroy(Reservation reservation) JsonResponse
     }
 
     class DigitalRentalController {
@@ -350,17 +379,11 @@ classDiagram
         +refundStatus(Request request) JsonResponse
     }
 
-    class MembershipTierController {
-        +index() JsonResponse
-        +update(Request request) JsonResponse
-        -getDefaultTiers() array
-        -getSettingsFilePath() string
-    }
-
     class AiChatbotController {
         -AiLibrarianManagerService aiManager
         +chat(Request request) JsonResponse
-        +clearChat(Request request) JsonResponse
+        +history(Request request) JsonResponse
+        +clearHistory(Request request) JsonResponse
     }
 
     class AiSettingsController {
@@ -372,30 +395,14 @@ classDiagram
     }
 
     class LibrarianDashboardController {
-        -OpenLibraryServiceInterface openLibrary
         +metrics() JsonResponse
-        +members(Request request) JsonResponse
-        +configureBorrowLimit(Member member, Request request) JsonResponse
-        +toggleBookRestriction(Book book) JsonResponse
         +bookCopies(Request request) JsonResponse
         +storeBookCopy(Request request) JsonResponse
         +updateBookCopy(BookCopy copy, Request request) JsonResponse
         +deleteBookCopy(BookCopy copy) JsonResponse
-        +activeLoans(Request request) JsonResponse
-        +subscriptions(Request request) JsonResponse
-        +storeSubscription(Request request) JsonResponse
-        +updateSubscription(Subscription sub, Request request) JsonResponse
-        +deleteSubscription(Subscription sub) JsonResponse
-        +reimbursements() JsonResponse
-        +reviewReimbursement(int id, Request request) JsonResponse
-        +getRefundRequests() JsonResponse
-        +approveRefund(int id) JsonResponse
-        +rejectRefund(int id, Request request) JsonResponse
         +searchOpenLibrary(Request request) JsonResponse
         +importOpenLibrary(Request request) JsonResponse
-        +reservations(Request request) JsonResponse
-        +approveReservation(Reservation res) JsonResponse
-        +denyReservation(Reservation res) JsonResponse
+        +approveRefund(int id) JsonResponse
     }
 
     class AdminAnalyticsController {
@@ -412,14 +419,42 @@ classDiagram
         +updateRecord(string table, int id, Request request) JsonResponse
         +destroyRecord(string table, int id) JsonResponse
     }
+
+    AuthModule <|-- AuthController
+    AuthModule <|-- MembershipTierController
+
+    CirculationModule <|-- BookInventoryController
+    CirculationModule <|-- CatalogSearchController
+    CirculationModule <|-- BookRecommendationController
+    CirculationModule <|-- LoanController
+    CirculationModule <|-- ReservationController
+
+    CommerceModule <|-- FineController
+    CommerceModule <|-- DigitalRentalController
+    CommerceModule <|-- SubscriptionController
+
+    GovernanceModule <|-- AiChatbotController
+    GovernanceModule <|-- AiSettingsController
+    GovernanceModule <|-- LibrarianDashboardController
+    GovernanceModule <|-- AdminAnalyticsController
+    GovernanceModule <|-- AdminCrudController
+
+    AuthModule -- CirculationModule : member profile & permissions
+    CirculationModule -- CommerceModule : triggers overdue fines & rentals
+    CommerceModule -- GovernanceModule : reports revenue & audit logs
 ```
 
 ---
 
-## 3. Services & Contracts Layer
+## 3. Services & Contracts Layer (Domain Business Logic)
 
 ```mermaid
+---
+title: MAKTABABORA - DOMAIN SERVICES & INTERFACE CONTRACTS
+---
 classDiagram
+    direction TB
+
     class AuthSessionServiceInterface {
         <<interface>>
         +createSessionToken(User user, bool remember) string
@@ -535,9 +570,17 @@ classDiagram
         +fulfillReservation(Reservation reservation) Loan
     }
 
+    %% Interface Implementations
     AuthSessionServiceInterface <|.. AuthSessionService
     DigitalRentalServiceInterface <|.. DigitalRentalService
     DarajaPaymentServiceInterface <|.. DarajaPaymentService
     OpenLibraryServiceInterface <|.. OpenLibraryService
-```
 
+    %% Domain Service Dependencies
+    DigitalRentalService ..> DarajaPaymentServiceInterface : triggers STK payment
+    DigitalRentalService ..> CurrencyConverterService : converts USD book prices
+    QueueReservationService ..> BorrowLimitService : validates member quota
+    AiLibrarianManagerService ..> TokenBucketRateLimiter : enforces tier token limits
+    AiLibrarianManagerService ..> BookRecommendationService : fetches grounded recommendations
+    BookRecommendationService ..> OpenLibraryServiceInterface : enriches catalog metadata
+```

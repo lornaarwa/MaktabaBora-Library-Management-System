@@ -1,6 +1,6 @@
-# Smart Library System (SmartLib) - System Documentation Index
+# MaktabaBora Library Management System - Documentation Index
 
-This directory contains the software engineering specifications, UML diagrams, and relational database schema documentation for the **Smart Library Management System**.
+This directory contains the software engineering specifications, UML diagrams, and relational database schema documentation for the **MaktabaBora Library Management System**, formatted for **Horizontal A4** presentation.
 
 ---
 
@@ -10,7 +10,7 @@ This directory contains the software engineering specifications, UML diagrams, a
    - Complete consolidated technical reference containing all UML diagrams, class structures, operational lifecycles, and database tables in a single document.
 
 2. **[Use Case Diagram](use_case_diagram.md)**
-   - Functional use cases and actor interactions for Guests, Members, Librarians, Administrators, Safaricom Daraja, and AI Gateways.
+   - Functional use cases and actor interactions for Guests, Members, Librarians, Administrators, Safaricom Daraja, and AI Gateways, formatted for Horizontal A4.
 
 3. **[Sequence Diagrams](sequence_diagrams.md)**
    - 6 end-to-end operational sequence diagrams:
@@ -24,13 +24,12 @@ This directory contains the software engineering specifications, UML diagrams, a
 4. **[Class Diagrams](class_diagrams.md)**
    - Object-oriented structure with all attributes, types, relations, mutators, and methods:
      - 3.1. Eloquent Models Architecture (14 Models)
-     - 3.2. REST Controllers Layer (15 Controllers)
+     - 3.2. REST Controllers Layer (15 Controllers in 4 Subsystems)
      - 3.3. Services & Contracts Layer (Domain Services & Rate Limiters)
 
 5. **[Relational Database Schema & Data Dictionary](database_schema.md)**
    - Entity-Relationship (ER) Diagram
    - Comprehensive data dictionaries for all 12+ PostgreSQL tables (`users`, `members`, `librarians`, `books`, `book_copies`, `loans`, `reservations`, `fines`, `subscriptions`, `digital_purchases`, `refund_requests`, `chat_sessions`, `chat_messages`, `ai_usage_logs`).
 
-6. **[Visual Diagrams Gallery (PNG Images)](diagrams/README.md)**
-   - High-resolution, standalone PNG image exports for all 11 diagrams ready for presentations, print, or direct inspection.
-
+6. **[Visual Diagrams Gallery (Horizontal A4 PNG Images)](diagrams/README.md)**
+   - High-resolution, standalone Horizontal A4 PNG image exports with title headers for all 11 diagrams ready for presentations, print, or direct inspection.
