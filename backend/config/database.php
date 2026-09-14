@@ -86,7 +86,19 @@ return [
 
         'pgsql' => [
             'driver' => 'pgsql',
-            'url' => env('DB_URL'),
+            'url' => (function () {
+                $url = env('DATABASE_URL', env('DB_URL'));
+                if (!$url) return null;
+                // If using Neon pooled connection, automatically switch to direct endpoint during migrations
+                // to prevent PgBouncer transaction pooling aborts on DDL statements.
+                if (isset($_SERVER['argv']) && is_array($_SERVER['argv'])) {
+                    $cmd = implode(' ', $_SERVER['argv']);
+                    if (str_contains($cmd, 'migrate')) {
+                        return str_replace('-pooler.', '.', $url);
+                    }
+                }
+                return $url;
+            })(),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
             'database' => env('DB_DATABASE', 'laravel'),
@@ -96,7 +108,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'sslmode' => env('DB_SSLMODE', 'require'),
         ],
 
         'sqlsrv' => [

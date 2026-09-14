@@ -10,6 +10,7 @@ Track implementation progress across phases and subphases with strict accountabi
 - **Phase 4: Reader Overhaul, Full Book Storage, Dynamic Models & Polish** — 🟢 **COMPLETED** (Commits `4fe4c72`, `c7d4c39`, `92639ba`, `f881261`, `3d31497`)
 - **Phase 5: Scroll Mode Distinctive Sheets, Top Chapter Nav & 20-Book Multi-Genre Expansion** — 🟢 **COMPLETED** (Commits `8fd9a8b`, `87d22bc`, `6f2b40c`)
 - **Phase 6: UI Revamp, Global Dark Mode & Accountability Receipts** — 🟢 **COMPLETED** (Commits `efbbb2d`, `3d8057e`, `3b2fa1f`, `ed3fd18`)
+- **Phase 7: Cloud Database Migration to Neon Serverless PostgreSQL** — 🟢 **COMPLETED**
 
 ---
 
@@ -395,6 +396,38 @@ Track implementation progress across phases and subphases with strict accountabi
     git add task.md
     git commit -m "docs: verify ui revamp, global dark mode, receipts, and complete task checklist"
     ```
+
+---
+
+## Phase 7: Cloud Database Migration to Neon Serverless PostgreSQL
+- [x] **Sub-phase 7.1: Configuration Architecture & PgBouncer Migration Auto-Bypass**
+  - **Goal**: Enable frictionless connection to Neon Serverless PostgreSQL while resolving PgBouncer transaction-mode DDL aborts during migrations.
+  - **Key Changes**:
+    - In `backend/config/database.php`:
+      - Updated `pgsql` connection to accept `DATABASE_URL` (or `DB_URL`) and enforced default `DB_SSLMODE=require`.
+      - Added dynamic CLI command detector that automatically bypasses `-pooler` during `migrate` artisan commands to use Neon's direct endpoint for DDL transactions, and uses the pooled connection for application runtime.
+    - In `backend/.env`:
+      - Configured `DATABASE_URL` pointing to user's Neon pooled instance (`ep-muddy-night-aee97x3v-pooler`).
+      - Cleaned and commented out local database variables.
+    - Created `backend/.env.example` documenting both single-line Neon cloud connection and local PostgreSQL fallback.
+    - Updated `README.md` with zero-local-db onboarding guide.
+
+- [x] **Sub-phase 7.2: Database Migration & Comprehensive Seeding**
+  - **Goal**: Migrate schema to Neon and seed all test accounts, physical copies, Gutenberg literature, and multi-genre catalog.
+  - **Key Changes**:
+    - Executed `php artisan migrate:fresh --force`: All 9 migrations completed with 0 errors.
+    - Executed `php artisan db:seed --force`: Initialized Admin, Librarian, Member, core books, and loans.
+    - Executed `php artisan books:seed-full-content --force`: Populated complete verbatim chapters for classic literature and technical study editions.
+    - Executed `php artisan books:seed-expanded-library --force`: Populated 20 diverse books across 14 genres with barcodes, shelf rack locations, and multi-chapter reading material.
+    - Verified Neon database counts: **25 books, 104 book copies, 3 users**.
+
+- [x] **Sub-phase 7.3: API Verification & Test Suite Integrity**
+  - **Goal**: Verify API endpoints against Neon and confirm isolated SQLite unit/feature test suite passes.
+  - **Key Changes**:
+    - Verified `GET /api/v1/books` returns HTTP 200 with 15 paginated books.
+    - Verified `GET /api/v1/membership-tiers` returns HTTP 200.
+    - Verified `POST /api/v1/auth/login` authenticates System Admin with HTTP 200.
+    - Executed full PHPUnit test suite: **127 passed (397 assertions)** in 7.45s.
 
 
 

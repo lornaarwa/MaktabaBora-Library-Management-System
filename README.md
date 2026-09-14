@@ -29,14 +29,24 @@ SmartLib is a production-grade, full-stack library management system featuring a
 
 ## Getting Started: Installation & Running Locally
 
-### 1. Database Setup (PostgreSQL)
+### 1. Database Setup: Neon Serverless PostgreSQL (Recommended)
 
-Ensure PostgreSQL service is running and create the database:
-```sql
-CREATE DATABASE library_db;
-CREATE USER postgres WITH PASSWORD 'library_db';
-GRANT ALL PRIVILEGES ON DATABASE library_db TO postgres;
+SmartLib connects to **Neon Serverless PostgreSQL (neondb)** in the cloud out of the box. Collaborators, evaluators, and developers do **not** need to install, configure, or run PostgreSQL locally.
+
+Simply copy the environment template and ensure your `DATABASE_URL` is set:
+
+```bash
+cd backend
+cp .env.example .env
 ```
+
+In `.env`:
+```ini
+DB_CONNECTION=pgsql
+DATABASE_URL="postgresql://neondb_owner:YOUR_PASSWORD@ep-YOUR-ENDPOINT-pooler.REGION.aws.neon.tech/neondb?sslmode=require"
+```
+
+*(Optional: If you prefer to run a local PostgreSQL instance instead, simply uncomment the local `DB_HOST=127.0.0.1` block in `.env`)*.
 
 ---
 
@@ -52,32 +62,20 @@ cd backend
    composer install
    ```
 
-2. **Configure Environment File**:
-   Copy `.env.example` to `.env` (or update existing `.env`):
-   ```bash
-   cp .env.example .env
-   ```
-   Ensure `.env` database settings match your PostgreSQL installation:
-   ```ini
-   DB_CONNECTION=pgsql
-   DB_HOST=127.0.0.1
-   DB_PORT=5432
-   DB_DATABASE=library_db
-   DB_USERNAME=postgres
-   DB_PASSWORD=library_db
-   ```
-
-3. **Generate Application Key**:
+2. **Generate Application Key**:
    ```bash
    php artisan key:generate
    ```
 
-4. **Run Database Migrations & Seeders**:
+3. **Run Database Migrations & Seeders**:
    ```bash
    php artisan migrate
+   php artisan db:seed
+   php artisan books:seed-full-content
+   php artisan books:seed-expanded-library
    ```
 
-5. **Start Laravel Development Server**:
+4. **Start Laravel Development Server**:
    ```bash
    php artisan serve --port=8000
    ```
