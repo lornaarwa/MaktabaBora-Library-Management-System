@@ -39,6 +39,11 @@ class Book extends Model
         'available_copies' => 'integer',
     ];
 
+    protected $hidden = [
+        'file_path',
+        'embedding',
+    ];
+
     public function getCoverImagePathAttribute(?string $value): ?string
     {
         if (!$value) {
