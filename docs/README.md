@@ -10,7 +10,7 @@ This directory contains the software engineering specifications, UML diagrams, p
    - Complete, authoritative 15-part master system document covering institutional objectives, system architecture, database dictionary, UI walkthroughs, code highlights, APIs, testing, and deployment.
 
 2. **[PowerPoint Technical Presentation (16:9 Widescreen)](MaktabaBora_System_Presentation.pptx)**
-   - Executive 38-slide technical presentation deck containing all system architecture specifications, technology matrices, schema dictionaries, key code implementations, and all 11 embedded Horizontal A4 UML diagrams.
+   - Executive 40-slide technical presentation deck containing all system architecture specifications, technology matrices, schema dictionaries, key code implementations, cloud deployment with CI/CD trade-offs, and all 11 embedded Horizontal A4 UML diagrams.
 
 3. **[Master Architecture & Diagrams Specification](system_architecture_and_diagrams.md)**
    - Consolidated technical reference containing all UML diagrams, class structures, operational lifecycles, and database tables in a single document.

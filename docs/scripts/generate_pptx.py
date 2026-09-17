@@ -326,7 +326,7 @@ class MaktabaBoraDeckBuilder:
         cards = [
             ("Patron & Digital Services", "Bridges physical book circulation with lifetime digital reading. Features an interactive in-browser EPUB/PDF reader, dynamic multi-tier perk subscriptions, and automated hold waitlists.", COLOR_ACCENT_CYAN),
             ("Staff Circulation Desk", "Eliminates manual paper ledgers with automated barcode loans, dynamic overdue fine accrual (KES 10/day), 1-click Open Library ISBN catalog imports, and fine waiver auditing.", COLOR_ACCENT_EMERALD),
-            ("Enterprise AI & Payments", "Features a conversational RAG AI Librarian grounded strictly in catalog records with a 20k daily token limiter, alongside instant Safaricom Daraja M-Pesa STK push checkout.", COLOR_ACCENT_AMBER)
+            ("Enterprise AI & Payments", "Features a conversational RAG AI Librarian grounded strictly in catalog records with a 20k daily token limiter, alongside simulated Safaricom Daraja M-Pesa STK push checkout.", COLOR_ACCENT_AMBER)
         ]
 
         for i, (head, desc, acc) in enumerate(cards):
@@ -399,7 +399,7 @@ class MaktabaBoraDeckBuilder:
         objs = [
             ("1. Automated Physical Circulation", "Eliminate paper ledgers via real-time barcode tracking, auto-computed return dates, and dynamic fine accrual."),
             ("2. Hybrid Physical + Digital Lending", "Empower remote patrons with in-browser digital reading (EPUB/PDF), chapter navigation, and study notes."),
-            ("3. Cashless Financial Operations", "Direct integration with Safaricom Daraja M-Pesa for instant, mobile-money settlement of passes, digital rentals, and fines."),
+            ("3. Cashless Financial Operations", "Direct integration with Safaricom Daraja M-Pesa for instant settlement of passes, digital rentals, and fines (simulated in MVP)."),
             ("4. Grounded AI Catalog Discovery", "Equip patrons with a conversational AI Assistant strictly grounded in real catalog holdings with a 20k token daily cost limiter."),
             ("5. Global Catalog Interoperability", "Rapidly populate collections with 1-click ISBN metadata synchronization from Open Library REST APIs."),
             ("6. Defense-in-Depth & Privacy", "Enforce stateless HMAC-SHA256 JWT tokens, granular RBAC, and absolute patron borrowing privacy.")
@@ -1081,7 +1081,7 @@ public function convert(?float $amount, ?string $from, string $to = 'KES'): ?flo
 }""",
             explanation_points=[
                 ("Base64 Security Token", "Generates dynamic Daraja timestamp password and bearer token for authenticated Safaricom gateway communication."),
-                ("Forex Pivot Conversion", "Converts foreign currencies (USD, EUR, GBP) to KES via a USD pivot base, enabling international book price estimations."),
+                ("Simulated Evaluation Flow", "Constructs compliant Daraja 2.0 payload envelopes and mock settlements for safe zero-cost MVP demonstration."),
                 ("24-Hour Cache Layer", "Live exchange rates are cached for 86,400 seconds (24h) to avoid third-party API latency and rate-limit penalties.")
             ]
         )
@@ -1279,21 +1279,22 @@ public function convert(?float $amount, ?string $from, string $to = 'KES'): ?flo
                 p.space_after = Pt(4)
 
         # -------------------------------------------------------------
-        # Slide 35: Deployment & Environment Prerequisites (Light Theme)
+        # -------------------------------------------------------------
+        # Slide 35: Containerized Architecture & Cloud Deployment (Light Theme)
         # -------------------------------------------------------------
         s35 = self.add_blank_slide(is_dark=False)
-        self.add_header(s35, "Deployment Architecture & Production Setup", category="SECTION 13: DEPLOYMENT & OPERATIONS", is_dark=False)
+        self.add_header(s35, "Containerized Architecture & Cloud Deployment", category="SECTION 13: DEPLOYMENT & OPERATIONS", is_dark=False)
 
-        prereqs = [
-            ("1. Server Environment", "Linux (Ubuntu 22.04/24.04 LTS) or Windows Server", "Nginx or Apache HTTP reverse proxy configured with SSL/TLS."),
-            ("2. PHP 8.2+ Runtime", "PHP 8.2 / 8.3 CLI & FPM", "Extensions: pdo_pgsql, openssl, mbstring, tokenizer, xml, curl, json."),
-            ("3. Database Engines", "PostgreSQL 16 / Neon Serverless", "Neon Cloud PostgreSQL with connection pooling & direct migration fallback."),
-            ("4. Node.js Ecosystem", "Node.js 18+ and npm", "Compiles production-optimized React Single Page Application via Vite 7."),
-            ("5. Cache & Session", "Redis 7.x or Database Store", "High-performance token blacklisting, rate limiting & exchange rate caching."),
-            ("6. Background Workers", "Laravel Queue & Supervisor", "Processes asynchronous notifications, M-Pesa status queries & indexers.")
+        cloud_cards = [
+            ("1. Multi-Process Container", "serversideup/php:8.2-fpm-nginx", "Alpine Linux base uniting Nginx and PHP-FPM 8.2 under unprivileged www-data (UID 33). Supervised by S6-Overlay with dynamic $PORT binding."),
+            ("2. Cloud Web Service", "Render Blueprint (render.yaml)", "Declarative Infrastructure-as-Code deployment on Render Free Tier with automated /up health probe monitoring and stderr log streaming."),
+            ("3. Serverless Cloud Database", "Neon PostgreSQL (AWS Ohio)", "High-availability serverless PostgreSQL 16 with PgBouncer connection pooling and dynamic direct-migration fallback detection."),
+            ("4. Automated Entrypoint Hook", "docker-entrypoint.sh Hook", "Automatically compiles configuration, route, and view caches on container startup and executes schema migrations conditionally via RUN_MIGRATIONS=true."),
+            ("5. Production Optimizations", "OPcache & Bytecode Caching", "Bytecode caching enabled (PHP_OPCACHE_ENABLE=1) and Composer dependencies bundled with optimized autoloader (--no-dev --prefer-dist)."),
+            ("6. Simulated M-Pesa Evaluation", "Compliant Sandbox Payment Flow", "Constructs standard Daraja 2.0 payload envelopes and polling loops in simulation mode for zero-cost, safe evaluation.")
         ]
 
-        for i, (title_p, ver_p, desc_p) in enumerate(prereqs):
+        for i, (title_p, ver_p, desc_p) in enumerate(cloud_cards):
             c_left = 0.8 + (i % 3) * 3.95
             c_top = 1.6 + (i // 3) * 2.75
             card = self.add_card(s35, c_left, c_top, 3.8, 2.5)
@@ -1325,10 +1326,164 @@ public function convert(?float $amount, ?string $from, string $to = 'KES'): ?flo
             p3.font.color.rgb = COLOR_TEXT_PRIMARY
 
         # -------------------------------------------------------------
-        # Slide 36: Production Pipeline & Command Execution (Light Theme)
+        # Slide 36: Continuous Integration & Deployment (GitHub Actions)
         # -------------------------------------------------------------
         s36 = self.add_blank_slide(is_dark=False)
-        self.add_header(s36, "Step-by-Step Deployment Pipeline", category="SECTION 13: DEPLOYMENT & OPERATIONS", is_dark=False)
+        self.add_header(s36, "Continuous Integration & Deployment (CI/CD)", category="SECTION 13: DEPLOYMENT & OPERATIONS", is_dark=False)
+
+        # Left Card: Pipeline Architecture
+        self.add_card(s36, 0.8, 1.6, 5.75, 5.3, title="GitHub Actions Automated Pipeline")
+        tb_ci_l = s36.shapes.add_textbox(Inches(1.05), Inches(2.25), Inches(5.25), Inches(4.5))
+        tf_ci_l = tb_ci_l.text_frame
+        tf_ci_l.word_wrap = True
+        tf_ci_l.margin_left = tf_ci_l.margin_top = tf_ci_l.margin_right = tf_ci_l.margin_bottom = 0
+
+        ci_steps = [
+            ("Stage 1: Multi-Branch Trigger", "Workflow activates on push and pull-request events targeting 'main' and 'kimura' development branches."),
+            ("Stage 2: Container Environment Setup", "Spins up ubuntu-latest virtual runner, installs PHP 8.2 runtime with pdo_pgsql and pdo_sqlite, and restores Composer cache."),
+            ("Stage 3: Automated Test Gate (127 Tests)", "Executes complete PHPUnit suite (80 Unit + 47 Feature tests, 397 assertions) using isolated in-memory SQLite runner."),
+            ("Stage 4: Zero-Downtime Deploy Trigger", "On 100% test passage, curls Render Deploy Hook URL with commit metadata. Broken builds are automatically blocked.")
+        ]
+        for i, (h, d) in enumerate(ci_steps):
+            p = tf_ci_l.add_paragraph() if i > 0 else tf_ci_l.paragraphs[0]
+            p.space_after = Pt(10)
+            r1 = p.add_run()
+            r1.text = f"{h}\n"
+            r1.font.name = "Segoe UI"
+            r1.font.bold = True
+            r1.font.size = Pt(11)
+            r1.font.color.rgb = COLOR_ACCENT_BLUE
+            r2 = p.add_run()
+            r2.text = d
+            r2.font.name = "Segoe UI"
+            r2.font.size = Pt(10)
+            r2.font.color.rgb = COLOR_TEXT_PRIMARY
+
+        # Right Card: Quality Controls
+        self.add_card(s36, 6.75, 1.6, 5.75, 5.3, title="Quality Assurance & Security Controls")
+        tb_ci_r = s36.shapes.add_textbox(Inches(7.0), Inches(2.25), Inches(5.25), Inches(4.5))
+        tf_ci_r = tb_ci_r.text_frame
+        tf_ci_r.word_wrap = True
+        tf_ci_r.margin_left = tf_ci_r.margin_top = tf_ci_r.margin_right = tf_ci_r.margin_bottom = 0
+
+        ci_controls = [
+            ("Strict Quality Gatekeeping", "No commit reaches production without passing every assertion. Prevents regressions in loan quotas, fine calculations, and JWT validation."),
+            ("Encrypted Webhook Secrets", "The Render Deploy Hook URL is stored strictly in GitHub Encrypted Repository Secrets (RENDER_DEPLOY_HOOK_URL), preventing credential leaks."),
+            ("High-Velocity Execution", "Complete test suite runs in under 15 seconds, providing immediate feedback to developers on pull requests."),
+            ("Audit Trail & Traceability", "Every deployment links commit SHA, test execution results, and container build logs directly in GitHub and Render consoles.")
+        ]
+        for i, (h, d) in enumerate(ci_controls):
+            p = tf_ci_r.add_paragraph() if i > 0 else tf_ci_r.paragraphs[0]
+            p.space_after = Pt(10)
+            r1 = p.add_run()
+            r1.text = f"{h}\n"
+            r1.font.name = "Segoe UI"
+            r1.font.bold = True
+            r1.font.size = Pt(11)
+            r1.font.color.rgb = COLOR_ACCENT_EMERALD
+            r2 = p.add_run()
+            r2.text = d
+            r2.font.name = "Segoe UI"
+            r2.font.size = Pt(10)
+            r2.font.color.rgb = COLOR_TEXT_PRIMARY
+
+        # -------------------------------------------------------------
+        # Slide 37: MVP Deployment Analysis: Advantages vs. Disadvantages
+        # -------------------------------------------------------------
+        s37 = self.add_blank_slide(is_dark=False)
+        self.add_header(s37, "MVP Deployment: Advantages vs. Disadvantages", category="SECTION 13: DEPLOYMENT & OPERATIONS", is_dark=False)
+
+        # Left Column: Advantages
+        adv_title_card = s37.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(0.8), Inches(1.5), Inches(5.75), Inches(0.45))
+        adv_title_card.fill.solid()
+        adv_title_card.fill.fore_color.rgb = COLOR_ACCENT_EMERALD
+        adv_title_card.line.fill.background()
+        p_at = adv_title_card.text_frame.paragraphs[0]
+        p_at.text = "PROS: ARCHITECTURAL ADVANTAGES"
+        p_at.font.name = "Segoe UI"
+        p_at.font.size = Pt(11)
+        p_at.font.bold = True
+        p_at.font.color.rgb = COLOR_CARD_BG
+
+        advantages = [
+            ("1. Zero Infrastructure Expenditure ($0/mo)", "Render Free Tier + Neon DB", "Fully functional containerized web service and scalable cloud PostgreSQL database with zero financial hosting costs for MVP evaluation."),
+            ("2. Production-Grade Docker Parity", "Immutable Container + Auto SSL", "Identical runtime environment locally and in the cloud. Render automatically provisions and renews free Let's Encrypt TLS/SSL certificates."),
+            ("3. Automated CI/CD Test Gate", "GitHub Actions Deployment Hook", "127 automated tests must pass before the Render deploy hook is triggered, guaranteeing broken code never reaches production.")
+        ]
+        for i, (t, sub, desc) in enumerate(advantages):
+            top_i = 2.05 + i * 1.7
+            self.add_card(s37, 0.8, top_i, 5.75, 1.55)
+            tb = s37.shapes.add_textbox(Inches(1.05), Inches(top_i + 0.15), Inches(5.25), Inches(1.25))
+            tf = tb.text_frame
+            tf.word_wrap = True
+            tf.margin_left = tf.margin_top = tf.margin_right = tf.margin_bottom = 0
+            p1 = tf.paragraphs[0]
+            p1.text = t
+            p1.font.name = "Segoe UI"
+            p1.font.size = Pt(12)
+            p1.font.bold = True
+            p1.font.color.rgb = COLOR_ACCENT_EMERALD
+            p2 = tf.add_paragraph()
+            p2.text = sub
+            p2.font.name = "Segoe UI"
+            p2.font.size = Pt(9.5)
+            p2.font.bold = True
+            p2.font.color.rgb = COLOR_TEXT_MUTED
+            p2.space_after = Pt(4)
+            p3 = tf.add_paragraph()
+            p3.text = desc
+            p3.font.name = "Segoe UI"
+            p3.font.size = Pt(10)
+            p3.font.color.rgb = COLOR_TEXT_PRIMARY
+
+        # Right Column: Disadvantages / Trade-offs
+        dis_title_card = s37.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(6.75), Inches(1.5), Inches(5.75), Inches(0.45))
+        dis_title_card.fill.solid()
+        dis_title_card.fill.fore_color.rgb = COLOR_ACCENT_AMBER
+        dis_title_card.line.fill.background()
+        p_dt = dis_title_card.text_frame.paragraphs[0]
+        p_dt.text = "CONS: MVP TRADE-OFFS & LIMITATIONS"
+        p_dt.font.name = "Segoe UI"
+        p_dt.font.size = Pt(11)
+        p_dt.font.bold = True
+        p_dt.font.color.rgb = COLOR_CARD_BG
+
+        disadvantages = [
+            ("1. Free-Tier Inactivity Sleep", "15-Min Inactivity Timeout", "Render puts free containers to sleep after 15 minutes of inactivity; the initial wake-up request incurs a 30 to 50-second cold start latency delay."),
+            ("2. Compute & Memory Ceiling", "0.1 CPU & 512 MB RAM", "Free tier bounds high concurrency and memory-intensive batch operations (easily upgraded to Starter $7/mo for dedicated CPU and no sleep)."),
+            ("3. Ephemeral Disk & Simulated Flow", "Stateless Container Architecture", "Container filesystem resets on redeploy (all state safely stored in Neon DB); Daraja M-Pesa operates in simulated flow for evaluation safety.")
+        ]
+        for i, (t, sub, desc) in enumerate(disadvantages):
+            top_i = 2.05 + i * 1.7
+            self.add_card(s37, 6.75, top_i, 5.75, 1.55)
+            tb = s37.shapes.add_textbox(Inches(7.0), Inches(top_i + 0.15), Inches(5.25), Inches(1.25))
+            tf = tb.text_frame
+            tf.word_wrap = True
+            tf.margin_left = tf.margin_top = tf.margin_right = tf.margin_bottom = 0
+            p1 = tf.paragraphs[0]
+            p1.text = t
+            p1.font.name = "Segoe UI"
+            p1.font.size = Pt(12)
+            p1.font.bold = True
+            p1.font.color.rgb = COLOR_ACCENT_AMBER
+            p2 = tf.add_paragraph()
+            p2.text = sub
+            p2.font.name = "Segoe UI"
+            p2.font.size = Pt(9.5)
+            p2.font.bold = True
+            p2.font.color.rgb = COLOR_TEXT_MUTED
+            p2.space_after = Pt(4)
+            p3 = tf.add_paragraph()
+            p3.text = desc
+            p3.font.name = "Segoe UI"
+            p3.font.size = Pt(10)
+            p3.font.color.rgb = COLOR_TEXT_PRIMARY
+
+        # -------------------------------------------------------------
+        # Slide 38: Alternative Bare-Metal Setup & CLI Pipeline (Light Theme)
+        # -------------------------------------------------------------
+        s38 = self.add_blank_slide(is_dark=False)
+        self.add_header(s38, "Alternative Bare-Metal / Local CLI Setup", category="SECTION 13: DEPLOYMENT & OPERATIONS", is_dark=False)
 
         steps = [
             ("Step 1: Clone Repository & PHP Dependencies", "git clone https://github.com/lornaarwa/Smart-library-management-system.git\ncd backend && composer install --no-dev --optimize-autoloader"),
@@ -1340,9 +1495,9 @@ public function convert(?float $amount, ?string $from, string $to = 'KES'): ?flo
 
         for i, (s_title, s_cmd) in enumerate(steps):
             s_top = 1.55 + i * 1.15
-            self.add_card(s36, 0.8, s_top, 11.733, 1.05)
+            self.add_card(s38, 0.8, s_top, 11.733, 1.05)
 
-            tb_s = s36.shapes.add_textbox(Inches(1.0), Inches(s_top + 0.12), Inches(11.333), Inches(0.8))
+            tb_s = s38.shapes.add_textbox(Inches(1.0), Inches(s_top + 0.12), Inches(11.333), Inches(0.8))
             tf_s = tb_s.text_frame
             tf_s.word_wrap = True
             tf_s.margin_left = tf_s.margin_top = tf_s.margin_right = tf_s.margin_bottom = 0
@@ -1361,10 +1516,10 @@ public function convert(?float $amount, ?string $from, string $to = 'KES'): ?flo
             p_sc.font.color.rgb = COLOR_TEXT_PRIMARY
 
         # -------------------------------------------------------------
-        # Slide 37: Future Improvements & Strategic Roadmap (Light Theme)
+        # Slide 39: Future Improvements & Strategic Roadmap (Light Theme)
         # -------------------------------------------------------------
-        s37 = self.add_blank_slide(is_dark=False)
-        self.add_header(s37, "Strategic Roadmap & Future Enhancements", category="SECTION 14: FUTURE ROADMAP", is_dark=False)
+        s39 = self.add_blank_slide(is_dark=False)
+        self.add_header(s39, "Strategic Roadmap & Future Enhancements", category="SECTION 14: FUTURE ROADMAP", is_dark=False)
 
         roadmap = [
             ("1. Hardware RFID & Barcode Scanners", "WebUSB & HID Scanner Listeners", "Enable hands-free, high-throughput book checkout and inventory auditing directly from browser workstations without auxiliary client drivers."),
@@ -1376,9 +1531,9 @@ public function convert(?float $amount, ?string $from, string $to = 'KES'): ?flo
         for i, (r_title, r_sub, r_desc) in enumerate(roadmap):
             c_left = 0.8 + (i % 2) * 5.95
             c_top = 1.6 + (i // 2) * 2.7
-            self.add_card(s37, c_left, c_top, 5.75, 2.5)
+            self.add_card(s39, c_left, c_top, 5.75, 2.5)
 
-            tb_r = s37.shapes.add_textbox(Inches(c_left + 0.3), Inches(c_top + 0.25), Inches(5.15), Inches(2.0))
+            tb_r = s39.shapes.add_textbox(Inches(c_left + 0.3), Inches(c_top + 0.25), Inches(5.15), Inches(2.0))
             tf_r = tb_r.text_frame
             tf_r.word_wrap = True
             tf_r.margin_left = tf_r.margin_top = tf_r.margin_right = tf_r.margin_bottom = 0
@@ -1405,12 +1560,12 @@ public function convert(?float $amount, ?string $from, string $to = 'KES'): ?flo
             p3.font.color.rgb = COLOR_TEXT_PRIMARY
 
         # -------------------------------------------------------------
-        # Slide 38: Conclusion & Final Evaluation (Dark Theme)
+        # Slide 40: Conclusion & Final Evaluation (Dark Theme)
         # -------------------------------------------------------------
-        s38 = self.add_blank_slide(is_dark=True)
-        self.add_header(s38, "Conclusion & Architectural Summary", category="SECTION 15: CONCLUSION", is_dark=True)
+        s40 = self.add_blank_slide(is_dark=True)
+        self.add_header(s40, "Conclusion & Architectural Summary", category="SECTION 15: CONCLUSION", is_dark=True)
 
-        c_box = s38.shapes.add_textbox(Inches(0.8), Inches(1.8), Inches(11.733), Inches(5.0))
+        c_box = s40.shapes.add_textbox(Inches(0.8), Inches(1.8), Inches(11.733), Inches(5.0))
         tf_c = c_box.text_frame
         tf_c.word_wrap = True
 
@@ -1426,7 +1581,7 @@ public function convert(?float $amount, ?string $from, string $to = 'KES'): ?flo
         p_c2.text = (
             "MaktabaBora redefines modern library management by uniting physical inventory administration with an advanced "
             "digital ecosystem. By combining a headless, interface-driven Laravel 11 REST API, an intuitive React 18 frontend, "
-            "robust PostgreSQL 3NF data modeling, cashless Safaricom Daraja M-Pesa payments, and grounded Retrieval-Augmented "
+            "robust PostgreSQL 3NF data modeling, cashless Safaricom Daraja M-Pesa payments (simulated for MVP), and grounded Retrieval-Augmented "
             "Generation (RAG) AI, the platform delivers an enterprise-grade, secure, and production-ready solution."
         )
         p_c2.font.name = "Segoe UI"
@@ -1439,7 +1594,7 @@ public function convert(?float $amount, ?string $from, string $to = 'KES'): ?flo
             "✔ 100% Passing Automated Tests (127/127)",
             "✔ 11 High-Resolution Horizontal A4 UML Diagrams",
             "✔ Zero Database Session Bloat (Stateless HMAC-SHA256 JWT)",
-            "✔ Cashless Mobile Money Settlement via Safaricom Daraja"
+            "✔ Containerized Render & Neon DB Deployment with GitHub Actions CI/CD"
         ]
         for pill_t in c_pillars:
             p_pil = tf_c.add_paragraph()
@@ -1460,3 +1615,4 @@ public function convert(?float $amount, ?string $from, string $to = 'KES'): ?flo
 if __name__ == "__main__":
     builder = MaktabaBoraDeckBuilder()
     builder.build_deck()
+

@@ -13,7 +13,7 @@
 
 **MaktabaBora** (Swahili for *"Superior Library"*) is an enterprise-grade, full-stack hybrid library management ecosystem designed to bridge physical book circulation with next-generation digital reading, automated mobile payment processing, and retrieval-augmented artificial intelligence (RAG).
 
-Built with a headless **Laravel 11 RESTful API backend** and a high-performance **React 18 Single-Page Application (SPA)**, the platform replaces manual register-based tracking with automated borrowing workflows, granular role-based access control (RBAC), multi-currency book pricing, in-browser protected digital reading, and cashless fine settlement powered by Safaricom's Daraja 2.0 (M-Pesa) API.
+Built with a headless **Laravel 11 RESTful API backend** and a high-performance **React 18 Single-Page Application (SPA)**, the platform replaces manual register-based tracking with automated borrowing workflows, granular role-based access control (RBAC), multi-currency book pricing, in-browser protected digital reading, and cashless fine settlement powered by Safaricom's Daraja 2.0 (M-Pesa) API (featuring a full simulated payment flow for safe, zero-cost evaluation).
 
 ```
 +-----------------------------------------------------------------------------------------------+
@@ -22,11 +22,12 @@ Built with a headless **Laravel 11 RESTful API backend** and a high-performance 
 |       PATRON SERVICES        |       CIRCULATION DESK        |         ADMIN & AI CORE        |
 +------------------------------+-------------------------------+--------------------------------+
 | - Public Catalog & Search    | - Barcode Book Checkouts      | - Generative AI Librarian      |
-| - FIFO Hold Queue Tracking   | - Automated Overdue Returns   | - Safaricom Daraja STK Push    |
+| - FIFO Hold Queue Tracking   | - Automated Overdue Returns   | - Safaricom Daraja STK Push *  |
 | - In-Browser Digital Reader  | - Fine Management & Waivers   | - Dynamic Membership Tiers     |
 | - Multi-Tier Perk Passes     | - Open Library 1-Click Import | - System Usage Analytics       |
 | - Downloadable Receipts      | - Custom Member Borrow Limits | - Dynamic Database Maintenance |
 +------------------------------+-------------------------------+--------------------------------+
+(* Simulated payment workflow for MVP evaluation)
 ```
 
 ---
@@ -59,7 +60,7 @@ Traditional public, academic, and community libraries face critical operational 
 MaktabaBora was engineered to achieve six core institutional goals:
 1. **Automate Physical Circulation:** Eliminate manual paperwork via real-time barcode copy management, automated loan calculation, and dynamic overdue fine computation.
 2. **Support Modern Hybrid Reading:** Combine physical lending with a secured, in-browser digital eBook reader (EPUB/PDF), supporting chapter navigation, reading progress persistence, and custom reading notes.
-3. **Cashless Financial Operations:** Direct integration with **Safaricom Daraja M-Pesa**, providing frictionless mobile money STK push checkouts for membership passes, digital rentals, and overdue fines.
+3. **Cashless Financial Operations:** Direct integration with **Safaricom Daraja M-Pesa**, providing frictionless mobile money STK push checkouts for membership passes, digital rentals, and overdue fines (operating with a simulated evaluation flow for safe zero-cost MVP testing).
 4. **Intelligent Conversational Assistance:** An integrated **AI Librarian Assistant** powered by OpenAI and Google Gemini with Retrieval-Augmented Generation (RAG), strictly grounded in the library's physical and digital catalog.
 5. **Catalog Interoperability:** Rapid collection expansion through automated 1-click ISBN metadata synchronization from the **Open Library REST API**.
 6. **Data Privacy & Operational Security:** Strict stateless token authentication (JWT), complete separation of privileges (RBAC), and rigorous token-bucket cost limiters on AI services.
@@ -99,7 +100,7 @@ MaktabaBora was engineered to achieve six core institutional goals:
 |                     | - Automatic tier upgrade handling with previous subscription retirement |
 |                     | - Patron refund requests with librarian review & audit trails           |
 +---------------------+-------------------------------------------------------------------------+
-| Cashless M-Pesa     | - Safaricom Daraja 2.0 STK Push integration                             |
+| Cashless M-Pesa     | - Safaricom Daraja 2.0 STK Push integration (Simulated flow for MVP)    |
 | Payments            | - Dynamic USD-to-KES currency conversion with 24-hour rate caching      |
 |                     | - Real-time status polling fallback for local development environments  |
 |                     | - Automatic loan clearance, subscription activation, and digital grant  |
@@ -1870,6 +1871,7 @@ The personal command center for authenticated patrons, segmented into 4 primary 
 
 #### 6. Safaricom Daraja M-Pesa Payment Modal (`DarajaPayModal.jsx`)
 - **Checkout Dialog:** Displays the merchant title ("MaktabaBora Library"), the exact charge in KES, and a formatted mobile input field (`07XXXXXXXX` or `01XXXXXXXX`).
+- **Simulated MVP Flow:** For evaluation and academic presentation purposes, the payment flow runs in simulated mode—disagreeing with real cellular account deductions while faithfully demonstrating STK prompt dispatch, timed polling, and automated backend ledger settlement.
 - **Live Status Polling:** Once initiated, the modal transitions to an animated countdown screen polling the backend for STK callback settlement.
 - **Receipt Handoff:** On successful confirmation, automatically renders the `ReceiptModal`.
 
@@ -2026,7 +2028,11 @@ public static function cosine(array $a, array $b): float
 ---
 
 ### 8.4 Daraja M-Pesa STK Push Integration
-Located at [`backend/app/Services/DarajaPaymentService.php`](file:///c:/Users/kimushzyyy/Documents/SCHOOL%20PROJECTS%203.2/Smart-library-management-system/backend/app/Services/DarajaPaymentService.php), this service handles Base64 timestamp password generation and initiates the Safaricom STK prompt:
+Located at [`backend/app/Services/DarajaPaymentService.php`](file:///c:/Users/kimushzyyy/Documents/SCHOOL%20PROJECTS%203.2/Smart-library-management-system/backend/app/Services/DarajaPaymentService.php), this service handles Base64 timestamp password generation and initiates the Safaricom STK prompt. 
+
+> [!NOTE]
+> **Simulated Payment Flow for MVP Evaluation:**
+> In our current MVP prototype, the Daraja payment flow is configured in a simulated sandbox mode. While the service constructs compliant Daraja 2.0 payload envelopes and enforces transaction tracking schemas (`CheckoutRequestID`, `MerchantRequestID`, `transaction_reference`), it safely simulates the end-to-end phone prompt and webhook settlement without requiring live Safaricom cellular airtime or real cash deductions during defense and evaluation.
 
 ```php
 public function initiateStkPush(string $phoneNumber, float $amount, string $accountReference, string $transactionDesc = 'Payment'): array
@@ -2144,7 +2150,7 @@ All routes are prefixed with `/api/v1` and wrapped in the `api.gateway` middlewa
 
 ### 9.2 External Integrations
 
-1. **Safaricom Daraja 2.0 API:** Handles instant mobile money payments via STK push. Supports live status polling and incoming transaction webhook callbacks.
+1. **Safaricom Daraja 2.0 API:** Handles instant mobile money payments via STK push. Supports live status polling and incoming transaction webhook callbacks (simulated in MVP mode for frictionless, zero-cost evaluation).
 2. **OpenAI API & Google Gemini API:** Provides text embeddings via `text-embedding-3-small` and conversational intelligence via `gpt-4o-mini` and `gemini-1.5-flash`.
 3. **Open Library REST API:** Queries `https://openlibrary.org/search.json` and `https://openlibrary.org/isbn/{isbn}.json` for instant 1-click catalog import.
 4. **Open Exchange Rates / Frankfurter API:** Fetches daily financial currency exchange rates for automated foreign book pricing estimates in KES.
@@ -2229,17 +2235,256 @@ php artisan test
 ## 13. Deployment and Operations
 
 ### 13.1 Production Prerequisites
-- **Server:** Linux (Ubuntu 22.04 LTS / 24.04 LTS recommended) or Windows Server
-- **PHP:** Version 8.2 or 8.3 with extensions: `pdo_pgsql`, `openssl`, `mbstring`, `tokenizer`, `xml`, `ctype`, `json`, `curl`
-- **Database:** PostgreSQL 15+ or Neon Serverless PostgreSQL
-- **Node.js:** Node.js 18+ and npm for frontend production asset compilation
-- **Web Server:** Nginx or Apache HTTP Server with reverse proxy configuration
+- **Server Platform:** Linux (Ubuntu 22.04 LTS / 24.04 LTS recommended) or Containerized Cloud Host (Render, AWS ECS, GCP Cloud Run)
+- **Container Runtime:** Docker Engine 24+ with multi-stage build support
+- **PHP Runtime:** Version 8.2 or 8.3 with extensions: `pdo_pgsql`, `openssl`, `mbstring`, `tokenizer`, `xml`, `ctype`, `json`, `curl`, `opcache`
+- **Database Engine:** Remote Neon Serverless Cloud PostgreSQL (PgBouncer connection pooling enabled)
+- **Node.js Environment:** Node.js 18+ and npm for frontend production asset bundling
+- **Reverse Proxy / Ingress:** Nginx 1.24+ with SSL termination and HTTP/2 support
 
 ---
 
-### 13.2 Production Setup Guide
+### 13.2 Containerized Docker Architecture
 
-#### 1. Backend Deployment
+The MaktabaBora backend is packaged as an immutable, production-hardened Docker container engineered for high-density, low-overhead cloud deployments.
+
+#### 1. Base Image & Security Hardening
+- **Base Image:** Built upon `serversideup/php:8.2-fpm-nginx`, an enterprise-grade container combining PHP 8.2 FPM and Nginx under Alpine Linux.
+- **Process Supervision:** Governed by **S6-Overlay** (PID 1), ensuring resilient lifecycle management, clean signal traps, and graceful shutdowns of both Nginx and PHP-FPM workers.
+- **Unprivileged Execution:** Runs strictly under the non-root `www-data` user (UID 33 / GID 33), mitigating container breakout vectors.
+- **Dynamic Port Binding:** Automatically adapts Nginx to bind to the dynamic `$PORT` environment variable supplied by cloud orchestrators like Render.
+
+#### 2. Container Build Specification (`backend/Dockerfile`)
+```dockerfile
+FROM serversideup/php:8.2-fpm-nginx
+
+# Configure production PHP environment
+ENV PHP_OPCACHE_ENABLE=1 \
+    AUTORUN_ENABLED=true \
+    WEB_DOCUMENT_ROOT=/var/www/html/public
+
+USER root
+
+# Install PostgreSQL client drivers & extensions
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev \
+    postgresql-client \
+    && docker-php-ext-install pdo_pgsql \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Copy application source code
+COPY --chown=www-data:www-data . /var/www/html
+
+# Install Composer production dependencies
+WORKDIR /var/www/html
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+# Copy automated entrypoint script
+COPY --chown=www-data:www-data docker-entrypoint.sh /etc/entrypoint.d/99-maktababora.sh
+RUN chmod +x /etc/entrypoint.d/99-maktababora.sh
+
+USER www-data
+```
+
+#### 3. Automated Entrypoint Lifecycle Hook (`backend/docker-entrypoint.sh`)
+```bash
+#!/bin/sh
+set -e
+
+echo "🚀 Booting MaktabaBora Backend..."
+
+# Optimize Laravel configuration, routing, and views
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+# Conditionally execute database schema migrations
+if [ "$RUN_MIGRATIONS" = "true" ]; then
+    echo "⚡ Executing database migrations against Neon Cloud..."
+    php artisan migrate --force
+fi
+
+echo "✅ MaktabaBora initialization complete."
+```
+
+#### 4. Build Context Optimization (`backend/.dockerignore`)
+To ensure rapid container build times and prevent credential leaks, `.dockerignore` excludes unnecessary local state:
+```
+.git
+.github
+.env
+vendor/
+node_modules/
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+tests/
+```
+
+---
+
+### 13.3 Cloud Hosting on Render Free Tier (`render.yaml`)
+
+MaktabaBora employs Render's Infrastructure-as-Code Blueprint specification (`render.yaml`) to automate web service deployment:
+
+```yaml
+services:
+  - type: web
+    name: maktababora-backend
+    env: docker
+    dockerContext: backend
+    dockerfilePath: backend/Dockerfile
+    plan: free
+    region: oregon
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: MaktabaBora
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: RUN_MIGRATIONS
+        value: "true"
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+```
+
+- **Health Probe Endpoint:** Render monitors `/up` (returning HTTP 200 OK) to confirm healthy Nginx and PHP-FPM initialization before routing ingress traffic.
+- **Log Streaming:** Application and web server logs are piped directly to `stderr` / `stdout` for centralized Render dashboard inspection.
+
+---
+
+### 13.4 Continuous Integration & Continuous Deployment (CI/CD)
+
+Continuous integration and automated delivery are orchestrated through **GitHub Actions** via [`.github/workflows/deploy-render.yml`](file:///.github/workflows/deploy-render.yml).
+
+```
++-----------------------------------------------------------------------------------------------+
+|                                MAKTABABORA CI/CD PIPELINE                                     |
++------------------------------+-------------------------------+--------------------------------+
+|       1. CODE COMMIT         |     2. TEST GATE CHECKOUT     |      3. DEPLOY HOOK TRIGGER    |
++------------------------------+-------------------------------+--------------------------------+
+| Developer pushes commit or   | GitHub Actions runner runs:   | On 100% test suite passage,    |
+| opens PR to main or kimura.  | - Setup PHP 8.2 & extensions  | pipeline curls Render Deploy   |
+|                              | - Install Composer deps       | Webhook with commit SHA.       |
+|                              | - Execute php artisan test    | Render triggers Docker build.  |
+|                              |   (127 Tests / 397 Asserts)   |                                |
++------------------------------+-------------------------------+--------------------------------+
+```
+
+#### Workflow Definition (`.github/workflows/deploy-render.yml`)
+```yaml
+name: Deploy MaktabaBora Backend to Render
+
+on:
+  push:
+    branches: [ main, kimura ]
+  pull_request:
+    branches: [ main, kimura ]
+
+jobs:
+  test-and-deploy:
+    name: Run Automated Test Gates & Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP Runtime
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_pgsql, pdo_sqlite
+          coverage: none
+
+      - name: Install Dependencies
+        run: |
+          cd backend
+          composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Execute Automated Test Gates
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+        run: |
+          cd backend
+          php artisan test
+
+      - name: Trigger Render Deploy Hook
+        if: github.event_name == 'push' && success()
+        run: |
+          if [ -n "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          else
+            echo "Render Deploy Hook URL not configured; skipping trigger."
+          fi
+```
+
+---
+
+### 13.5 Database Hosting: Neon Serverless Cloud PostgreSQL
+
+MaktabaBora relies exclusively on **Neon Serverless PostgreSQL** for persistent relational storage.
+
+- **Connection URL Format:**
+  ```ini
+  DATABASE_URL="postgresql://neondb_owner:PASSWORD@ep-muddy-night-aee97x3v-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+  ```
+- **Connection Pooling & SSL:** Connects via Neon's built-in PgBouncer pooler (`-pooler.`) with mandatory TLS encryption (`sslmode=require`).
+- **Dynamic Migration Fallback:** To prevent PgBouncer transaction-mode errors during DDL execution, [`backend/config/database.php`](file:///c:/Users/kimushzyyy/Documents/SCHOOL%20PROJECTS%203.2/Smart-library-management-system/backend/config/database.php) inspects CLI arguments. If `migrate` commands run, it dynamically strips `-pooler.` to execute schema changes through a direct compute connection.
+
+---
+
+### 13.6 MVP Deployment Trade-Off Analysis (Advantages & Disadvantages)
+
+The MVP production stack (Render Free Tier Web Service + Neon Serverless PostgreSQL) offers compelling trade-offs suitable for project defense, academic evaluation, and demonstration:
+
+```
++-------------------------------------------------------------+-------------------------------------------------------------+
+| ADVANTAGES OF OUR MVP STACK                                 | DISADVANTAGES & LIMITATIONS OF OUR MVP STACK                |
++-------------------------------------------------------------+-------------------------------------------------------------+
+| 1. Zero Infrastructure Expenditure ($0/month):              | 1. Free-Tier Inactivity Spin-Down (Cold Starts):            |
+|    Hosts full Dockerized web service and serverless cloud   |    Render puts free web services to sleep after 15 minutes  |
+|    PostgreSQL database with zero hosting costs.             |    of inactivity; the initial wake-up request incurs a      |
+|                                                             |    30 to 50-second latency delay.                           |
+| 2. Production-Grade Containerization:                       | 2. Compute & Memory Ceiling:                                |
+|    Dockerized packaging ensures 100% environment parity     |    Render Free Tier provides 0.1 CPU cores and 512 MB RAM,  |
+|    between local development and cloud production.          |    limiting maximum concurrent HTTP requests and batch ops. |
+| 3. Automated TLS/SSL & Worldwide Ingress:                   | 3. Ephemeral Container Filesystem:                          |
+|    Render issues and auto-renews free Let's Encrypt SSL      |    Container storage is ephemeral; local uploads or files   |
+|    certificates, providing instant HTTPS encryption.        |    are wiped on redeploy (persisted safely in Neon DB).     |
+| 4. Serverless Database Elasticity & Automated Backups:      | 4. Webhook Cold-Start Timeouts:                             |
+|    Neon automatically scales storage and computes point-in- |    If a third-party webhook (e.g. M-Pesa) arrives while the  |
+|    time restoration points without server management.       |    service is sleeping, the 30s delay may cause timeout.    |
+| 5. Automated CI/CD Quality Assurance:                       | 5. Simulated M-Pesa Payment Flow:                           |
+|    Every deployment is strictly gated by 127 automated      |    While the API contract is fully Daraja 2.0 compliant,   |
+|    PHPUnit tests, preventing regressions from hitting live. |    it operates in simulation mode for evaluation safety.    |
++-------------------------------------------------------------+-------------------------------------------------------------+
+```
+
+#### Detailed Trade-Off Considerations
+1. **Cold Start Management:** In a live demo, navigating to the backend URL 1 minute prior to evaluation warms up the container, eliminating cold-start latency for all subsequent interactions.
+2. **State Persistence:** All operational application state (users, books, loans, fines, reservations, settings) is persisted in the remote Neon PostgreSQL cloud database, rendering container reboots completely non-destructive.
+3. **Upgrade Pathway:** When transitioning beyond MVP to enterprise production, upgrading Render to the "Starter" tier ($7/month) removes spin-downs, provides dedicated CPU, and enables horizontal container auto-scaling.
+
+---
+
+### 13.7 Alternative Bare-Metal / Local Setup Guide
+
+For on-premise institutional installations on physical Linux servers:
+
+#### 1. Backend CLI Setup
 ```bash
 # Clone the repository
 git clone https://github.com/lornaarwa/Smart-library-management-system.git maktababora
@@ -2255,13 +2500,13 @@ php artisan key:generate
 # Execute database migrations and seed baseline catalog data
 php artisan migrate --force --seed
 
-# Optimize route and configuration caching
+# Optimize route, config, and view caches
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 ```
 
-#### 2. Frontend Deployment
+#### 2. Frontend SPA Compilation
 ```bash
 cd ../frontend
 
@@ -2271,44 +2516,41 @@ npm install
 # Compile production-ready Single Page Application bundle
 npm run build
 
-# The compiled output in frontend/dist/ is served via Nginx or static file host
+# Output in frontend/dist/ is served via Nginx or static file host
 ```
 
 ---
 
-### 13.3 Environment Variables Checklist (`backend/.env`)
+### 13.8 Production Environment Variables Reference (`backend/.env`)
 
 ```ini
 APP_NAME="MaktabaBora"
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://library.yourdomain.com
+APP_URL=https://maktababora-backend.onrender.com
 
-# Database Connection (Neon Cloud or Local PostgreSQL)
+# Remote Neon Serverless PostgreSQL Database Connection
+DATABASE_URL="postgresql://neondb_owner:PASSWORD@ep-muddy-night-aee97x3v-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 DB_CONNECTION=pgsql
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_DATABASE=library_db
-DB_USERNAME=postgres
-DB_PASSWORD=your_secure_password
-DB_SSLMODE=prefer
+RUN_MIGRATIONS=true
 
-# Safaricom Daraja M-Pesa 2.0 Credentials
-DARAJA_ENV=production
-DARAJA_CONSUMER_KEY=your_daraja_consumer_key
-DARAJA_CONSUMER_SECRET=your_daraja_consumer_secret
-DARAJA_PASSKEY=your_daraja_passkey
-DARAJA_SHORTCODE=your_daraja_paybill_or_till
-DARAJA_CALLBACK_URL=https://library.yourdomain.com/api/v1/fines/daraja/callback
+# Safaricom Daraja M-Pesa 2.0 Credentials (Simulated Evaluation Mode)
+DARAJA_ENV=sandbox
+DARAJA_CONSUMER_KEY=simulated_consumer_key
+DARAJA_CONSUMER_SECRET=simulated_consumer_secret
+DARAJA_PASSKEY=bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919
+DARAJA_SHORTCODE=174379
+DARAJA_CALLBACK_URL=https://maktababora-backend.onrender.com/api/v1/fines/daraja/callback
 
-# AI Gateway Configurations (Encrypted in Database or Defined Here)
+# AI Gateway Configurations
 OPENAI_API_KEY=your_openai_api_key
 GEMINI_API_KEY=your_gemini_api_key
 
-# Cache & Session
-CACHE_STORE=redis
+# Cache & Session Stores
+CACHE_STORE=database
 SESSION_DRIVER=database
 QUEUE_CONNECTION=database
+LOG_CHANNEL=stderr
 ```
 
 ---

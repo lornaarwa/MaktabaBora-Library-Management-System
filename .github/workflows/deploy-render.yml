@@ -1,0 +1,50 @@
+name: MaktabaBora CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, kimura ]
+  pull_request:
+    branches: [ main, kimura ]
+
+jobs:
+  test:
+    name: Run Automated Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP Runtime
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_sqlite, bcmath, curl
+          coverage: none
+
+      - name: Install Composer Dependencies
+        working-directory: ./backend
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Execute PHPUnit Test Suite
+        working-directory: ./backend
+        run: php artisan test
+
+  deploy:
+    name: Trigger Render Deployment
+    needs: test
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/kimura'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Render Deploy Hook
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -n "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "Triggering automated deploy hook on Render..."
+            curl -s -X POST "$RENDER_DEPLOY_HOOK_URL"
+          else
+            echo "RENDER_DEPLOY_HOOK_URL secret not configured. Skipping manual webhook trigger (Render Git auto-deploy will process the push)."
+          fi
+
