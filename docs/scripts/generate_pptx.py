@@ -1280,16 +1280,16 @@ public function convert(?float $amount, ?string $from, string $to = 'KES'): ?flo
 
         # -------------------------------------------------------------
         # -------------------------------------------------------------
-        # Slide 35: Containerized Architecture & Cloud Deployment (Light Theme)
+        # Slide 35: Unified Fullstack Container Architecture (Light Theme)
         # -------------------------------------------------------------
         s35 = self.add_blank_slide(is_dark=False)
-        self.add_header(s35, "Containerized Architecture & Cloud Deployment", category="SECTION 13: DEPLOYMENT & OPERATIONS", is_dark=False)
+        self.add_header(s35, "Unified Fullstack Container Architecture", category="SECTION 13: DEPLOYMENT & OPERATIONS", is_dark=False)
 
         cloud_cards = [
-            ("1. Multi-Process Container", "serversideup/php:8.2-fpm-nginx", "Alpine Linux base uniting Nginx and PHP-FPM 8.2 under unprivileged www-data (UID 33). Supervised by S6-Overlay with dynamic $PORT binding."),
-            ("2. Cloud Web Service", "Render Blueprint (render.yaml)", "Declarative Infrastructure-as-Code deployment on Render Free Tier with automated /up health probe monitoring and stderr log streaming."),
+            ("1. Multi-Stage Docker Build", "node:20-alpine + php:8.2-fpm-nginx", "Stage 1 compiles React 18 SPA with Vite into /dist. Stage 2 serves Nginx + PHP-FPM 8.2 and copies static SPA into Laravel public/ folder."),
+            ("2. Single Turnkey Service", "Render Blueprint (render.yaml)", "Deploys both frontend UI and backend API as a single web service, eliminating CORS complexity and hardcoded local ports."),
             ("3. Serverless Cloud Database", "Neon PostgreSQL (AWS Ohio)", "High-availability serverless PostgreSQL 16 with PgBouncer connection pooling and dynamic direct-migration fallback detection."),
-            ("4. Automated Entrypoint Hook", "docker-entrypoint.sh Hook", "Automatically compiles configuration, route, and view caches on container startup and executes schema migrations conditionally via RUN_MIGRATIONS=true."),
+            ("4. SPA Catch-All Route", "Laravel routes/web.php", "Nginx serves static assets directly; web routes (/, /catalog, /login) are routed to index.html for client-side React Router navigation."),
             ("5. Production Optimizations", "OPcache & Bytecode Caching", "Bytecode caching enabled (PHP_OPCACHE_ENABLE=1) and Composer dependencies bundled with optimized autoloader (--no-dev --prefer-dist)."),
             ("6. Simulated M-Pesa Evaluation", "Compliant Sandbox Payment Flow", "Constructs standard Daraja 2.0 payload envelopes and polling loops in simulation mode for zero-cost, safe evaluation.")
         ]
@@ -1340,8 +1340,8 @@ public function convert(?float $amount, ?string $from, string $to = 'KES'): ?flo
 
         ci_steps = [
             ("Stage 1: Multi-Branch Trigger", "Workflow activates on push and pull-request events targeting 'main' and 'kimura' development branches."),
-            ("Stage 2: Container Environment Setup", "Spins up ubuntu-latest virtual runner, installs PHP 8.2 runtime with pdo_pgsql and pdo_sqlite, and restores Composer cache."),
-            ("Stage 3: Automated Test Gate (127 Tests)", "Executes complete PHPUnit suite (80 Unit + 47 Feature tests, 397 assertions) using isolated in-memory SQLite runner."),
+            ("Stage 2: Container Environment Setup", "Spins up ubuntu-latest virtual runner, installs PHP 8.2 and Node 20 runtimes, and restores caches."),
+            ("Stage 3: Automated Test & Build Gates", "Executes complete PHPUnit suite (127 tests, 397 assertions) and builds the React SPA bundle with Vite."),
             ("Stage 4: Zero-Downtime Deploy Trigger", "On 100% test passage, curls Render Deploy Hook URL with commit metadata. Broken builds are automatically blocked.")
         ]
         for i, (h, d) in enumerate(ci_steps):
@@ -1407,7 +1407,7 @@ public function convert(?float $amount, ?string $from, string $to = 'KES'): ?flo
 
         advantages = [
             ("1. Zero Infrastructure Expenditure ($0/mo)", "Render Free Tier + Neon DB", "Fully functional containerized web service and scalable cloud PostgreSQL database with zero financial hosting costs for MVP evaluation."),
-            ("2. Production-Grade Docker Parity", "Immutable Container + Auto SSL", "Identical runtime environment locally and in the cloud. Render automatically provisions and renews free Let's Encrypt TLS/SSL certificates."),
+            ("2. Fullstack Single-Origin Simplicity", "Unified Container + Auto SSL", "UI and API share the exact same origin, eliminating CORS issues and hardcoded ports with automated Let's Encrypt SSL."),
             ("3. Automated CI/CD Test Gate", "GitHub Actions Deployment Hook", "127 automated tests must pass before the Render deploy hook is triggered, guaranteeing broken code never reaches production.")
         ]
         for i, (t, sub, desc) in enumerate(advantages):
