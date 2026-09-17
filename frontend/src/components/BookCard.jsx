@@ -7,6 +7,7 @@ import { useLibrary } from '../context/LibraryContext';
 import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
 import { BookCover } from './ui/BookCover';
+import { api } from '../services/api';
 
 export default function BookCard({ book, onReserve, onBuyDigital, index = 0, memberActions = true }) {
     const { user } = useAuth();
@@ -24,6 +25,7 @@ export default function BookCard({ book, onReserve, onBuyDigital, index = 0, mem
             viewport={{ once: true, margin: '-40px' }}
             transition={{ duration: 0.32, delay: Math.min(index * 0.04, 0.3), ease: 'easeOut' }}
             whileHover={{ y: -4 }}
+            onMouseEnter={() => api.prefetchBook(book.id)}
             className="group relative flex flex-col justify-between rounded-xl border border-bark-100 bg-paper p-4 shadow-card transition-shadow hover:shadow-lift"
         >
 
