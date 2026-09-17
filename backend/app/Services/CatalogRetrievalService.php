@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Book;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator as Paginator;
 use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\Log;
@@ -31,23 +32,36 @@ class CatalogRetrievalService
     public function search(array $params, int $perPage = 15): LengthAwarePaginator
     {
         $queryText = trim((string) ($params['q'] ?? ''));
-        $books = $this->candidates($params);
 
-        // No query: preserve the legacy default ordering (sort_by / sort_order).
+        // No query: execute fast database-level LIMIT/OFFSET pagination without loading all records into PHP.
         if ($queryText === '') {
             $sortField = $params['sort_by'] ?? 'created_at';
             $sortOrder = (($params['sort_order'] ?? 'desc') === 'asc') ? 'asc' : 'desc';
-            $sorted = $books->sortBy($sortField, SORT_REGULAR, $sortOrder === 'desc')->values();
 
-            return $this->paginate($sorted, $perPage, $params);
+            $paginator = $this->candidateQuery($params)
+                ->orderBy($sortField, $sortOrder)
+                ->paginate($perPage);
+
+            $paginator->appends($params);
+            return $paginator;
         }
 
         $queryTerms = $this->tokenize($queryText);
 
-        // Stopword-only query (e.g. "find me a book") — fall back to default ordering.
+        // Stopword-only query (e.g. "find me a book") — fall back to database-level default ordering.
         if (count($queryTerms) === 0) {
-            return $this->paginate($books, $perPage, $params);
+            $sortField = $params['sort_by'] ?? 'created_at';
+            $sortOrder = (($params['sort_order'] ?? 'desc') === 'asc') ? 'asc' : 'desc';
+
+            $paginator = $this->candidateQuery($params)
+                ->orderBy($sortField, $sortOrder)
+                ->paginate($perPage);
+
+            $paginator->appends($params);
+            return $paginator;
         }
+
+        $books = $this->candidates($params);
 
         $indexed = $books
             ->map(fn (Book $book) => [
@@ -128,13 +142,18 @@ class CatalogRetrievalService
     }
 
     /**
-     * Candidate set after applying non-text filters (genre, author, isbn, availability).
-     *
-     * @return SupportCollection<int, Book>
+     * Candidate query builder applying non-text filters and pruning heavy TOAST columns.
      */
-    protected function candidates(array $params): SupportCollection
+    protected function candidateQuery(array $params): Builder
     {
-        $query = Book::query();
+        $query = Book::query()->select([
+            'id', 'isbn', 'title', 'author', 'publisher', 'genre',
+            'description', 'cover_image_path', 'publication_year',
+            'total_copies', 'available_copies', 'is_blocked', 'is_exclusive',
+            'digital_purchase_price', 'foreign_price', 'foreign_currency',
+            'embedding',
+            'created_at', 'updated_at',
+        ]);
 
         if (! empty($params['genre'])) {
             $query->where('genre', $params['genre']);
@@ -152,8 +171,18 @@ class CatalogRetrievalService
             $query->where('available_copies', '>', 0)->where('is_blocked', false);
         }
 
+        return $query;
+    }
+
+    /**
+     * Candidate set after applying non-text filters (genre, author, isbn, availability).
+     *
+     * @return SupportCollection<int, Book>
+     */
+    protected function candidates(array $params): SupportCollection
+    {
         // Return a base collection so map/filter/pluck behave predictably on arrays.
-        return new SupportCollection($query->get()->all());
+        return new SupportCollection($this->candidateQuery($params)->get()->all());
     }
 
     protected function bookText(Book $book): string
