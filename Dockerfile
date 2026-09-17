@@ -51,5 +51,16 @@ COPY --from=frontend-builder --chown=www-data:www-data /app/frontend/dist/ /var/
 COPY --chown=www-data:www-data backend/docker-entrypoint.sh /etc/entrypoint.d/99-maktababora.sh
 RUN chmod +x /etc/entrypoint.d/99-maktababora.sh
 
+# Copy dynamic port entrypoint wrapper
+COPY --chown=www-data:www-data backend/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Expose default HTTP port for container documentation
+EXPOSE 8080
+
 # Run under unprivileged user
 USER www-data
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["/init"]
+
