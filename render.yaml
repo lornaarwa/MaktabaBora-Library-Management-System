@@ -4,10 +4,10 @@
 # ==============================================================================
 services:
   - type: web
-    name: maktababora-backend
+    name: maktababora
     runtime: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     plan: free
     region: oregon
     healthCheckPath: /up
