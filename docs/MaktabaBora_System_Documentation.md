@@ -2244,21 +2244,32 @@ php artisan test
 
 ---
 
-### 13.2 Containerized Docker Architecture
+### 13.2 Unified Fullstack Container Architecture
 
-The MaktabaBora backend is packaged as an immutable, production-hardened Docker container engineered for high-density, low-overhead cloud deployments.
+MaktabaBora packages both the **React 18 Single-Page Application (SPA)** and the **Laravel 11 REST API** into a single, unified, production-hardened Docker container. This eliminates cross-origin resource sharing (CORS) friction, eliminates hardcoded local ports in production, and provides a single turnkey web service.
 
-#### 1. Base Image & Security Hardening
-- **Base Image:** Built upon `serversideup/php:8.2-fpm-nginx`, an enterprise-grade container combining PHP 8.2 FPM and Nginx under Alpine Linux.
-- **Process Supervision:** Governed by **S6-Overlay** (PID 1), ensuring resilient lifecycle management, clean signal traps, and graceful shutdowns of both Nginx and PHP-FPM workers.
-- **Unprivileged Execution:** Runs strictly under the non-root `www-data` user (UID 33 / GID 33), mitigating container breakout vectors.
-- **Dynamic Port Binding:** Automatically adapts Nginx to bind to the dynamic `$PORT` environment variable supplied by cloud orchestrators like Render.
+#### 1. Multi-Stage Docker Build Architecture (`Dockerfile`)
+- **Stage 1 (`frontend-builder`):** Uses lightweight `node:20-alpine` to install dependencies (`npm ci`) and build the production Vite bundle with optimized gzip chunks.
+- **Stage 2 (`production`):** Based on `serversideup/php:8.2-fpm-nginx` (Alpine Linux). Copies the compiled frontend assets from `frontend-builder` (`dist/`) directly into Laravel's `/var/www/html/public/` directory alongside `index.php`.
+- **Process Supervision:** Governed by **S6-Overlay** (PID 1) running under the unprivileged `www-data` user (UID 33), orchestrating Nginx and PHP-FPM 8.2 workers with dynamic `$PORT` binding.
+- **SPA Routing Integration:** Nginx serves static CSS, JS, and brand images directly with high performance. For non-API routes (`/`, `/catalog`, `/login`, `/dashboard`), Laravel's `routes/web.php` catch-all serves `index.html`, handing route management to client-side React Router.
 
-#### 2. Container Build Specification (`backend/Dockerfile`)
+#### 2. Multi-Stage Build Specification (`Dockerfile`)
 ```dockerfile
-FROM serversideup/php:8.2-fpm-nginx
+# Stage 1: Build React 18 Single-Page Application (SPA)
+FROM node:20-alpine AS frontend-builder
+WORKDIR /app/frontend
 
-# Configure production PHP environment
+COPY frontend/package*.json ./
+RUN npm ci
+
+COPY frontend/ ./
+ENV VITE_API_URL=/api/v1
+RUN npm run build
+
+# Stage 2: Production PHP-FPM + Nginx Environment
+FROM serversideup/php:8.2-fpm-nginx AS production
+
 ENV PHP_OPCACHE_ENABLE=1 \
     AUTORUN_ENABLED=true \
     WEB_DOCUMENT_ROOT=/var/www/html/public
@@ -2272,113 +2283,125 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && docker-php-ext-install pdo_pgsql \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy application source code
-COPY --chown=www-data:www-data . /var/www/html
+# Copy backend application source code
+COPY --chown=www-data:www-data backend /var/www/html
 
 # Install Composer production dependencies
 WORKDIR /var/www/html
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
 
-# Copy automated entrypoint script
-COPY --chown=www-data:www-data docker-entrypoint.sh /etc/entrypoint.d/99-maktababora.sh
+# Copy compiled React SPA bundle into Laravel's public directory
+COPY --from=frontend-builder --chown=www-data:www-data /app/frontend/dist/ /var/www/html/public/
+
+# Copy automated entrypoint lifecycle script
+COPY --chown=www-data:www-data backend/docker-entrypoint.sh /etc/entrypoint.d/99-maktababora.sh
 RUN chmod +x /etc/entrypoint.d/99-maktababora.sh
 
 USER www-data
 ```
 
-#### 3. Automated Entrypoint Lifecycle Hook (`backend/docker-entrypoint.sh`)
+#### 3. Single-Page Application (SPA) Catch-All Routing (`backend/routes/web.php`)
+```php
+Route::get('/{any?}', function () {
+    $spaIndexPath = public_path('index.html');
+
+    if (file_exists($spaIndexPath)) {
+        return response()->file($spaIndexPath);
+    }
+
+    return response()->json([
+        'status' => 'active',
+        'message' => 'MaktabaBora API Backend is running.',
+        'documentation' => '/api/v1/catalog/search'
+    ]);
+})->where('any', '^(?!api|up).*$');
+```
+
+#### 4. Automated Entrypoint Lifecycle Hook (`backend/docker-entrypoint.sh`)
 ```bash
 #!/bin/sh
 set -e
 
-echo "🚀 Booting MaktabaBora Backend..."
+echo "=== Starting MaktabaBora Fullstack Container ==="
 
 # Optimize Laravel configuration, routing, and views
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+if [ -n "$APP_KEY" ]; then
+    echo ">> Caching configuration, routes, and views..."
+    php artisan config:cache || true
+    php artisan route:cache || true
+    php artisan view:cache || true
+fi
 
 # Conditionally execute database schema migrations
 if [ "$RUN_MIGRATIONS" = "true" ]; then
-    echo "⚡ Executing database migrations against Neon Cloud..."
-    php artisan migrate --force
+    echo ">> Executing database migrations against remote Neon DB..."
+    php artisan migrate --force || true
 fi
 
-echo "✅ MaktabaBora initialization complete."
-```
-
-#### 4. Build Context Optimization (`backend/.dockerignore`)
-To ensure rapid container build times and prevent credential leaks, `.dockerignore` excludes unnecessary local state:
-```
-.git
-.github
-.env
-vendor/
-node_modules/
-storage/logs/*
-storage/framework/cache/*
-storage/framework/sessions/*
-storage/framework/views/*
-tests/
+echo ">> MaktabaBora initialization complete. Passing control to Nginx & PHP-FPM..."
 ```
 
 ---
 
 ### 13.3 Cloud Hosting on Render Free Tier (`render.yaml`)
 
-MaktabaBora employs Render's Infrastructure-as-Code Blueprint specification (`render.yaml`) to automate web service deployment:
+MaktabaBora employs Render's Infrastructure-as-Code Blueprint specification (`render.yaml`) to automate the single-service fullstack deployment:
 
 ```yaml
 services:
   - type: web
-    name: maktababora-backend
-    env: docker
-    dockerContext: backend
-    dockerfilePath: backend/Dockerfile
+    name: maktababora
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     plan: free
     region: oregon
     healthCheckPath: /up
     envVars:
-      - key: APP_NAME
-        value: MaktabaBora
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
         value: false
+      - key: APP_URL
+        sync: false
       - key: APP_KEY
         generateValue: true
+      - key: DB_CONNECTION
+        value: pgsql
       - key: DATABASE_URL
         sync: false
-      - key: RUN_MIGRATIONS
-        value: "true"
+      - key: DB_SSLMODE
+        value: require
       - key: LOG_CHANNEL
         value: stderr
       - key: SESSION_DRIVER
         value: database
       - key: CACHE_STORE
         value: database
+      - key: QUEUE_CONNECTION
+        value: database
 ```
 
+- **Single Turnkey Web Service:** Serves both frontend UI and backend API from one unified URL (e.g. `https://maktababora.onrender.com`).
 - **Health Probe Endpoint:** Render monitors `/up` (returning HTTP 200 OK) to confirm healthy Nginx and PHP-FPM initialization before routing ingress traffic.
-- **Log Streaming:** Application and web server logs are piped directly to `stderr` / `stdout` for centralized Render dashboard inspection.
+- **Log Streaming:** Centralized log delivery to `stderr` / `stdout` for unified Render console inspection.
 
 ---
 
 ### 13.4 Continuous Integration & Continuous Deployment (CI/CD)
 
-Continuous integration and automated delivery are orchestrated through **GitHub Actions** via [`.github/workflows/deploy-render.yml`](file:///.github/workflows/deploy-render.yml).
+Continuous integration and delivery are orchestrated through **GitHub Actions** via [`.github/workflows/deploy-render.yml`](file:///.github/workflows/deploy-render.yml).
 
 ```
 +-----------------------------------------------------------------------------------------------+
 |                                MAKTABABORA CI/CD PIPELINE                                     |
 +------------------------------+-------------------------------+--------------------------------+
-|       1. CODE COMMIT         |     2. TEST GATE CHECKOUT     |      3. DEPLOY HOOK TRIGGER    |
+|       1. CODE COMMIT         |     2. TEST & BUILD GATES     |      3. DEPLOY HOOK TRIGGER    |
 +------------------------------+-------------------------------+--------------------------------+
-| Developer pushes commit or   | GitHub Actions runner runs:   | On 100% test suite passage,    |
-| opens PR to main or kimura.  | - Setup PHP 8.2 & extensions  | pipeline curls Render Deploy   |
-|                              | - Install Composer deps       | Webhook with commit SHA.       |
-|                              | - Execute php artisan test    | Render triggers Docker build.  |
-|                              |   (127 Tests / 397 Asserts)   |                                |
+| Developer pushes commit or   | GitHub Actions runner runs:   | On 100% test & build passage,  |
+| opens PR to main or kimura.  | - PHP 8.2 + 127 PHPUnit tests | pipeline curls Render Deploy   |
+|                              | - Node 20 + React Vite build  | Webhook with commit SHA.       |
+|                              |   (Fullstack Verification)    | Render triggers Docker build.  |
 +------------------------------+-------------------------------+--------------------------------+
 ```
 
