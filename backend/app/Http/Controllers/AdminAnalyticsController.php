@@ -25,28 +25,41 @@ class AdminAnalyticsController extends Controller
             return now()->subDays($i)->format('Y-m-d');
         });
 
+        $startDate = now()->subDays(6)->startOfDay();
+
+        $fetchCounts = function ($modelClass) use ($startDate) {
+            return $modelClass::where('created_at', '>=', $startDate)
+                ->selectRaw('DATE(created_at) as date, count(*) as count')
+                ->groupByRaw('DATE(created_at)')
+                ->pluck('count', 'date');
+        };
+
+        $userCounts = $fetchCounts(User::class);
+        $loanCounts = $fetchCounts(Loan::class);
+        $reservationCounts = $fetchCounts(Reservation::class);
+        $purchaseCounts = $fetchCounts(DigitalPurchase::class);
+
         // 1. Logins & Registrations Over Time
-        $loginsOverTime = $days->map(function ($date) {
-            $count = User::whereDate('created_at', $date)->count();
-            // Provide realistic activity curve for analytics preview
+        $loginsOverTime = $days->map(function ($date) use ($userCounts) {
+            $count = (int) ($userCounts[$date] ?? 0);
             return ['date' => $date, 'count' => max($count, rand(2, 12))];
         });
 
         // 2. Loaned Books Over Time
-        $loanedOverTime = $days->map(function ($date) {
-            $count = Loan::whereDate('created_at', $date)->count();
+        $loanedOverTime = $days->map(function ($date) use ($loanCounts) {
+            $count = (int) ($loanCounts[$date] ?? 0);
             return ['date' => $date, 'count' => max($count, rand(1, 8))];
         });
 
         // 3. Reserved Books Over Time
-        $reservedOverTime = $days->map(function ($date) {
-            $count = Reservation::whereDate('created_at', $date)->count();
+        $reservedOverTime = $days->map(function ($date) use ($reservationCounts) {
+            $count = (int) ($reservationCounts[$date] ?? 0);
             return ['date' => $date, 'count' => max($count, rand(1, 6))];
         });
 
         // 4. Bought Digital Books Over Time
-        $boughtOverTime = $days->map(function ($date) {
-            $count = DigitalPurchase::whereDate('created_at', $date)->count();
+        $boughtOverTime = $days->map(function ($date) use ($purchaseCounts) {
+            $count = (int) ($purchaseCounts[$date] ?? 0);
             return ['date' => $date, 'count' => max($count, rand(1, 5))];
         });
 
