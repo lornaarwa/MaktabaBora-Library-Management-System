@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLibrary } from '../context/LibraryContext';
 import { BookOpen, User, Shield, BookMarked, LogOut, Search, Bot, ShoppingCart } from 'lucide-react';
 import { Button } from './ui/Button';
+import { api } from '../services/api';
 
 export default function Navbar({ onOpenAiChat }) {
     const { user, logout } = useAuth();
@@ -31,6 +32,7 @@ export default function Navbar({ onOpenAiChat }) {
                 <nav className="hidden items-center gap-1 rounded-xl border border-bark-100 bg-cream-light/60 p-1 md:flex">
                     <Link
                         to="/catalog"
+                        onMouseEnter={() => api.prefetchCatalog()}
                         className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
                             location.pathname === '/catalog' ? 'bg-paper font-bold text-bark-900 shadow-sm' : 'text-bark-500 hover:bg-paper/50 hover:text-bark-900'
                         }`}
@@ -41,6 +43,7 @@ export default function Navbar({ onOpenAiChat }) {
                     {user?.role === 'member' && (
                         <Link
                             to="/member"
+                            onMouseEnter={() => api.prefetchMyLibrary()}
                             className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
                                 location.pathname === '/member' ? 'bg-paper font-bold text-bark-900 shadow-sm' : 'text-bark-500 hover:bg-paper/50 hover:text-bark-900'
                             }`}
