@@ -29,7 +29,8 @@ class BookInventoryController extends Controller
             ])->with('copies')->latest()->paginate(15);
         });
 
-        return response()->json($books);
+        return response()->json($books)
+            ->header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
     }
 
     public function store(Request $request): JsonResponse
@@ -98,7 +99,8 @@ class BookInventoryController extends Controller
             );
         }
 
-        return response()->json($book);
+        return response()->json($book)
+            ->header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
     }
 
     public function update(Request $request, Book $book): JsonResponse
