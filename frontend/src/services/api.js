@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { clientCache } from './clientCache';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
@@ -85,61 +86,174 @@ export const api = {
     registerMembershipStk: (data) => apiClient.post('/auth/register-membership-stk', data),
     login: (data) => apiClient.post('/auth/login', data),
     refreshToken: () => apiClient.post('/auth/refresh'),
-    logout: () => apiClient.post('/auth/logout'),
+    logout: async () => {
+        clientCache.clear();
+        return apiClient.post('/auth/logout');
+    },
     getMe: () => apiClient.get('/auth/me'),
-    updateProfile: (data) => apiClient.put('/auth/profile', data),
+    updateProfile: async (data) => {
+        const res = await apiClient.put('/auth/profile', data);
+        clientCache.invalidate('user_');
+        return res;
+    },
     changeFirstLoginPassword: (data) => apiClient.post('/auth/change-first-login-password', data),
 
     // Catalog & Books
-    searchCatalog: (query = '', genre = '') => apiClient.get(`/catalog/search?q=${encodeURIComponent(query)}&genre=${encodeURIComponent(genre)}`),
-    getBooks: () => apiClient.get('/books'),
-    getBookDetails: (id) => apiClient.get(`/books/${id}`),
-    getSimilarBooks: (id) => apiClient.get(`/books/${id}/similar`),
-    getRecommendations: () => apiClient.get('/recommendations'),
+    searchCatalog: (query = '', genre = '') =>
+        clientCache.fetchWithCache(
+            `catalog_${query}_${genre}`,
+            () => apiClient.get(`/catalog/search?q=${encodeURIComponent(query)}&genre=${encodeURIComponent(genre)}`),
+            { ttl: 120000, persist: true }
+        ),
+    getBooks: () =>
+        clientCache.fetchWithCache('books_index', () => apiClient.get('/books'), { ttl: 120000, persist: true }),
+    getBookDetails: (id) =>
+        clientCache.fetchWithCache(`book_${id}`, () => apiClient.get(`/books/${id}`), { ttl: 180000, persist: true }),
+    getSimilarBooks: (id) =>
+        clientCache.fetchWithCache(`similar_${id}`, () => apiClient.get(`/books/${id}/similar`), { ttl: 300000, persist: true }),
+    getRecommendations: () =>
+        clientCache.fetchWithCache('recommendations', () => apiClient.get('/recommendations'), { ttl: 120000, persist: false }),
 
     // Subscriptions
-    checkoutSubscription: (data) => apiClient.post('/subscriptions/checkout', data),
-    getSubscriptionStatus: () => apiClient.get('/subscriptions/status'),
-    cancelSubscription: () => apiClient.post('/subscriptions/cancel'),
+    checkoutSubscription: async (data) => {
+        const res = await apiClient.post('/subscriptions/checkout', data);
+        clientCache.invalidate('user_');
+        return res;
+    },
+    getSubscriptionStatus: () =>
+        clientCache.fetchWithCache('user_subscription_status', () => apiClient.get('/subscriptions/status'), { ttl: 60000, persist: false }),
+    cancelSubscription: async () => {
+        const res = await apiClient.post('/subscriptions/cancel');
+        clientCache.invalidate('user_');
+        return res;
+    },
     requestRefund: (data) => apiClient.post('/subscriptions/refund', data),
     getReimbursementStatus: () => apiClient.get('/subscriptions/refund-status'),
-    getMyFines: () => apiClient.get('/fines'),
+    getMyFines: () =>
+        clientCache.fetchWithCache('user_fines', () => apiClient.get('/fines'), { ttl: 60000, persist: false }),
 
     // Digital Book Store
-    getMyDigitalLibrary: () => apiClient.get('/digital-books/my-library'),
-    purchaseDigitalBook: (id, data) => apiClient.post(`/digital-books/${id}/purchase`, data),
-    checkoutCart: (data) => apiClient.post('/digital-books/checkout-cart', data),
+    getMyDigitalLibrary: () =>
+        clientCache.fetchWithCache('user_digital_library', () => apiClient.get('/digital-books/my-library'), { ttl: 120000, persist: false }),
+    purchaseDigitalBook: async (id, data) => {
+        const res = await apiClient.post(`/digital-books/${id}/purchase`, data);
+        clientCache.invalidate('user_digital_library');
+        clientCache.invalidate(`book_${id}`);
+        return res;
+    },
+    checkoutCart: async (data) => {
+        const res = await apiClient.post('/digital-books/checkout-cart', data);
+        clientCache.invalidate('user_digital_library');
+        clientCache.invalidate('catalog_');
+        return res;
+    },
     readDigitalBook: (id) => apiClient.get(`/digital-books/${id}/read`),
 
     // Loans & Reservations
-    getLoans: () => apiClient.get('/loans'),
-    reserveBook: (bookId) => apiClient.post('/reservations', { book_id: bookId }),
-    getMyReservations: () => apiClient.get('/reservations'),
-    cancelReservation: (id) => apiClient.delete(`/reservations/${id}`),
-    payFineDaraja: (fineId, data) => apiClient.post(`/fines/${fineId}/pay-daraja`, data),
+    getLoans: () =>
+        clientCache.fetchWithCache('user_loans', () => apiClient.get('/loans'), { ttl: 60000, persist: false }),
+    reserveBook: async (bookId) => {
+        const res = await apiClient.post('/reservations', { book_id: bookId });
+        clientCache.invalidate('user_reservations');
+        clientCache.invalidate('catalog_');
+        clientCache.invalidate(`book_${bookId}`);
+        return res;
+    },
+    getMyReservations: () =>
+        clientCache.fetchWithCache('user_reservations', () => apiClient.get('/reservations'), { ttl: 60000, persist: false }),
+    cancelReservation: async (id) => {
+        const res = await apiClient.delete(`/reservations/${id}`);
+        clientCache.invalidate('user_reservations');
+        clientCache.invalidate('catalog_');
+        return res;
+    },
+    payFineDaraja: async (fineId, data) => {
+        const res = await apiClient.post(`/fines/${fineId}/pay-daraja`, data);
+        clientCache.invalidate('user_fines');
+        return res;
+    },
 
     // Librarian Operations
     getMetrics: () => apiClient.get('/librarian/metrics'),
     getLibrarianMembers: () => apiClient.get('/librarian/members'),
-    checkoutLoan: (data) => apiClient.post('/librarian/loans/checkout', data),
-    returnLoan: (loanId) => apiClient.post(`/librarian/loans/${loanId}/return`),
-    createBook: (data) => apiClient.post('/librarian/books', data),
-    updateBook: (id, data) => apiClient.put(`/librarian/books/${id}`, data),
-    deleteBook: (id) => apiClient.delete(`/librarian/books/${id}`),
-    toggleBookRestriction: (id) => apiClient.post(`/librarian/books/${id}/toggle-restriction`),
+    checkoutLoan: async (data) => {
+        const res = await apiClient.post('/librarian/loans/checkout', data);
+        clientCache.invalidate('user_loans');
+        clientCache.invalidate('catalog_');
+        clientCache.invalidate('books_index');
+        return res;
+    },
+    returnLoan: async (loanId) => {
+        const res = await apiClient.post(`/librarian/loans/${loanId}/return`);
+        clientCache.invalidate('user_loans');
+        clientCache.invalidate('catalog_');
+        clientCache.invalidate('books_index');
+        return res;
+    },
+    createBook: async (data) => {
+        const res = await apiClient.post('/librarian/books', data);
+        clientCache.invalidate('catalog_');
+        clientCache.invalidate('books_index');
+        return res;
+    },
+    updateBook: async (id, data) => {
+        const res = await apiClient.put(`/librarian/books/${id}`, data);
+        clientCache.invalidate('catalog_');
+        clientCache.invalidate('books_index');
+        clientCache.invalidate(`book_${id}`);
+        return res;
+    },
+    deleteBook: async (id) => {
+        const res = await apiClient.delete(`/librarian/books/${id}`);
+        clientCache.invalidate('catalog_');
+        clientCache.invalidate('books_index');
+        clientCache.invalidate(`book_${id}`);
+        return res;
+    },
+    toggleBookRestriction: async (id) => {
+        const res = await apiClient.post(`/librarian/books/${id}/toggle-restriction`);
+        clientCache.invalidate('catalog_');
+        clientCache.invalidate('books_index');
+        clientCache.invalidate(`book_${id}`);
+        return res;
+    },
     configureBorrowLimit: (memberId, limit) => apiClient.post(`/librarian/members/${memberId}/borrow-limit`, { borrow_limit: limit }),
     getFines: () => apiClient.get('/librarian/fines'),
-    waiveFine: (fineId) => apiClient.post(`/librarian/fines/${fineId}/waive`),
+    waiveFine: async (fineId) => {
+        const res = await apiClient.post(`/librarian/fines/${fineId}/waive`);
+        clientCache.invalidate('user_fines');
+        return res;
+    },
 
     // Open Library Catalog Integration
     searchOpenLibrary: (params = {}) => apiClient.get('/librarian/openlibrary/search', { params }),
-    importOpenLibraryBooks: (books) => apiClient.post('/librarian/openlibrary/import', { books }),
+    importOpenLibraryBooks: async (books) => {
+        const res = await apiClient.post('/librarian/openlibrary/import', { books });
+        clientCache.invalidate('catalog_');
+        clientCache.invalidate('books_index');
+        return res;
+    },
 
     // Librarian Book Copies & Subscriptions CRUD
     getLibrarianCopies: () => apiClient.get('/librarian/book-copies'),
-    createLibrarianCopy: (data) => apiClient.post('/librarian/book-copies', data),
-    updateLibrarianCopy: (id, data) => apiClient.put(`/librarian/book-copies/${id}`, data),
-    deleteLibrarianCopy: (id) => apiClient.delete(`/librarian/book-copies/${id}`),
+    createLibrarianCopy: async (data) => {
+        const res = await apiClient.post('/librarian/book-copies', data);
+        clientCache.invalidate('catalog_');
+        clientCache.invalidate('books_index');
+        return res;
+    },
+    updateLibrarianCopy: async (id, data) => {
+        const res = await apiClient.put(`/librarian/book-copies/${id}`, data);
+        clientCache.invalidate('catalog_');
+        clientCache.invalidate('books_index');
+        return res;
+    },
+    deleteLibrarianCopy: async (id) => {
+        const res = await apiClient.delete(`/librarian/book-copies/${id}`);
+        clientCache.invalidate('catalog_');
+        clientCache.invalidate('books_index');
+        return res;
+    },
 
     getActiveLoans: () => apiClient.get('/librarian/loans/active'),
 
@@ -159,8 +273,19 @@ export const api = {
 
     // Hold Reservations Approvals & Circulation Desk
     getLibrarianReservations: (status) => apiClient.get('/librarian/reservations', { params: status ? { status } : {} }),
-    approveLibrarianReservation: (id, data = {}) => apiClient.post(`/librarian/reservations/${id}/approve`, data),
-    denyLibrarianReservation: (id, data = {}) => apiClient.post(`/librarian/reservations/${id}/deny`, data),
+    approveLibrarianReservation: async (id, data = {}) => {
+        const res = await apiClient.post(`/librarian/reservations/${id}/approve`, data);
+        clientCache.invalidate('user_reservations');
+        clientCache.invalidate('user_loans');
+        clientCache.invalidate('catalog_');
+        return res;
+    },
+    denyLibrarianReservation: async (id, data = {}) => {
+        const res = await apiClient.post(`/librarian/reservations/${id}/deny`, data);
+        clientCache.invalidate('user_reservations');
+        clientCache.invalidate('catalog_');
+        return res;
+    },
 
     // Admin Operations
     getAdminAnalytics: () => apiClient.get('/admin/analytics'),
@@ -172,9 +297,15 @@ export const api = {
     createAdminRecord: (table, data) => apiClient.post(`/admin/tables/${table}`, data),
     updateAdminRecord: (table, id, data) => apiClient.put(`/admin/tables/${table}/${id}`, data),
     deleteAdminRecord: (table, id) => apiClient.delete(`/admin/tables/${table}/${id}`),
+    
     // Membership Tiers Customization
-    getMembershipTiers: () => apiClient.get('/membership-tiers'),
-    updateMembershipTiers: (tiers) => apiClient.put('/admin/membership-tiers', { tiers }),
+    getMembershipTiers: () =>
+        clientCache.fetchWithCache('membership_tiers', () => apiClient.get('/membership-tiers'), { ttl: 300000, persist: true }),
+    updateMembershipTiers: async (tiers) => {
+        const res = await apiClient.put('/admin/membership-tiers', { tiers });
+        clientCache.invalidate('membership_tiers');
+        return res;
+    },
 
     // AI Settings & Multi-Provider Configuration
     getAiSettings: () => apiClient.get('/admin/ai-settings'),
@@ -185,6 +316,28 @@ export const api = {
     // AI Assistant
     sendAiMessage: (prompt, chat_session_id = null) => apiClient.post('/ai/chat', { prompt, chat_session_id }),
     clearAiChat: (chat_session_id = null) => apiClient.post('/ai/chat/clear', { chat_session_id }),
+
+    // Speculative Preloaders
+    prefetchBook: (id) => {
+        if (!id) return;
+        clientCache.prefetch(`book_${id}`, () => apiClient.get(`/books/${id}`), { ttl: 180000, persist: true });
+        clientCache.prefetch(`similar_${id}`, () => apiClient.get(`/books/${id}/similar`), { ttl: 300000, persist: true });
+    },
+    prefetchCatalog: (query = '', genre = '') => {
+        clientCache.prefetch(
+            `catalog_${query}_${genre}`,
+            () => apiClient.get(`/catalog/search?q=${encodeURIComponent(query)}&genre=${encodeURIComponent(genre)}`),
+            { ttl: 120000, persist: true }
+        );
+    },
+    prefetchMyLibrary: () => {
+        clientCache.prefetch('user_loans', () => apiClient.get('/loans'), { ttl: 60000 });
+        clientCache.prefetch('user_reservations', () => apiClient.get('/reservations'), { ttl: 60000 });
+        clientCache.prefetch('user_digital_library', () => apiClient.get('/digital-books/my-library'), { ttl: 120000 });
+        clientCache.prefetch('user_subscription_status', () => apiClient.get('/subscriptions/status'), { ttl: 60000 });
+    },
+
+    cache: clientCache,
 };
 
 export default api;
