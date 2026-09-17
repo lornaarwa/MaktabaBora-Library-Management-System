@@ -23,7 +23,8 @@ export function BookCover({ book, className = '' }) {
     if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
       return path;
     }
-    return `http://127.0.0.1:8000${path.startsWith('/') ? '' : '/'}${path}`;
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+    return `${backendUrl}${path.startsWith('/') ? '' : '/'}${path}`;
   };
 
   const src = getImageUrl(book.cover_image_path);
