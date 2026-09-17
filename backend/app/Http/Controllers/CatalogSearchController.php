@@ -27,6 +27,7 @@ class CatalogSearchController extends Controller
             );
         });
 
-        return response()->json($results);
+        return response()->json($results)
+            ->header('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
     }
 }
