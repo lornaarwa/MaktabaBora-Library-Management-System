@@ -46,25 +46,34 @@ export default function BookDetails() {
   const { user } = useAuth();
   const { addToCart, pushToast } = useLibrary();
 
-  const [book, setBook] = useState(location.state?.book || null);
-  const [loading, setLoading] = useState(!book);
+  const cachedEntry = api.cache?.get(`book_${id}`)?.data;
+  const initialBook = location.state?.book || (cachedEntry?.book || cachedEntry) || null;
+
+  const [book, setBook] = useState(initialBook);
+  const [loading, setLoading] = useState(!initialBook);
   const [error, setError] = useState(null);
   const [reserving, setReserving] = useState(false);
-  const [similarBooks, setSimilarBooks] = useState([]);
-  const [similarLoading, setSimilarLoading] = useState(false);
+
+  const cachedSimilar = api.cache?.get(`similar_${id}`)?.data;
+  const [similarBooks, setSimilarBooks] = useState(cachedSimilar?.data || cachedSimilar || []);
+  const [similarLoading, setSimilarLoading] = useState(!cachedSimilar && Boolean(initialBook?.id));
 
   // Modals
   const [readerModal, setReaderModal] = useState({ isOpen: false, data: null });
   const [darajaModal, setDarajaModal] = useState({ isOpen: false, type: 'digital', item: null });
 
   const fetchBook = async () => {
-    setLoading(true);
+    if (!book) {
+      setLoading(true);
+    }
     setError(null);
     try {
       const data = await api.getBookDetails(id);
       setBook(data.book || data);
     } catch (err) {
-      setError(err.status === 404 ? 'This book is no longer in the catalog.' : (err.message || 'Could not load book details.'));
+      if (!book) {
+        setError(err.status === 404 ? 'This book is no longer in the catalog.' : (err.message || 'Could not load book details.'));
+      }
     } finally {
       setLoading(false);
     }
@@ -79,13 +88,15 @@ export default function BookDetails() {
   useEffect(() => {
     if (!book?.id) return;
     let cancelled = false;
-    setSimilarLoading(true);
+    if (similarBooks.length === 0) {
+      setSimilarLoading(true);
+    }
     api.getSimilarBooks(book.id)
       .then((res) => {
         if (!cancelled) setSimilarBooks(res.data || res || []);
       })
       .catch(() => {
-        if (!cancelled) setSimilarBooks([]);
+        if (!cancelled && similarBooks.length === 0) setSimilarBooks([]);
       })
       .finally(() => {
         if (!cancelled) setSimilarLoading(false);
