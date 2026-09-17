@@ -35,6 +35,8 @@ export function BookCover({ book, className = '' }) {
         <img
           src={src}
           alt={book.title}
+          loading="lazy"
+          decoding="async"
           onError={() => setHasError(true)}
           className="w-full h-full object-cover rounded-md"
         />
