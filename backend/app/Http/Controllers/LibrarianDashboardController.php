@@ -114,21 +114,31 @@ class LibrarianDashboardController extends Controller
 
     public function members(): JsonResponse
     {
-        $members = Member::with('user')->get()->map(function ($m) {
-            return [
-                'id' => $m->id,
-                'member_number' => $m->member_number,
-                'name' => $m->user ? $m->user->name : 'N/A',
-                'email' => $m->user ? $m->user->email : 'N/A',
-                'membership_tier' => $m->membership_tier,
-                'borrow_limit' => $m->borrow_limit,
-                'is_banned' => $m->is_banned,
-                'active_loans_count' => Loan::where('member_id', $m->id)->where('status', 'active')->count(),
-                'total_loans_count' => Loan::where('member_id', $m->id)->count(),
-                'reserved_books_count' => Reservation::where('member_id', $m->id)->count(),
-                'digital_purchases_count' => DigitalPurchase::where('member_id', $m->id)->orWhere('user_id', $m->user_id)->count(),
-            ];
-        });
+        $members = Member::with('user')
+            ->withCount([
+                'loans as total_loans_count',
+                'loans as active_loans_count' => function ($query) {
+                    $query->where('status', 'active');
+                },
+                'reservations as reserved_books_count',
+                'digitalPurchases as digital_purchases_count',
+            ])
+            ->get()
+            ->map(function ($m) {
+                return [
+                    'id' => $m->id,
+                    'member_number' => $m->member_number,
+                    'name' => $m->user ? $m->user->name : 'N/A',
+                    'email' => $m->user ? $m->user->email : 'N/A',
+                    'membership_tier' => $m->membership_tier,
+                    'borrow_limit' => $m->borrow_limit,
+                    'is_banned' => $m->is_banned,
+                    'active_loans_count' => (int) $m->active_loans_count,
+                    'total_loans_count' => (int) $m->total_loans_count,
+                    'reserved_books_count' => (int) $m->reserved_books_count,
+                    'digital_purchases_count' => (int) $m->digital_purchases_count,
+                ];
+            });
 
         return response()->json(['status' => 'success', 'data' => $members]);
     }
