@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Contracts\Services\CatalogSearchEngineInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class CatalogSearchController extends Controller
 {
@@ -17,10 +18,14 @@ class CatalogSearchController extends Controller
 
     public function search(Request $request): JsonResponse
     {
-        $results = $this->searchEngine->search(
-            $request->all(),
-            (int) $request->input('per_page', 12)
-        );
+        $cacheKey = 'catalog_search_' . md5(json_encode($request->query()));
+
+        $results = Cache::remember($cacheKey, 60, function () use ($request) {
+            return $this->searchEngine->search(
+                $request->all(),
+                (int) $request->input('per_page', 12)
+            );
+        });
 
         return response()->json($results);
     }
