@@ -2293,14 +2293,42 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-di
 # Copy compiled React SPA bundle into Laravel's public directory
 COPY --from=frontend-builder --chown=www-data:www-data /app/frontend/dist/ /var/www/html/public/
 
-# Copy automated entrypoint lifecycle script
+# Copy container startup lifecycle entrypoint hook
 COPY --chown=www-data:www-data backend/docker-entrypoint.sh /etc/entrypoint.d/99-maktababora.sh
 RUN chmod +x /etc/entrypoint.d/99-maktababora.sh
 
+# Copy dynamic port entrypoint wrapper
+COPY --chown=www-data:www-data backend/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Expose default HTTP port for container documentation
+EXPOSE 8080
+
 USER www-data
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["/init"]
 ```
 
-#### 3. Single-Page Application (SPA) Catch-All Routing (`backend/routes/web.php`)
+#### 3. Dynamic Port Binding Wrapper (`backend/entrypoint.sh`)
+Cloud hosts such as Render assign arbitrary internal ports to containers at runtime via the `$PORT` environment variable (e.g. `PORT=10000`). To guarantee zero-configuration compatibility with Render, Heroku, or standard Docker hosts without hardcoded networking, an entrypoint wrapper dynamically maps `$PORT` to `NGINX_HTTP_PORT`:
+
+```bash
+#!/bin/sh
+# Map Render's dynamically assigned $PORT to NGINX_HTTP_PORT if PORT is provided
+if [ -n "$PORT" ]; then
+    export NGINX_HTTP_PORT="$PORT"
+fi
+
+# Default to /init if no arguments are provided to start S6-overlay supervisor
+if [ $# -eq 0 ]; then
+    set -- /init
+fi
+
+exec docker-php-serversideup-entrypoint "$@"
+```
+
+#### 4. Single-Page Application (SPA) Catch-All Routing (`backend/routes/web.php`)
 ```php
 Route::get('/{any?}', function () {
     $spaIndexPath = public_path('index.html');
@@ -2317,7 +2345,7 @@ Route::get('/{any?}', function () {
 })->where('any', '^(?!api|up).*$');
 ```
 
-#### 4. Automated Entrypoint Lifecycle Hook (`backend/docker-entrypoint.sh`)
+#### 5. Automated Entrypoint Lifecycle Hook (`backend/docker-entrypoint.sh`)
 ```bash
 #!/bin/sh
 set -e
@@ -2358,6 +2386,12 @@ services:
     region: oregon
     healthCheckPath: /up
     envVars:
+      - key: PORT
+        value: 8080
+      - key: NGINX_HTTP_PORT
+        value: 8080
+      - key: RUN_MIGRATIONS
+        value: true
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
@@ -2380,7 +2414,54 @@ services:
         value: database
       - key: QUEUE_CONNECTION
         value: database
+      - key: DARAJA_ENV
+        value: sandbox
+      - key: DARAJA_CONSUMER_KEY
+        sync: false
+      - key: DARAJA_CONSUMER_SECRET
+        sync: false
+      - key: DARAJA_PASSKEY
+        sync: false
+      - key: DARAJA_SHORTCODE
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
 ```
+
+#### Step-by-Step Render Deployment Walkthrough
+
+##### Option A: Blueprint Infrastructure-as-Code (Recommended)
+1. **Sign in to Render:** Navigate to [dashboard.render.com](https://dashboard.render.com).
+2. **Create New Blueprint:** Click **New +** > **Blueprint**.
+3. **Connect Repository:** Select your GitHub repository (`Smart-library-management-system`).
+4. **Approve Specification:** Render automatically parses `render.yaml` and prepares the `maktababora` Web Service.
+5. **Configure Secrets:**
+   - `DATABASE_URL`: Paste your remote Neon PostgreSQL connection string (e.g. `postgresql://neondb_owner:PASSWORD@ep-muddy-night-aee97x3v-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require`).
+   - `APP_URL`: Enter your assigned Render URL (e.g. `https://maktababora.onrender.com`).
+   - `DARAJA_*` (Optional): Enter sandbox credentials or leave blank to utilize built-in simulated evaluation flows.
+6. **Deploy:** Click **Apply**. Render builds the multi-stage Docker container and launches the service.
+
+##### Option B: Manual Web Service Setup via Dashboard
+1. **New Web Service:** Click **New +** > **Web Service** in Render.
+2. **Repository & Runtime:** Connect repository, select **Docker** as Runtime, and specify `./Dockerfile`.
+3. **Instance Type:** Select **Free** (0.1 CPU, 512 MB RAM).
+4. **Health Check Path:** Set to `/up`.
+5. **Environment Variables:** Add the following keys under the **Environment** tab:
+   - `PORT`: `8080`
+   - `NGINX_HTTP_PORT`: `8080`
+   - `RUN_MIGRATIONS`: `true`
+   - `APP_ENV`: `production`
+   - `APP_DEBUG`: `false`
+   - `APP_KEY`: Generate via `php artisan key:generate --show` or Render auto-generator.
+   - `DATABASE_URL`: Neon PostgreSQL pooled connection URI.
+   - `DB_CONNECTION`: `pgsql`
+   - `DB_SSLMODE`: `require`
+   - `SESSION_DRIVER`: `database`
+   - `CACHE_STORE`: `database`
+   - `QUEUE_CONNECTION`: `database`
+   - `LOG_CHANNEL`: `stderr`
+   - `DARAJA_ENV`: `sandbox`
+6. **Deploy:** Click **Create Web Service**. The service will build and begin serving traffic.
 
 - **Single Turnkey Web Service:** Serves both frontend UI and backend API from one unified URL (e.g. `https://maktababora.onrender.com`).
 - **Health Probe Endpoint:** Render monitors `/up` (returning HTTP 200 OK) to confirm healthy Nginx and PHP-FPM initialization before routing ingress traffic.
@@ -2550,7 +2631,7 @@ npm run build
 APP_NAME="MaktabaBora"
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://maktababora-backend.onrender.com
+APP_URL=https://maktababora.onrender.com
 
 # Remote Neon Serverless PostgreSQL Database Connection
 DATABASE_URL="postgresql://neondb_owner:PASSWORD@ep-muddy-night-aee97x3v-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
@@ -2563,7 +2644,7 @@ DARAJA_CONSUMER_KEY=simulated_consumer_key
 DARAJA_CONSUMER_SECRET=simulated_consumer_secret
 DARAJA_PASSKEY=bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919
 DARAJA_SHORTCODE=174379
-DARAJA_CALLBACK_URL=https://maktababora-backend.onrender.com/api/v1/fines/daraja/callback
+DARAJA_CALLBACK_URL=https://maktababora.onrender.com/api/v1/fines/daraja/callback
 
 # AI Gateway Configurations
 OPENAI_API_KEY=your_openai_api_key
