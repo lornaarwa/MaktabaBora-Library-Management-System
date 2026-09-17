@@ -32,7 +32,9 @@ export default function PublicCatalog() {
 
     useEffect(() => {
         const fetchCatalog = async () => {
-            setLoading(true);
+            if (books.length === 0) {
+                setLoading(true);
+            }
             setError(null);
             try {
                 const res = await api.searchCatalog(searchQuery, selectedGenre === 'All' ? '' : selectedGenre);
@@ -49,12 +51,12 @@ export default function PublicCatalog() {
     }, [searchQuery, selectedGenre, revision]);
 
     // Auto-refresh when the member returns to this tab, so books added by staff
-    // (or in another tab) appear without a manual page reload. Debounced cooldown
-    // avoids duplicate fetches when focus and visibility events fire together.
+    // appear without a manual page reload. 60-second cooldown prevents wasteful
+    // re-fetches when switching browser tabs.
     useEffect(() => {
         const refreshIfActive = () => {
             const now = Date.now();
-            if (!document.hidden && now - lastAutoRefresh.current > 1500) {
+            if (!document.hidden && now - lastAutoRefresh.current > 60000) {
                 lastAutoRefresh.current = now;
                 setRevision((v) => v + 1);
             }
