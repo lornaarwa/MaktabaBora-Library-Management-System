@@ -12,6 +12,12 @@ services:
     region: oregon
     healthCheckPath: /up
     envVars:
+      - key: PORT
+        value: 8080
+      - key: NGINX_HTTP_PORT
+        value: 8080
+      - key: RUN_MIGRATIONS
+        value: true
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
