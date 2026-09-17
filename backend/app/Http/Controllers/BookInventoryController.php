@@ -7,6 +7,7 @@ use App\Models\Book;
 use App\Models\BookCopy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class BookInventoryController extends Controller
 {
@@ -15,9 +16,19 @@ class BookInventoryController extends Controller
     ) {
     }
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $books = Book::with('copies')->latest()->paginate(15);
+        $page = (int) $request->input('page', 1);
+        $books = Cache::remember("books_index_page_{$page}", 60, function () {
+            return Book::select([
+                'id', 'isbn', 'title', 'author', 'publisher', 'genre',
+                'description', 'cover_image_path', 'publication_year',
+                'total_copies', 'available_copies', 'is_blocked', 'is_exclusive',
+                'digital_purchase_price', 'foreign_price', 'foreign_currency',
+                'created_at', 'updated_at',
+            ])->with('copies')->latest()->paginate(15);
+        });
+
         return response()->json($books);
     }
 
@@ -69,6 +80,8 @@ class BookInventoryController extends Controller
             ]);
         }
 
+        $this->clearCatalogCache();
+
         return response()->json(['message' => 'Book and copies created successfully', 'book' => $book->load('copies')], 201);
     }
 
@@ -114,12 +127,22 @@ class BookInventoryController extends Controller
 
         $book->update($validated);
 
+        $this->clearCatalogCache();
+
         return response()->json(['message' => 'Book updated successfully', 'book' => $book]);
     }
 
     public function destroy(Book $book): JsonResponse
     {
         $book->delete();
+
+        $this->clearCatalogCache();
+
         return response()->json(['message' => 'Book removed from catalog']);
+    }
+
+    protected function clearCatalogCache(): void
+    {
+        Cache::flush();
     }
 }
