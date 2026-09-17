@@ -16,13 +16,20 @@ import BookMiniCard from '../components/BookMiniCard';
 export default function MemberDashboard() {
     const { user } = useAuth();
     const { pushToast } = useLibrary();
-    const [loans, setLoans] = useState([]);
-    const [reservations, setReservations] = useState([]);
-    const [digitalLibrary, setDigitalLibrary] = useState([]);
-    const [subscription, setSubscription] = useState(null);
+
+    const cachedLoans = api.cache?.get('user_loans')?.data;
+    const cachedReservations = api.cache?.get('user_reservations')?.data;
+    const cachedDigital = api.cache?.get('user_digital_library')?.data;
+    const cachedSub = api.cache?.get('user_subscription_status')?.data;
+    const hasCachedData = Boolean(cachedLoans || cachedReservations || cachedDigital);
+
+    const [loans, setLoans] = useState(cachedLoans?.data || cachedLoans || []);
+    const [reservations, setReservations] = useState(cachedReservations?.data || cachedReservations || []);
+    const [digitalLibrary, setDigitalLibrary] = useState(cachedDigital?.data || cachedDigital || []);
+    const [subscription, setSubscription] = useState(cachedSub?.data || cachedSub || null);
     const [recommended, setRecommended] = useState([]);
     const [recommendedLoading, setRecommendedLoading] = useState(true);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!hasCachedData);
 
     // Modals
     const [darajaModal, setDarajaModal] = useState({ isOpen: false, type: 'fine', item: null });
@@ -31,7 +38,9 @@ export default function MemberDashboard() {
 
     useEffect(() => {
         const fetchDashboardData = async () => {
-            setLoading(true);
+            if (!hasCachedData && loans.length === 0) {
+                setLoading(true);
+            }
             try {
                 const [loansRes, subRes, digitalRes, recsRes, resRes] = await Promise.all([
                     api.getLoans().catch(() => ({ data: [] })),
